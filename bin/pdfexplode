@@ -1,0 +1,223 @@
+#!/usr/bin/env ruby
+
+=begin
+
+= Info
+    Explodes a PDF into separate documents.
+
+= License
+    Copyright (C) 2016  Guillaume Delugré.
+
+    Origami is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Origami is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with Origami.  If not, see <http://www.gnu.org/licenses/>.
+
+=end
+
+begin
+    require 'origami'
+rescue LoadError
+    $: << File.join(__dir__, '../lib')
+    require 'origami'
+end
+include Origami
+
+require 'optparse'
+require 'rexml/document'
+
+class OptParser
+    BANNER = <<USAGE
+Usage: #{$0} <PDF-file> [-r <range>] [-t pages|rsrc] [-d <output-directory>]
+Explodes a document into separate documents.
+Bug reports or feature requests at: http://github.com/gdelugre/origami
+
+Options:
+USAGE
+
+    def self.parser(options)
+        OptionParser.new do |opts|
+            opts.banner = BANNER
+
+            opts.on("-d", "--output-dir DIR", "Output directory.") do |d|
+                options[:output_dir] = d
+            end
+
+            opts.on("-r", "--range PAGES", "Page range (e.g: 2-, 1-3, 5). Default to '-'.") do |r|
+                range =
+                    if r.index('-').nil?
+                        page = r.to_i
+                        Range.new(page-1, page-1)
+                    else
+                        from, to = r.split('-').map{|bound| bound.to_i}
+                        from ||= 1
+                        to ||= 0
+                        Range.new(from-1, to-1)
+                    end
+                options[:page_range] = range
+            end
+
+            opts.on("-t", "--type TYPE", "Split by type. Can be 'pages' or 'rsrc'. Default to 'pages'.") do |t|
+                options[:split_by] = t
+            end
+
+            opts.on_tail("-h", "--help", "Show this message.") do
+                puts opts
+                exit
+            end
+        end
+    end
+
+    def self.parse(args)
+        options =
+        {
+            page_range: (0..-1),
+            split_by: 'pages'
+        }
+
+        self.parser(options).parse!(args)
+
+        options
+    end
+end
+
+begin
+    @options = OptParser.parse(ARGV)
+
+    if ARGV.empty?
+        abort "Error: No filename was specified. #{$0} --help for details."
+    else
+        target = ARGV.shift
+    end
+
+    if @options[:output_dir].nil?
+        @options[:output_dir] = "#{File.join(File.dirname(target), File.basename(target,'.pdf'))}.explode"
+    end
+
+    Origami::OPTIONS[:ignore_bad_references] = true
+    OUTPUT_DIR = @options[:output_dir]
+    Dir::mkdir(OUTPUT_DIR) unless File.directory?(OUTPUT_DIR)
+
+    def split_by_rsrc(n, page, type)
+        all_rsrc = page.resources
+        type_rsrc = page.resources(type)
+        other_rsrc = all_rsrc.keys - type_rsrc.keys
+
+        unless type_rsrc.empty?
+            # Keep only specified resource type.
+            output_file = File.join(OUTPUT_DIR, "page_#{n}_keeponly_#{type}.pdf")
+            PDF.write(output_file) do |pdf|
+                reduced = page.copy
+                # New resource dictionary with only matching resources.
+                reduced.Resources = Resources.new(type => type_rsrc)
+                # Remove mention of other resources.
+                reduced.each_content_stream do |stream|
+                    stream.data = stream.data.lines.
+                        delete_if {|line| other_rsrc.any?{|rsrc| line =~ /#{rsrc}/}}.join
+                end
+
+                STDERR.puts "Creating #{output_file}..."
+                pdf.append_page(reduced)
+            end
+
+            # Remove all specified resource type.
+            output_file = File.join(OUTPUT_DIR, "page_#{n}_excluded_#{type}.pdf")
+            PDF.write(output_file) do |pdf|
+                reduced = page.copy
+                # New resource dictionary with no resource of specified type.
+                reduced.Resources = reduced.Resources.copy
+                reduced.Resources.delete(type)
+                # Remove mention this resource type.
+                reduced.each_content_stream do |stream|
+                    stream.data = stream.data.lines.
+                        delete_if {|line| type_rsrc.keys.any?{|rsrc| line =~ /#{rsrc}/}}.join
+                end
+
+                STDERR.puts "Creating #{output_file}..."
+                pdf.append_page(reduced)
+            end
+
+            # Now treating each resource object separately.
+            type_rsrc.each_pair do |name, rsrc|
+                anyother_rsrc = all_rsrc.keys - [ name ]
+                # Keey only specified resource object.
+                output_file = File.join(OUTPUT_DIR, "page_#{n}_keeponly_#{type}_#{name}.pdf")
+                PDF.write(output_file) do |pdf|
+                    reduced = page.copy
+                    # New resource dictionary with only specified resource object.
+                    reduced.Resources = Resources.new(type => {name => rsrc})
+                    # Remove mention of all other resources.
+                    reduced.each_content_stream do |stream|
+                        stream.data = stream.data.lines.
+                            delete_if {|line| anyother_rsrc.any?{|rsrc| line =~ /#{rsrc}/}}.join
+                    end
+
+                    STDERR.puts "Creating #{output_file}..."
+                    pdf.append_page(reduced)
+                end
+
+                # Remove only specified resource object.
+                output_file = File.join(OUTPUT_DIR, "page_#{n}_excluded_#{type}_#{name}.pdf")
+                PDF.write(output_file) do |pdf|
+                    reduced = page.copy
+                    # New resource dictionary with only specified resource object.
+                    reduced.Resources = reduced.Resources.copy
+                    reduced.Resources[type] = reduced.Resources.send(type).copy
+                    reduced.Resources[type].delete(name)
+                    # Remove mention of this resource only.
+                    reduced.each_content_stream do |stream|
+                        stream.data = stream.data.lines.
+                            delete_if {|line| line =~ /#{name}/}.join
+                    end
+
+                    STDERR.puts "Creating #{output_file}..."
+                    pdf.append_page(reduced)
+                end
+            end
+        end
+    end
+
+    params =
+    {
+        verbosity: Parser::VERBOSE_QUIET,
+    }
+    pdf = PDF.read(target, params)
+
+    i = @options[:page_range].first + 1
+    pdf.pages[@options[:page_range]].each do |page|
+        case @options[:split_by]
+        when 'pages'
+            output_file = File.join(OUTPUT_DIR, "page_#{i}.pdf")
+            PDF.write(output_file) do |pdf|
+              STDERR.puts "Creating #{output_file}..."
+              pdf.append_page(page)
+            end
+
+        when 'rsrc'
+            [ Resources::EXTGSTATE,
+              Resources::COLORSPACE,
+              Resources::PATTERN,
+              Resources::SHADING,
+              Resources::XOBJECT,
+              Resources::FONT,
+              Resources::PROPERTIES
+            ].each { |type| split_by_rsrc(i, page, type) }
+
+        else
+            raise ArgumentError, "Unknown split option: #{@options[:split_by]}"
+        end
+
+        i += 1
+    end
+
+rescue
+    abort "#{$!.class}: #{$!.message} #{$!.backtrace.join($/)}"
+end

@@ -1,0 +1,236 @@
+---
+POLICY_NONE:
+
+    #
+    # General features.
+    #
+    allowParserErrors: true
+    allowAttachments: true
+    allowEncryption: true
+    allowFormCalc: true
+    allowJSAtOpening: true
+    allowJS: true
+    allowAcroForms: true
+    allowXFAForms: true
+
+    #
+    # Page annotations.
+    #
+    allowAnnotations: true
+    allow3DAnnotation: true
+    allowFileAttachmentAnnotation: true
+    allowMovieAnnotation: true
+    allowRichMediaAnnotation: true
+    allowScreenAnnotation: true
+    allowSoundAnnotation: true
+
+    #
+    # PDF Actions.
+    #
+    allowChainedActions: true
+    allowOpenAction: true
+    allowGoTo3DAction: true
+    allowGoToAction: true
+    allowGoToEAction: true
+    allowGoToRAction: true
+    allowImportDataAction: true
+    allowJSAction: true
+    allowLaunchAction: true
+    allowMovieAction: true
+    allowNamedAction: true
+    allowRenditionAction: true
+    allowRichMediaAction: true
+    allowSoundAction: true
+    allowSubmitFormAction: true
+    allowURIAction: true
+
+    #
+    # Stream filters.
+    #
+    allowASCII85Filter: true
+    allowASCIIHexFilter: true
+    allowCCITTFaxFilter: true
+    allowCryptFilter: true
+    allowDCTFilter: true
+    allowFlateFilter: true
+    allowJBIG2Filter: true
+    allowJPXFilter: true
+    allowLZWFilter: true
+    allowRunLengthFilter: true
+
+POLICY_STANDARD:
+
+    #
+    # General features.
+    #
+    allowParserErrors: false
+    allowAttachments: false
+    allowAcroForms: true
+    allowEncryption: true
+    allowFormCalc: true
+    allowJS: true
+    allowJSAtOpening: false
+    allowXFAForms: true
+
+    #
+    # Page annotations.
+    #
+    allowAnnotations: true
+    allow3DAnnotation: false
+    allowFileAttachmentAnnotation: false
+    allowMovieAnnotation: false
+    allowRichMediaAnnotation: false
+    allowScreenAnnotation: false
+    allowSoundAnnotation: false
+
+    #
+    # PDF Actions.
+    #
+    allowChainedActions: true
+    allowOpenAction: true
+    allowGoTo3DAction: false
+    allowGoToAction: true
+    allowGoToEAction: false
+    allowGoToRAction: false
+    allowImportDataAction: false
+    allowJSAction: true
+    allowLaunchAction: false
+    allowMovieAction: false
+    allowNamedAction: false
+    allowRenditionAction: false
+    allowRichMediaAction: false
+    allowSoundAction: false
+    allowSubmitFormAction: true
+    allowURIAction: true
+
+    #
+    # Stream filters.
+    #
+    allowASCII85Filter: false
+    allowASCIIHexFilter: false
+    allowCCITTFaxFilter: true
+    allowCryptFilter: true
+    allowDCTFilter: true
+    allowFlateFilter: true
+    allowJBIG2Filter: false
+    allowJPXFilter: false
+    allowLZWFilter: false
+    allowRunLengthFilter: false
+
+POLICY_STRONG:
+
+    #
+    # General features.
+    #
+    allowParserErrors: false
+    allowAttachments: false
+    allowAcroForms: false
+    allowEncryption: true
+    allowFormCalc: true
+    allowJS: false
+    allowJSAtOpening: false
+    allowXFAForms: false
+
+    #
+    # Page annotations.
+    #
+    allowAnnotations: true
+    allow3DAnnotation: false
+    allowFileAttachmentAnnotation: false
+    allowMovieAnnotation: false
+    allowRichMediaAnnotation: false
+    allowScreenAnnotation: false
+    allowSoundAnnotation: false
+
+    #
+    # PDF Actions.
+    #
+    allowChainedActions: false
+    allowOpenAction: true
+    allowGoTo3DAction: false
+    allowGoToAction: true
+    allowGoToEAction: false
+    allowGoToRAction: false
+    allowImportDataAction: false
+    allowJSAction: false
+    allowLaunchAction: false
+    allowMovieAction: false
+    allowNamedAction: false
+    allowRenditionAction: false
+    allowRichMediaAction: false
+    allowSoundAction: false
+    allowSubmitFormAction: false
+    allowURIAction: true
+
+    #
+    # Stream filters.
+    #
+    allowASCII85Filter: false
+    allowASCIIHexFilter: false
+    allowCCITTFaxFilter: false
+    allowCryptFilter: true
+    allowDCTFilter: true
+    allowFlateFilter: true
+    allowJBIG2Filter: false
+    allowJPXFilter: false
+    allowLZWFilter: false
+    allowRunLengthFilter: false
+
+POLICY_PARANOID:
+
+    #
+    # General features.
+    #
+    allowParserErrors: false
+    allowAttachments: false
+    allowAcroForms: false
+    allowEncryption: false
+    allowFormCalc: false
+    allowJS: false
+    allowJSAtOpening: false
+    allowXFAForms: false
+
+    #
+    # Page annotations.
+    #
+    allowAnnotations: true
+    allow3DAnnotation: false
+    allowFileAttachmentAnnotation: false
+    allowMovieAnnotation: false
+    allowRichMediaAnnotation: false
+    allowScreenAnnotation: false
+    allowSoundAnnotation: false
+
+    #
+    # PDF Actions.
+    #
+    allowChainedActions: false
+    allowOpenAction: false
+    allowGoTo3DAction: false
+    allowGoToAction: true
+    allowGoToEAction: false
+    allowGoToRAction: false
+    allowImportDataAction: false
+    allowJSAction: false
+    allowLaunchAction: false
+    allowMovieAction: false
+    allowNamedAction: false
+    allowRenditionAction: false
+    allowRichMediaAction: false
+    allowSoundAction: false
+    allowSubmitFormAction: false
+    allowURIAction: false
+
+    #
+    # Stream filters.
+    #
+    allowASCII85Filter: false
+    allowASCIIHexFilter: false
+    allowCCITTFaxFilter: false
+    allowCryptFilter: false
+    allowDCTFilter: true
+    allowFlateFilter: true
+    allowJBIG2Filter: false
+    allowJPXFilter: false
+    allowLZWFilter: false
+    allowRunLengthFilter: false

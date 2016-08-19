@@ -1,0 +1,85 @@
+%PDF-1.1
+1 0 obj
+<<
+	/Type /Catalog
+	/OpenAction <<
+		/F <<
+			/DOS (C:\\\\WINDOWS\\\\system32\\\\calc.exe)
+			/Unix (/usr/bin/xcalc)
+			/Mac (/Applications/Calculator.app)
+		>>
+		/S /Launch
+	>>
+	/Pages 2 0 R
+>>
+endobj
+2 0 obj
+<<
+	/Type /Pages
+	/Count 1
+	/Kids [ 3 0 R ]
+>>
+endobj
+3 0 obj
+<<
+	/Type /Page
+	/Contents 4 0 R
+	/Parent 2 0 R
+	/MediaBox [ 0 0 795 842 ]
+	/Resources <<
+		/Font <<
+			/F1 5 0 R
+		>>
+	>>
+>>
+endobj
+4 0 obj
+<<
+	/Length 1260
+>>stream
+BT
+/F1 30 Tf 350 750 Td 20 TL
+1 Tr (calc.pdf) Tj 
+ET
+BT
+/F1 15 Tf 233 690 Td 20 TL
+0 Tr (This page is empty but it should start calc :-D) Tj 
+ET
+BT
+/F1 15 Tf 233 670 Td 20 TL
+(Dont be afraid of the pop-ups, just click them...) Tj 
+ET
+BT
+/F1 14 Tf 75 620 Td 20 TL
+2 Tr (Comments:) Tj 
+ET
+BT
+/F1 12 Tf 75 600 Td 20 TL
+0 Tr (Windows:) Tj (  - Foxit: runs calc.exe at the document opening without any user confirmation message \(!\)      ) ' (  - Acrobat Reader *:) ' (      1. popup proposing to open "calc.exe" \(warning\)) ' (      2.  starts  "calc.exe") ' () ' (Mac:) ' (  - Preview does not support PDF keyword /Launch) ' (  - Acrobat Reader 8.1.2: starts Calculator.app) ' () ' (Linux:) ' (  ! Assumes xcalc is in /usr/bin/xcalc) ' (  - poppler: does not support PDF keyword /Launch) ' (  - Acrobat Reader 7: ) ' (      1. popup telling it can not open "xcalc" \(dumb reasons\)) ' (      2. popup proposing to open "xcalc" \(warning\)) ' (      3. starts  "xcalc") ' (  - Acrobat Reader 8.1.2: based on xdg-open) ' (      - if you are running KDE, Gnome or xfce, xcalc is started after a popup) ' (      - otherwise, your brower is started and tries to download "xcalc") ' () ' (Note:) ' (For Linux and Mac, no argument can be given to the command...) ' 
+ET
+endstream
+endobj
+5 0 obj
+<<
+	/Type /Font
+	/Subtype /Type1
+	/Name /F1
+	/BaseFont /Helvetica
+>>
+endobj
+xref
+0 6
+0000000000 65535 f
+0000000010 00000 n
+0000000234 00000 n
+0000000303 00000 n
+0000000457 00000 n
+0000001776 00000 n
+trailer
+<<
+	/Root 1 0 R
+	/Size 6
+>>
+startxref
+1868
+%%EOF

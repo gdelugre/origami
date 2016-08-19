@@ -1,0 +1,124 @@
+#!/usr/bin/env ruby
+
+=begin
+
+= Info
+    Prints out the metadata contained in a PDF document.
+
+= License
+    Copyright (C) 2016  Guillaume Delugré.
+
+    Origami is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Origami is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with Origami.  If not, see <http://www.gnu.org/licenses/>.
+
+=end
+
+begin
+    require 'origami'
+rescue LoadError
+    $: << File.join(__dir__, '../lib')
+    require 'origami'
+end
+include Origami
+
+require 'colorize'
+require 'optparse'
+
+class OptParser
+    BANNER = <<USAGE
+Usage: #{$0} [<PDF-file>] [-i] [-x]
+Prints out the metadata contained in a PDF document.
+Bug reports or feature requests at: http://github.com/gdelugre/origami
+
+Options:
+USAGE
+
+    def self.parser(options)
+        OptionParser.new do |opts|
+            opts.banner = BANNER
+
+            opts.on("-i", "Extracts document info metadata") do |i|
+                options[:doc_info] = true
+            end
+
+            opts.on("-x", "Extracts XMP document metadata stream") do |i|
+                options[:doc_stream] = true
+            end
+
+            opts.on("-n", "Turn off colorized output.") do
+                options[:disable_colors] = true
+            end
+
+            opts.on_tail("-h", "--help", "Show this message") do
+                puts opts
+                exit
+            end
+        end
+    end
+
+    def self.parse(args)
+        options =
+        {
+            disable_colors: false
+        }
+
+        self.parser(options).parse!(args)
+
+        options
+    end
+end
+
+begin
+    @options = OptParser.parse(ARGV)
+
+    unless @options[:doc_info] or @options[:doc_stream]
+        @options[:doc_info] = @options[:doc_stream] = true
+    end
+
+    String.disable_colorization @options[:disable_colors]
+
+    target = (ARGV.empty?) ? STDIN : ARGV.shift
+    params =
+    {
+        verbosity: Parser::VERBOSE_QUIET,
+        lazy: true
+    }
+
+    pdf = PDF.read(target, params)
+
+    if @options[:doc_info] and pdf.document_info?
+        puts "[*] Document information dictionary:".magenta
+
+        docinfo = pdf.document_info
+        docinfo.each_pair do |name, item|
+            obj = item.solve
+
+            print name.value.to_s.ljust(20, ' ').green
+            puts ": #{obj.respond_to?(:to_utf8) ? obj.to_utf8 : obj.value}"
+        end
+        puts
+    end
+
+    if @options[:doc_stream] and pdf.metadata?
+        puts "[*] Metadata stream:".magenta
+
+        metadata = pdf.metadata
+        metadata.each_pair do |name, item|
+            print name.ljust(20, ' ').green
+            puts ": #{item}"
+        end
+    end
+
+rescue
+    abort "#{$!.class}: #{$!.message}"
+end

@@ -1,0 +1,12 @@
+#!/usr/bin/env ruby
+
+begin
+    require 'irb'
+rescue LoadError
+    abort "Error: you need to install irb to run this application."
+end
+
+$:.unshift File.join(__dir__, 'shell')
+ENV["IRBRC"] = File.join(__dir__, "shell", ".irbrc")
+
+IRB.start
