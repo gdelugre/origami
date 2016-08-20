@@ -459,7 +459,7 @@ module Origami
 
                 if obj.is_a?(ObjectStream)
                     obj.each do |subobj|
-                        resolve_all_references[obj, browsed, ref_cache]
+                        resolve_all_references[subobj, browsed, ref_cache]
                     end
                 end
 
