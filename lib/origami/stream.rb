@@ -615,14 +615,7 @@ module Origami
         # Returns the index of Object _no_.
         #
         def index(no)
-            ind = 0
-            @objects.to_a.sort.each do |num, obj|
-                return ind if num == no
-
-                ind = ind + 1
-            end
-
-            nil
+            @objects.to_a.sort.index { |num, _| num == no }
         end
 
         #
