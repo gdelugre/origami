@@ -95,7 +95,7 @@ module Origami
             # Converts MacOS file path into PDF file path.
             #
             def Mac(file)
-                LiteralString.new("/" + file.gsub(":", "/"))
+                LiteralString.new("/" + file.tr(":", "/"))
             end
 
             #
@@ -109,7 +109,7 @@ module Origami
                     file.sub!(":","")
                 end
 
-                file.gsub!("\\", "/")
+                file.tr!("\\", "/")
                 LiteralString.new(path + file)
             end
         end

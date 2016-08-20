@@ -68,7 +68,7 @@ module PDFWalker
                         end
 
                         text.encode!("UTF-8", replace: '.')
-                            .gsub!("\x00", '.')
+                            .tr!("\x00", '.')
 
                         @pdfbuffer.set_text(text)
                         @pdfbuffer.apply_tag("Default", @pdfbuffer.start_iter, @pdfbuffer.end_iter)

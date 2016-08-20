@@ -295,7 +295,7 @@ module PDFWalker
                 name =
                     case object
                     when Origami::String
-                        '"' + object.to_utf8.gsub("\x00", ".") + '"'
+                        '"' + object.to_utf8.tr("\x00", ".") + '"'
                     when Origami::Number, Origami::Name
                         object.value.to_s
                     else

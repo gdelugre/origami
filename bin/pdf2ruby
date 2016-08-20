@@ -185,7 +185,7 @@ def dictionaryToRuby(dict, inclevel, internalname, customtype = nil)
 
             if val.is_a?(Origami::Reference) and @var_hash[val] and @var_hash[val][0,3] == "obj"
                 oldname = @var_hash[val]
-                newname = (key.value.to_s.downcase.gsub(/[^[[:alnum:]]]/,'_') + "_" + @var_hash[val][4..-1]).gsub('.','_')
+                newname = (key.value.to_s.downcase.gsub(/[^[[:alnum:]]]/,'_') + "_" + @var_hash[val][4..-1]).tr('.', '_')
 
                 if not @obj_route.include?(oldname)
                     @var_hash[val] = newname
@@ -217,7 +217,7 @@ def dictionaryToHashMap(dict, inclevel, internalname)
 
         if val.is_a?(Origami::Reference) and @var_hash[val] and @var_hash[val][0,3] == "obj"
             oldname = @var_hash[val]
-            newname = (key.value.to_s.downcase + "_" + @var_hash[val][4..-1]).gsub('.','_')
+            newname = (key.value.to_s.downcase + "_" + @var_hash[val][4..-1]).tr('.', '_')
 
             if not @obj_route.include?(oldname)
                 @var_hash[val] = newname
