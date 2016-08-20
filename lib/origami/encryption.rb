@@ -211,7 +211,6 @@ module Origami
                 end
 
                 crypt_filters = Hash.new(algorithm)
-                string_filter = stream_filter = nil
 
             when 'AES'
                 algorithm = Encryption::AES
@@ -232,7 +231,6 @@ module Origami
                     Identity: Encryption::Identity,
                     StdCF: algorithm
                 }
-                string_filter = stream_filter = :StdCF
 
             else
                 raise EncryptionNotSupportedError, "Cipher not supported : #{params[:cipher]}"
