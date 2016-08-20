@@ -157,7 +157,7 @@ module Origami
             # _left_, _bottom_, _right_, _top_:: The rectangle to fit in.
             #
             def self.[](page, left: 0, bottom: 0, right: 0, top: 0)
-                self.new([pageref, :FitR, left, bottom, right, top])
+                self.new([page, :FitR, left, bottom, right, top])
             end
         end
 
@@ -231,7 +231,7 @@ module Origami
             # _left_:: The horizontal coord.
             #
             def self.[](page, left: 0)
-                self.new([pageref, :FitBV, left])
+                self.new([page, :FitBV, left])
             end
         end
 
