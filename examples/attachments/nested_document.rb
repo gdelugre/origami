@@ -18,7 +18,7 @@ EMBEDDED_NAME = "#{('a'..'z').to_a.sample(8).join}.pdf"
 # A simple document displaying a message box.
 #
 output_str = StringIO.new
-nested_doc = PDF.write(output_str) do |pdf|
+PDF.write(output_str) do |pdf|
     pdf.onDocumentOpen Action::JavaScript "app.alert('Hello world!');" 
 end
 

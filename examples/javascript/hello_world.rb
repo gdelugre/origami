@@ -15,8 +15,8 @@ include Origami
 OUTPUT_FILE = "#{File.basename(__FILE__, ".rb")}.pdf"
 
 # Creating a new file
-pdf = PDF.new
-         .onDocumentOpen(Action::JavaScript 'app.alert("Hello world");')
-         .save(OUTPUT_FILE)
+PDF.new
+   .onDocumentOpen(Action::JavaScript 'app.alert("Hello world");')
+   .save(OUTPUT_FILE)
 
 puts "PDF file saved as #{OUTPUT_FILE}."
