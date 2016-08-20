@@ -51,7 +51,7 @@ module Origami
             super(@value.to_s)
         end
 
-        def self.parse(stream, parser = nil) #:nodoc:
+        def self.parse(stream, _parser = nil) #:nodoc:
             offset = stream.pos
 
             if stream.scan(@@regexp).nil?

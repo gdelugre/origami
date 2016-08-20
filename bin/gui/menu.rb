@@ -28,14 +28,14 @@ module PDFWalker
             {
                 Name: Stock::SAVE_AS,
                 Sensitive: true,
-                Callback: lambda { |widget, viewer, path|
+                Callback: lambda { |_widget, viewer, _path|
                     viewer.parent.save
                 }
             },
             {
                 Name: "Serialize",
                 Sensitive: true,
-                Callback: lambda { |widget, viewer, path|
+                Callback: lambda { |_widget, viewer, _path|
                     viewer.parent.serialize
                 }
             },
@@ -45,7 +45,7 @@ module PDFWalker
             {
                 Name: Stock::PROPERTIES,
                 Sensitive: true,
-                Callback: lambda { |widget, viewer, path|
+                Callback: lambda { |_widget, viewer, _path|
                     viewer.parent.display_file_properties
                 }
             },
@@ -55,7 +55,7 @@ module PDFWalker
             {
                 Name: Stock::CLOSE,
                 Sensitive: true,
-                Callback: lambda { |widget, viewer, path|
+                Callback: lambda { |_widget, viewer, _path|
                     viewer.parent.close
                 }
             }
@@ -66,7 +66,7 @@ module PDFWalker
             {
                 Name: Stock::JUMP_TO,
                 Sensitive: true,
-                Callback: lambda { |widget, viewer, path|
+                Callback: lambda { |_widget, viewer, path|
                     viewer.row_activated(path, viewer.get_column(viewer.class::TEXTCOL))
                 }
             }
@@ -77,7 +77,7 @@ module PDFWalker
             {
                 Name: "Save to this revision",
                 Sensitive: true,
-                Callback: lambda { |widget, viewer, path|
+                Callback: lambda { |_widget, viewer, path|
                     revstr = viewer.model.get_value(viewer.model.get_iter(path), viewer.class::TEXTCOL)
                     revstr.slice!(0, "Revision ".size)
 
@@ -107,7 +107,7 @@ module PDFWalker
             {
                 Name: "Dump encoded stream",
                 Sensitive: true,
-                Callback: lambda { |widget, viewer, path|
+                Callback: lambda { |_widget, viewer, path|
                     stream = viewer.model.get_value(viewer.model.get_iter(path), viewer.class::OBJCOL)
 
                     viewer.parent.save_data("Save stream to file", stream.encoded_data)
@@ -116,7 +116,7 @@ module PDFWalker
             {
                 Name: "Dump decoded stream",
                 Sensitive: true,
-                Callback: lambda { |widget, viewer, path|
+                Callback: lambda { |_widget, viewer, path|
                     stream = viewer.model.get_value(viewer.model.get_iter(path), viewer.class::OBJCOL)
 
                     viewer.parent.save_data("Save stream to file", stream.data)
@@ -129,7 +129,7 @@ module PDFWalker
             {
                 Name: "Dump string",
                 Sensitive: true,
-                Callback: lambda { |widget, viewer, path|
+                Callback: lambda { |_widget, viewer, path|
                     string = viewer.model.get_value(viewer.model.get_iter(path), viewer.class::OBJCOL)
 
                     viewer.parent.save_data("Save string to file", string.value)
@@ -145,7 +145,7 @@ module PDFWalker
             {
                 Name: "View image",
                 Sensitive: true,
-                Callback: lambda { |widget, viewer, path|
+                Callback: lambda { |_widget, viewer, path|
                     stm = viewer.model.get_value(viewer.model.get_iter(path), viewer.class::OBJCOL)
                     w,h = stm.Width, stm.Height
 

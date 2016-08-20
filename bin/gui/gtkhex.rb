@@ -169,7 +169,7 @@ module Gtk
                 @xdisp_gc.set_exposures(true)
             end
 
-            @xdisp.signal_connect 'expose_event' do |xdisp, event|
+            @xdisp.signal_connect 'expose_event' do |_xdisp, event|
                 imin = (event.area.y / @char_height).to_i
                 imax = ((event.area.y + event.area.height) / @char_height).to_i
                 imax += 1 if (event.area.y + event.area.height).to_i % @char_height != 0
@@ -179,7 +179,7 @@ module Gtk
                 render_hex_lines(imin, imax)
             end
 
-            @xdisp.signal_connect 'scroll_event' do |xdisp, event|
+            @xdisp.signal_connect 'scroll_event' do |_xdisp, event|
                 @scrollbar.event(event)
             end
 
@@ -245,7 +245,7 @@ module Gtk
                 @adisp_gc.set_exposures(true)
             end
 
-            @adisp.signal_connect 'expose_event' do |adisp, event|
+            @adisp.signal_connect 'expose_event' do |_adisp, event|
                 imin = (event.area.y / @char_height).to_i
                 imax = ((event.area.y + event.area.height) / @char_height).to_i
                 imax += 1 if (event.area.y + event.area.height).to_i % @char_height != 0
@@ -254,7 +254,7 @@ module Gtk
                 render_ascii_lines(imin, imax)
             end
 
-            @adisp.signal_connect 'scroll_event' do |adisp, event|
+            @adisp.signal_connect 'scroll_event' do |_adisp, event|
                 @scrollbar.event(event)
             end
 
@@ -910,7 +910,7 @@ module Gtk
             @olayout = @offsets.create_pango_layout('')
 
             @offsets.events = Gdk::Event::EXPOSURE_MASK
-            @offsets.signal_connect 'expose_event' do |offsets, event|
+            @offsets.signal_connect 'expose_event' do |_offsets, event|
                 imin = (event.area.y / @char_height).to_i
                 imax = ((event.area.y + event.area.height) / @char_height).to_i
                 imax += 1 if (event.area.y + event.area.height).to_i % @char_height != 0

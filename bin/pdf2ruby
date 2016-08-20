@@ -237,7 +237,7 @@ def dictionaryToHashMap(dict, inclevel, internalname)
 end
 
 def streamToRuby(stm, internalname)
-    dict = stm.dictionary.dup.delete_if{|k,v| k == :Length}
+    dict = stm.dictionary.dup.delete_if {|k, _| k == :Length}
 
     code = "Stream.new("
 

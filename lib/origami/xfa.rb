@@ -61,7 +61,7 @@ module Origami
                 end
             end
 
-            def xfa_node(name, type, range = (0..(1.0/0)))
+            def xfa_node(name, type, _range = (0..Float::INFINITY))
 
                 adder = "add_#{name}"
                 remove_method(adder) rescue NameError
@@ -220,7 +220,7 @@ module Origami
                     def initialize(record = "")
                         super('record')
 
-                        self.text = ""
+                        self.text = record
                     end
                 end
 
@@ -1099,6 +1099,8 @@ module Origami
 
                     def initialize(text = "")
                         super('toolTip')
+
+                        self.text = text
                     end
                 end
 

@@ -253,7 +253,7 @@ module Origami
             best_type
         end
 
-        def self.hint_type(name); nil end #:nodoc:
+        def self.hint_type(_name); nil end #:nodoc:
 
         private
 

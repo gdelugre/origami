@@ -76,7 +76,7 @@ module Origami
             super(TOKENS.first + Name.expand(@value))
         end
 
-        def self.parse(stream, parser = nil) #:nodoc:
+        def self.parse(stream, _parser = nil) #:nodoc:
             offset = stream.pos
 
             name =

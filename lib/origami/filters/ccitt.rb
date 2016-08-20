@@ -459,7 +459,7 @@ module Origami
                 end
             end
 
-            def encode_two_dimensional_line(input, output, columns, colors, prev_line) #:nodoc:
+            def encode_two_dimensional_line(_input, _output, _columns, _colors, _prev_line) #:nodoc:
                 raise NotImplementedError "CCITT two-dimensional encoding scheme not supported."
             end
 
@@ -486,7 +486,7 @@ module Origami
                 end
             end
 
-            def decode_two_dimensional_line(input, output, columns, colors, prev_line) #:nodoc:
+            def decode_two_dimensional_line(_input, _output, _columns, _colors, _prev_line) #:nodoc:
                 raise NotImplementedError, "CCITT two-dimensional decoding scheme not supported."
             end
 

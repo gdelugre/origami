@@ -31,7 +31,7 @@ module PDFWalker
             set_resizable false
 
             add_events(Gdk::Event::KEY_RELEASE_MASK)
-            signal_connect('key_release_event') { |w, event|
+            signal_connect('key_release_event') { |_, event|
                 destroy if event.keyval == Gdk::Keyval::GDK_Escape
             }
         end

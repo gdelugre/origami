@@ -471,12 +471,12 @@ module Origami
         end
 
         # TODO :nodoc:
-        def paint_shading(shade)
+        def paint_shading(_shade)
             raise NotImplementedError
         end
 
         # TODO :nodoc:
-        def set_text_font(font, size)
+        def set_text_font(_font, _size)
             raise NotImplementedError
         end
 

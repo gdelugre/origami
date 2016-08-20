@@ -55,7 +55,7 @@ module PDFWalker
                 @list.set_value(iter, NAMECOL, str)
             }
 
-            @view.signal_connect("row_activated") { |tree, path, _column|
+            @view.signal_connect("row_activated") { |_tree, _path, _column|
                 if @view.selection.selected
                     from = @list.get_value(@view.selection.selected, OBJCOL)
                     @parent.treeview.goto(from)

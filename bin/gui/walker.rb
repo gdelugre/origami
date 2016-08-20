@@ -82,7 +82,7 @@ module PDFWalker  #:nodoc:all
             }
 
             add_events(Gdk::Event::KEY_RELEASE_MASK)
-            signal_connect('key_release_event') { |w, event|
+            signal_connect('key_release_event') { |_w, event|
                 if event.keyval == Gdk::Keyval::GDK_F1 then about
                 elsif event.keyval == Gdk::Keyval::GDK_Escape and @opened and not @explorer_history.empty?
                     @treeview.goto(@explorer_history.pop)
@@ -155,7 +155,7 @@ module PDFWalker  #:nodoc:all
             dialog.vbox.pack_start(button_byname)
             dialog.vbox.pack_end(button_regexp)
 
-            dialog.signal_connect('response') do |dlg, response|
+            dialog.signal_connect('response') do |_, response|
                 if response != Gtk::Dialog::RESPONSE_OK
                     dialog.destroy
                     next

@@ -73,7 +73,7 @@ module PDFWalker
                 end
             }
 
-            signal_connect('row-activated') { |tree, path, column|
+            signal_connect('row-activated') { |_tree, path,_column|
                 if selection.selected
                     obj = @treestore.get_value(selection.selected, OBJCOL)
 
@@ -87,7 +87,7 @@ module PDFWalker
                 end
             }
 
-            signal_connect('row-expanded') { |tree, iter, path|
+            signal_connect('row-expanded') { |_tree, iter, _path|
                 obj = @treestore.get_value(iter, OBJCOL)
 
                 if obj.is_a?(Origami::Stream) and iter.n_children == 1
@@ -114,7 +114,7 @@ module PDFWalker
             }
 
             add_events(Gdk::Event::BUTTON_PRESS_MASK)
-            signal_connect('button_press_event') { |widget, event|
+            signal_connect('button_press_event') { |_widget, event|
                 if event.button == 3 && parent.opened
                     path = get_path(event.x,event.y).first
                     set_cursor(path, nil, false)
@@ -221,7 +221,7 @@ module PDFWalker
                 object_path.push(root_obj)
             end
 
-            @treestore.each do |model, path, iter|
+            @treestore.each do |_model, path, iter|
                 current_obj = @treestore.get_value(iter, OBJCOL)
 
                 # Load the intermediate nodes if necessary.

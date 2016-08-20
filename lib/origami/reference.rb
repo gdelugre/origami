@@ -42,7 +42,7 @@ module Origami
             @refno, @refgen = refno, refgen
         end
 
-        def self.parse(stream, parser = nil) #:nodoc:
+        def self.parse(stream, _parser = nil) #:nodoc:
             offset = stream.pos
 
             if stream.scan(@@regexp).nil?

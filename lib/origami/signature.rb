@@ -151,7 +151,7 @@ module Origami
                 end
 
             when 'adbe.x509.rsa_sha1'
-                signfield_size = -> (crt, pkey, certs) do
+                signfield_size = -> (_crt, pkey, _certs) do
                     pkey.private_encrypt(
                       Digest::SHA1.digest('')
                     ).size

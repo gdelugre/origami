@@ -350,12 +350,12 @@ module PDFWalker
         private
 
         def parse_file(path)
-            update_bar = lambda { |obj|
+            update_bar = lambda do |_obj|
                 @progressbar.pulse if @progressbar
                 Gtk.main_iteration while Gtk.events_pending?
-            }
+            end
 
-            prompt_passwd = lambda {
+            prompt_passwd = lambda do
                 passwd = ""
 
                 dialog = Gtk::Dialog.new(
@@ -386,7 +386,7 @@ module PDFWalker
 
                 dialog.destroy
                 return passwd
-            }
+            end
 
             #
             # Try to detect the file type of the document.

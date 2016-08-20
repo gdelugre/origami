@@ -146,7 +146,7 @@ module Origami
             Matrix.rows([[1,0,0],[0,1,0],[tx,ty,1]]) * canvas.gs.text_state.text_line_matrix
         end
 
-        insn  'Tm', Real, Real, Real, Real, Real, Real do |canvas, a,b,c,d,e,f,g|
+        insn  'Tm', Real, Real, Real, Real, Real, Real do |canvas, a, b, c, d, e, f|
             unless canvas.gs.text_state.is_in_text_object?
                 raise TextStateError, "Must be in a text object to use operator : Tm"
             end

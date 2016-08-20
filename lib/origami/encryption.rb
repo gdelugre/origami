@@ -576,11 +576,11 @@ module Origami
         # Identity transformation.
         #
         module Identity
-            def Identity.encrypt(key, data)
+            def Identity.encrypt(_key, data)
                 data
             end
 
-            def Identity.decrypt(key, data)
+            def Identity.decrypt(_key, data)
                 data
             end
         end

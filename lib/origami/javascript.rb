@@ -106,7 +106,7 @@ module Origami
                     def self.check_method_args(args, def_args)
                         if args.first.is_a?(V8::Object)
                             args = args.first
-                            members = args.entries.map{|k,v| k}
+                            members = args.entries.map {|k, _| k}
                             argv = []
                             def_args.each do |def_arg|
                                 raise MissingArgError if def_arg.required and not members.include?(def_arg.name)
@@ -230,7 +230,7 @@ module Origami
 
                     acro_method 'setPersistent',
                         Arg[name: 'cVariable', required: true],
-                        Arg[name: 'bPersist', required: true] do |cVariable, bPersist|
+                        Arg[name: 'bPersist', required: true] do |cVariable, _bPersist|
 
                         raise GeneralError unless @vars.include?(cVariable)
                     end
@@ -344,7 +344,7 @@ module Origami
 
                     acro_method 'getDataObjectContents',
                         Arg[name: 'cName', type: ::String, required: true],
-                        Arg[name: 'bAllowAuth', default: false] do |cName, bAllowAuth|
+                        Arg[name: 'bAllowAuth', default: false] do |cName, _bAllowAuth|
 
                         file_desc = @pdf.resolve_name(Names::EMBEDDED_FILES, cName)
 
@@ -359,7 +359,7 @@ module Origami
                         Arg[name: 'cName', type: ::String, required: true],
                         Arg[name: 'cDIPath' ],
                         Arg[name: 'bAllowAuth'],
-                        Arg[name: 'nLaunch'] do |cName, cDIPath, bAllowAuth, nLaunch|
+                        Arg[name: 'nLaunch'] do |cName, _cDIPath, _bAllowAuth, _nLaunch|
 
                         file_desc = @pdf.resolve_name(Names::EMBEDDED_FILES, cName)
 
@@ -466,14 +466,14 @@ module Origami
                 class Util < AcrobatObject
                     acro_method 'streamFromString',
                         Arg[name: 'cString', type: ::Object, required: true],
-                        Arg[name: 'cCharset', type: ::Object, default: 'utf-8'] do |cString, cCharset|
+                        Arg[name: 'cCharset', type: ::Object, default: 'utf-8'] do |cString, _cCharset|
 
                         ReadStream.new(@engine, cString.to_s)
                     end
 
                     acro_method 'stringFromStream',
                         Arg[name: 'oStream', type: ReadStream, required: true],
-                        Arg[name: 'cCharset', type: ::Object, default: 'utf-8'] do |oStream, cCharset|
+                        Arg[name: 'cCharset', type: ::Object, default: 'utf-8'] do |oStream, _cCharset|
 
                         oStream.instance_variable_get(:@data).dup
                     end

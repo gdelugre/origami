@@ -121,7 +121,7 @@ module Origami
             super(i)
         end
 
-        def self.parse(stream, parser = nil) #:nodoc:
+        def self.parse(stream, _parser = nil) #:nodoc:
             offset = stream.pos
 
             if not stream.scan(@@regexp)
@@ -165,7 +165,7 @@ module Origami
             super(f)
         end
 
-        def self.parse(stream, parser = nil) #:nodoc:
+        def self.parse(stream, _parser = nil) #:nodoc:
             offset = stream.pos
 
             if not stream.scan(@@regexp)
