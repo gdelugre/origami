@@ -47,14 +47,14 @@ module Origami
 
             def xfa_attribute(name)
                 # Attribute getter.
-                attr_getter = "attr_#{name.to_s}"
+                attr_getter = "attr_#{name}"
                 remove_method(attr_getter) rescue NameError
                 define_method(attr_getter) do
                     self.attributes[name.to_s]
                 end
 
                 # Attribute setter.
-                attr_setter = "attr_#{name.to_s}="
+                attr_setter = "attr_#{name}="
                 remove_method(attr_setter) rescue NameError
                 define_method(attr_setter) do |value|
                     self.attributes[names.to_s] = value

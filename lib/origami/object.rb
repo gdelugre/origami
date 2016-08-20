@@ -238,18 +238,18 @@ module Origami
                 begin
                     field_value = self[field].solve
                 rescue InvalidReferenceError
-                    STDERR.puts "Warning: in object #{self.class}, field `#{field.to_s}' is an invalid reference (#{self[field].to_s})"
+                    STDERR.puts "Warning: in object #{self.class}, field `#{field}' is an invalid reference (#{self[field]})"
                     next
                 end
 
                 types = attributes[:Type].is_a?(::Array) ? attributes[:Type] : [ attributes[:Type] ]
 
                 unless types.any? {|type| not type.is_a?(Class) or field_value.is_a?(type.native_type)}
-                    STDERR.puts "Warning: in object #{self.class}, field `#{field.to_s}' has unexpected type #{field_value.class}"
+                    STDERR.puts "Warning: in object #{self.class}, field `#{field}' has unexpected type #{field_value.class}"
                 end
 
                 if attributes.key?(:Assert) and not (attributes[:Assert] === field_value)
-                    STDERR.puts "Warning: assertion failed for field `#{field.to_s}' in object #{self.class}"
+                    STDERR.puts "Warning: assertion failed for field `#{field}' in object #{self.class}"
                 end
             end
         end

@@ -545,7 +545,7 @@ module Origami
                 obj.objstm_offset = objoff
 
                 prolog << "#{num} #{objoff} "
-                objdata = "#{obj.to_s} "
+                objdata = "#{obj} "
 
                 objoff += objdata.size
                 data << objdata

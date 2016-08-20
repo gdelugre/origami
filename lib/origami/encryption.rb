@@ -59,7 +59,7 @@ module Origami
             handler = Encryption::Standard::Dictionary.new(encrypt_dict.dup)
 
             unless handler.Filter == :Standard
-                raise EncryptionNotSupportedError, "Unknown security handler : '#{handler.Filter.to_s}'"
+                raise EncryptionNotSupportedError, "Unknown security handler : '#{handler.Filter}'"
             end
 
             crypt_filters = {

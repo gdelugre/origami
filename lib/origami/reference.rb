@@ -68,7 +68,7 @@ module Origami
             target = doc.get_object(self)
 
             if target.nil? and not Origami::OPTIONS[:ignore_bad_references]
-                raise InvalidReferenceError, "Cannot resolve reference : #{self.to_s}"
+                raise InvalidReferenceError, "Cannot resolve reference : #{self}"
             end
 
             target or Null.new

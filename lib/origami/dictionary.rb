@@ -92,7 +92,7 @@ module Origami
                 key = Name.parse(stream, parser)
 
                 type = Object.typeof(stream)
-                raise InvalidDictionaryObjectError, "Invalid object for field #{key.to_s}" if type.nil?
+                raise InvalidDictionaryObjectError, "Invalid object for field #{key}" if type.nil?
 
                 value = type.parse(stream, parser)
                 hash[key] = value
@@ -124,7 +124,7 @@ module Origami
             else
                 content = TOKENS.first.dup
                 self.each_pair do |key,value|
-                    content << "#{key.to_s} #{value.is_a?(Dictionary) ? value.to_s(indent: 0) : value.to_s}"
+                    content << "#{key} #{value.is_a?(Dictionary) ? value.to_s(indent: 0) : value.to_s}"
                 end
                 content << TOKENS.last
             end

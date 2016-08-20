@@ -138,7 +138,7 @@ module Origami
                         <y:PolyLineEdge>
                             <y:LineStyle type="line" width="1.0" color="#000000"/>
                             <y:Arrows source="none" target="standard"/>
-                            <y:EdgeLabel>#{label.to_s}</y:EdgeLabel>
+                            <y:EdgeLabel>#{label}</y:EdgeLabel>
                         </y:PolyLineEdge>
                     </data>
                 </edge>

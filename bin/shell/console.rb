@@ -77,20 +77,20 @@ module Origami
         class Revision
             def to_s
                 puts "----------  Body  ----------".white.bold
-                @body.each_value { |obj|
+                @body.each_value do |obj|
                     print "#{obj.reference.to_s.rjust(8,' ')}".ljust(10).magenta
                     puts "#{obj.type}".yellow
-                }
+                end
 
                 puts "---------- Trailer ---------".white.bold
                 if not @trailer.dictionary
                     puts "  [x] No trailer found.".blue
                 else
-                    @trailer.dictionary.each_pair { |entry, value|
+                    @trailer.dictionary.each_pair do |entry, value|
                         print "  [*] ".magenta
-                        print "#{entry.to_s}: ".yellow
-                        puts "#{value.to_s}".red
-                    }
+                        print "#{entry}: ".yellow
+                        puts "#{value}".red
+                    end
 
                     print "  [+] ".magenta
                     print "startxref: ".yellow
@@ -111,9 +111,9 @@ module Origami
             print "Version: ".yellow
             puts "#{@header.major_version}.#{@header.minor_version}".red
 
-            @revisions.each { |revision|
+            @revisions.each do |revision|
                 revision.to_s
-            }
+            end
             puts
         end
 
