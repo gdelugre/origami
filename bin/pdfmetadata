@@ -47,11 +47,11 @@ USAGE
         OptionParser.new do |opts|
             opts.banner = BANNER
 
-            opts.on("-i", "Extracts document info metadata") do |i|
+            opts.on("-i", "Extracts document info metadata") do
                 options[:doc_info] = true
             end
 
-            opts.on("-x", "Extracts XMP document metadata stream") do |i|
+            opts.on("-x", "Extracts XMP document metadata stream") do
                 options[:doc_stream] = true
             end
 
