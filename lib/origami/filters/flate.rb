@@ -32,44 +32,16 @@ module Origami
         #
         class Flate
             include Filter
+            include Predictor
 
             EOD = 257 #:nodoc:
-
-            class DecodeParms < Dictionary
-                include StandardObject
-
-                field   :Predictor,         :Type => Integer, :Default => 1
-                field   :Colors,            :Type => Integer, :Default => 1
-                field   :BitsPerComponent,  :Type => Integer, :Default => 8
-                field   :Columns,           :Type => Integer, :Default => 1
-            end
-
-            #
-            # Create a new Flate Filter.
-            # _parameters_:: A hash of filter options (ignored).
-            #
-            def initialize(parameters = {})
-                super(DecodeParms.new(parameters))
-            end
 
             #
             # Encodes data using zlib/Deflate compression method.
             # _stream_:: The data to encode.
             #
             def encode(stream)
-                if @params.Predictor.is_a?(Integer)
-                    colors  = @params.Colors.is_a?(Integer) ? @params.Colors.to_i : 1
-                    bpc     = @params.BitsPerComponent.is_a?(Integer) ? @params.BitsPerComponent.to_i : 8
-                    columns = @params.Columns.is_a?(Integer) ? @params.Columns.to_i : 1
-
-                    stream = Predictor.do_pre_prediction(stream, 
-                                                         predictor: @params.Predictor.to_i, 
-                                                         colors: colors, 
-                                                         bpc: bpc, 
-                                                         columns: columns)
-                end
-
-                Zlib::Deflate.deflate(stream, Zlib::BEST_COMPRESSION)
+                Zlib::Deflate.deflate(pre_prediction(stream), Zlib::BEST_COMPRESSION)
             end
 
             #
@@ -88,19 +60,7 @@ module Origami
                     end
                 end
 
-                if @params.Predictor.is_a?(Integer)
-                    colors  = @params.Colors.is_a?(Integer) ? @params.Colors.to_i : 1
-                    bpc     = @params.BitsPerComponent.is_a?(Integer) ? @params.BitsPerComponent.to_i : 8
-                    columns = @params.Columns.is_a?(Integer) ? @params.Columns.to_i : 1
-
-                    uncompressed = Predictor.do_post_prediction(uncompressed, 
-                                                                predictor: @params.Predictor.to_i, 
-                                                                colors: colors, 
-                                                                bpc: bpc, 
-                                                                columns: columns)
-                end
-
-                uncompressed
+                post_prediction(uncompressed)
             end
         end
         Fl = Flate

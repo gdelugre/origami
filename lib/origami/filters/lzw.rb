@@ -32,44 +32,17 @@ module Origami
         #
         class LZW
             include Filter
-
-            class DecodeParms < Dictionary
-                include StandardObject
-
-                field   :Predictor,         :Type => Integer, :Default => 1
-                field   :Colors,            :Type => Integer, :Default => 1
-                field   :BitsPerComponent,  :Type => Integer, :Default => 8
-                field   :Columns,           :Type => Integer, :Default => 1
-                field   :EarlyChange,       :Type => Integer, :Default => 1
-            end
+            include Predictor
 
             EOD = 257 #:nodoc:
             CLEARTABLE = 256 #:nodoc:
-
-            #
-            # Creates a new LZW Filter.
-            # _parameters_:: A hash of filter options (ignored).
-            #
-            def initialize(parameters = {})
-                super(DecodeParms.new(parameters))
-            end
 
             #
             # Encodes given data using LZW compression method.
             # _stream_:: The data to encode.
             #
             def encode(string)
-                if @params.Predictor.is_a?(Integer)
-                    colors  = @params.Colors.is_a?(Integer) ?  @params.Colors.to_i : 1
-                    bpc     = @params.BitsPerComponent.is_a?(Integer) ? @params.BitsPerComponent.to_i : 8
-                    columns = @params.Columns.is_a?(Integer) ? @params.Columns.to_i : 1
-
-                    string = Predictor.do_pre_prediction(string,
-                                                         predictor: @params.Predictor.to_i,
-                                                         colors: colors,
-                                                         bpc: bpc,
-                                                         columns: columns)
-                end
+                input = pre_prediction(string)
 
                 codesize = 9
                 result = Utils::BitWriter.new
@@ -77,7 +50,7 @@ module Origami
                 table = clear({})
 
                 s = ''
-                string.each_byte do |byte|
+                input.each_byte do |byte|
                     char = byte.chr
 
                     case table.size
@@ -174,19 +147,7 @@ module Origami
                     end
                 end
 
-                if @params.Predictor.is_a?(Integer)
-                    colors  = @params.Colors.is_a?(Integer) ?  @params.Colors.to_i : 1
-                    bpc     = @params.BitsPerComponent.is_a?(Integer) ? @params.BitsPerComponent.to_i : 8
-                    columns = @params.Columns.is_a?(Integer) ? @params.Columns.to_i : 1
-
-                    result = Predictor.do_post_prediction(result,
-                                                          predictor: @params.Predictor.to_i,
-                                                          colors: colors,
-                                                          bpc: bpc,
-                                                          columns: columns)
-                end
-
-                result
+                post_prediction(result)
             end
 
             private

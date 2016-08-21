@@ -26,6 +26,7 @@ module Origami
         end
 
         module Predictor
+
             NONE = 1
             TIFF = 2
             PNG_NONE = 10
@@ -35,42 +36,88 @@ module Origami
             PNG_PAETH = 14
             PNG_OPTIMUM = 15
 
-            def self.do_pre_prediction(data, predictor: NONE, colors: 1, bpc: 8, columns: 1)
+            class DecodeParms < Dictionary
+                include StandardObject
+
+                field   :Predictor,         :Type => Integer, :Default => 1
+                field   :Colors,            :Type => Integer, :Default => 1
+                field   :BitsPerComponent,  :Type => Integer, :Default => 8
+                field   :Columns,           :Type => Integer, :Default => 1
+            end
+
+            def self.included(receiver)
+                raise TypeError, "Predictors only applies to Filters" unless receiver.include?(Filter)
+            end
+
+            #
+            # Create a new predictive Filter.
+            # _parameters_:: A hash of filter options.
+            #
+            def initialize(parameters = {})
+                super(DecodeParms.new(parameters))
+            end
+
+            private
+
+            def pre_prediction(data)
+                return data unless @params.Predictor.is_a?(Integer)
+
+                apply_pre_prediction(data, prediction_parameters)
+            end
+
+            def post_prediction(data)
+                return data unless @params.Predictor.is_a?(Integer)
+
+                apply_post_prediction(data, prediction_parameters)
+            end
+
+            def prediction_parameters
+                {
+                    predictor:  @params.Predictor.to_i,
+                    colors:     @params.Colors.is_a?(Integer) ? @params.Colors.to_i : 1,
+                    bpc:        @params.BitsPerComponent.is_a?(Integer) ? @params.BitsPerComponent.to_i : 8,
+                    columns:    @params.Columns.is_a?(Integer) ? @params.Columns.to_i : 1,
+                }
+            end
+
+            def apply_pre_prediction(data, predictor: NONE, colors: 1, bpc: 8, columns: 1)
                 return data if predictor == NONE
 
-                unless (1..4) === colors.to_i
-                    raise PredictorError.new("Colors must be between 1 and 4", input_data: data)
-                end
-
-                unless [1,2,4,8,16].include?(bpc.to_i)
-                    raise PredictorError.new("BitsPerComponent must be in 1, 2, 4, 8 or 16", input_data: data)
-                end
-
-                # components per line
-                nvals = columns * colors
-
-                # bytes per pixel
-                bpp = (colors * bpc + 7) >> 3
-
-                # bytes per row
-                bpr = (nvals * bpc + 7) >> 3
+                bpp, bpr = compute_bpp_bpr(data, columns, colors, bpc)
 
                 unless data.size % bpr == 0
-                    raise PredictorError.new("Invalid data size #{data.size}, should be multiple of bpr=#{bpr}", input_data: data)
+                    raise PredictorError.new("Invalid data size #{data.size}, should be multiple of bpr=#{bpr}",
+                                             input_data: data)
                 end
 
                 if predictor == TIFF
-                    do_tiff_pre_prediction(data, colors, bpc, columns)
+                    tiff_pre_prediction(data, colors, bpc, columns)
                 elsif predictor >= 10 # PNG
-                    do_png_pre_prediction(data, predictor, bpp, bpr)
+                    png_pre_prediction(data, predictor, bpp, bpr)
                 else
                     raise PredictorError.new("Unknown predictor : #{predictor}", input_data: data)
                 end
             end
 
-            def self.do_post_prediction(data, predictor: NONE, colors: 1, bpc: 8, columns: 1)
+            def apply_post_prediction(data, predictor: NONE, colors: 1, bpc: 8, columns: 1)
                 return data if predictor == NONE
 
+                bpp, bpr = compute_bpp_bpr(data, columns, colors, bpc)
+
+                if predictor == TIFF
+                    tiff_post_prediction(data, colors, bpc, columns)
+                elsif predictor >= 10 # PNG
+                    # Each line has an extra predictor byte.
+                    png_post_prediction(data, bpp, bpr + 1)
+                else
+                    raise PredictorError.new("Unknown predictor : #{predictor}", input_data: data)
+                end
+            end
+
+            #
+            # Computes the number of bytes per pixel and number of bytes per row.
+            #
+            def compute_bpp_bpr(data, columns, colors, bpc)
                 unless (1..4) === colors
                     raise PredictorError.new("Colors must be between 1 and 4", input_data: data)
                 end
@@ -86,18 +133,16 @@ module Origami
                 bpp = (colors * bpc + 7) >> 3
 
                 # bytes per row
-                bpr = ((nvals * bpc + 7) >> 3) + 1
+                bpr = (nvals * bpc + 7) >> 3
 
-                if predictor == TIFF
-                    do_tiff_post_prediction(data, colors, bpc, columns)
-                elsif predictor >= 10 # PNG
-                    do_png_post_prediction(data, bpp, bpr)
-                else
-                    raise PredictorError.new("Unknown predictor : #{predictor}", input_data: data)
-                end
+                [ bpp, bpr ]
             end
 
-            def self.do_png_post_prediction(data, bpp, bpr)
+            #
+            # Decodes the PNG input data.
+            # Each line should be prepended by a byte identifying a PNG predictor.
+            #
+            def png_post_prediction(data, bpp, bpr)
                 result = ""
                 uprow = "\0" * bpr
                 thisrow = "\0" * bpr
@@ -114,37 +159,18 @@ module Origami
                         if bpp > i
                             left = upleft = 0
                         else
-                            left = line[i-bpp].ord
-                            upleft = uprow[i-bpp].ord
+                            left = line[i - bpp].ord
+                            upleft = uprow[i - bpp].ord
                         end
 
-                        case predictor
-                        when PNG_NONE
-                            thisrow = line
-                        when PNG_SUB
-                            thisrow[i] = ((line[i].ord + left) & 0xFF).chr
-                        when PNG_UP
-                            thisrow[i] = ((line[i].ord + up) & 0xFF).chr
-                        when PNG_AVERAGE
-                            thisrow[i] = ((line[i].ord + ((left + up) / 2)) & 0xFF).chr
-                        when PNG_PAETH
-                            p = left + up - upleft
-                            pa, pb, pc = (p - left).abs, (p - up).abs, (p - upleft).abs
+                        begin
+                            thisrow[i] = png_apply_prediction(predictor, line[i].ord, up, left, upleft, &:+)
+                        rescue PredictorError => error
+                            thisrow[i] = line[i] if Origami::OPTIONS[:ignore_png_errors]
 
-                            thisrow[i] = ((line[i].ord +
-                                case [ pa, pb, pc ].min
-                                when pa then left
-                                when pb then up
-                                when pc then upleft
-                                end
-                            ) & 0xFF).chr
-                        else
-                            unless Origami::OPTIONS[:ignore_png_errors]
-                                raise PredictorError.new("Unknown PNG predictor : #{predictor}", input_data: data, decoded_data: result)
-                            end
-
-                            # behave as PNG_NONE
-                            thisrow = line
+                            error.input_data = data
+                            error.decoded_data = result
+                            raise(error)
                         end
                     end
 
@@ -155,47 +181,29 @@ module Origami
                 result
             end
 
-            def self.do_png_pre_prediction(data, predictor, bpp, bpr)
+            #
+            # Encodes the input data given a PNG predictor.
+            #
+            def png_pre_prediction(data, predictor, bpp, bpr)
                 result = ""
                 nrows = data.size / bpr
 
                 line = "\0" + data[-bpr, bpr]
 
-                (nrows-1).downto(0) do |irow|
+                (nrows - 1).downto(0) do |irow|
                     uprow =
                     if irow == 0
-                        "\0" * (bpr+1)
+                        "\0" * (bpr + 1)
                     else
-                        "\0" + data[(irow-1)*bpr,bpr]
+                        "\0" + data[(irow - 1) * bpr, bpr]
                     end
 
                     bpr.downto(1) do |i|
                         up = uprow[i].ord
-                        left = line[i-bpp].ord
-                        upleft = uprow[i-bpp].ord
+                        left = line[i - bpp].ord
+                        upleft = uprow[i - bpp].ord
 
-                        case predictor
-                        when PNG_SUB
-                            line[i] = ((line[i].ord - left) & 0xFF).chr
-                        when PNG_UP
-                            line[i] = ((line[i].ord - up) & 0xFF).chr
-                        when PNG_AVERAGE
-                            line[i] = ((line[i].ord - ((left + up) / 2)) & 0xFF).chr
-                        when PNG_PAETH
-                            p = left + up - upleft
-                            pa, pb, pc = (p - left).abs, (p - up).abs, (p - upleft).abs
-
-                            line[i] = ((line[i].ord -
-                                case [ pa, pb, pc ].min
-                                when pa then left
-                                when pb then up
-                                when pc then upleft
-                                end
-                            ) & 0xFF).chr
-                        when PNG_NONE
-                        else
-                            raise PredictorError.new("Unsupported PNG predictor : #{predictor}", input_data: data)
-                        end
+                        line[i] = png_apply_prediction(predictor, line[i].ord, up, left, upleft, &:-)
                     end
 
                     line[0] = (predictor - 10).chr
@@ -207,32 +215,54 @@ module Origami
                 result
             end
 
-            def self.do_tiff_post_prediction(data, colors, bpc, columns) #:nodoc:
-                bpr = (colors * bpc * columns + 7) >> 3
-                nrows = data.size / bpr
-                bitmask = (1 << bpc) - 1
-                result = Utils::BitWriter.new
+            #
+            # Computes the next component value given a predictor and adjacent components.
+            # A block must be passed to apply the operation.
+            #
+            def png_apply_prediction(predictor, value, up, left, upleft)
 
-                nrows.times do |irow|
-                    line = Utils::BitReader.new(data[irow * bpr, bpr])
-
-                    pixel = ::Array.new(colors, 0)
-                    columns.times do
-                        diffpixel = ::Array.new(colors) { line.read(bpc) }
-                        pixel = pixel.zip(diffpixel).map!{|c, diff| (c + diff) & bitmask}
-
-                        pixel.each do |c|
-                            result.write(c, bpc)
-                        end
+                result =
+                    case predictor
+                    when PNG_NONE
+                        value
+                    when PNG_SUB
+                        yield(value, left)
+                    when PNG_UP
+                        yield(value, up)
+                    when PNG_AVERAGE
+                        yield(value, (left + up) / 2)
+                    when PNG_PAETH
+                        yield(value, png_paeth_choose(up, left, upleft))
+                    else
+                        raise PredictorError, "Unsupported PNG predictor : #{predictor}"
                     end
 
-                    result.final
-                end
-
-                result.final.to_s
+                (result & 0xFF).chr
             end
 
-            def self.do_tiff_pre_prediction(data, colors, bpc, columns) #:nodoc:
+            #
+            # Choose the preferred value in a PNG paeth predictor given the left, up and up left samples.
+            #
+            def png_paeth_choose(left, up, upleft)
+                p = left + up - upleft
+                pa, pb, pc = (p - left).abs, (p - up).abs, (p - upleft).abs
+
+                case [pa, pb, pc].min
+                when pa then left
+                when pb then up
+                when pc then upleft
+                end
+            end
+
+            def tiff_post_prediction(data, colors, bpc, columns) #:nodoc:
+                tiff_apply_prediction(data, colors, bpc, columns, &:+)
+            end
+
+            def tiff_pre_prediction(data, colors, bpc, columns) #:nodoc:
+                tiff_apply_prediction(data, colors, bpc, columns, &:-)
+            end
+
+            def tiff_apply_prediction(data, colors, bpc, columns) #:nodoc:
                 bpr = (colors * bpc * columns + 7) >> 3
                 nrows = data.size / bpr
                 bitmask = (1 << bpc) - 1
@@ -244,7 +274,7 @@ module Origami
                     diffpixel = ::Array.new(colors, 0)
                     columns.times do
                         pixel = ::Array.new(colors) { line.read(bpc) }
-                        diffpixel = diffpixel.zip(pixel).map!{|diff, c| (c - diff) & bitmask}
+                        diffpixel = diffpixel.zip(pixel).map!{|diff, c| yield(c, diff) & bitmask}
 
                         diffpixel.each do |c|
                             result.write(c, bpc)
