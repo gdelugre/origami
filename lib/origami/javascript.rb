@@ -158,7 +158,9 @@ module Origami
                                 )
                             end
 
-                            raise NotAllowedError
+                            unless @engine.privileged?
+                                raise NotAllowedError, "Security settings prevent access to this property or method."
+                            end
 
                             args = AcrobatObject.check_method_args(args, def_args)
                             self.instance_exec(*args, &b) if b
@@ -235,7 +237,7 @@ module Origami
                         raise GeneralError unless @vars.include?(cVariable)
                     end
 
-                  acro_method 'subscribe',
+                    acro_method 'subscribe',
                         Arg[name: 'cVariable', required: true],
                         Arg[name: 'fCallback', type: V8::Function, require: true] do |cVariable, fCallback|
 
@@ -454,7 +456,7 @@ module Origami
                 class Console < AcrobatObject
                     def println(*args)
                         raise MissingArgError unless args.length > 0
-                        
+
                         @engine.options[:console].puts(args.first.to_s)
                     end
 
@@ -500,32 +502,35 @@ module Origami
                     end
 
                     def type
-                        (if @field.has_key?(:FT)
-                            case @field.FT.value
-                            when PDF::Field::Type::BUTTON
-                                if @fields.has_key?(:Ff)
-                                    flags = @field.Ff.value
+                        return '' unless @field.key?(:FT)
 
-                                    if (flags & Origami::Annotation::Widget::Button::Flags::PUSHBUTTON) != 0
-                                        'button'
-                                    elsif (flags & Origami::Annotation::Widget::Button::Flags::RADIO) != 0
-                                        'radiobox'
-                                    else
-                                        'checkbox'
-                                    end
-                                end
-                            when PDF::Field::Type::TEXT then 'text'
-                            when PDF::Field::Type::SIGNATURE then 'signature'
-                            when PDF::Field::Type::CHOICE
-                                if @field.has_key?(:Ff)
-                                    if (@field.Ff.value & Origami::Annotation::Widget::Choice::Flags::COMBO).zero?
-                                        'listbox'
-                                    else
-                                        'combobox'
-                                    end
+                        type_name =
+                        case @field.FT.value
+                        when PDF::Field::Type::BUTTON
+                            if @field.key?(:Ff)
+                                flags = @field.Ff.value
+
+                                if (flags & Origami::Annotation::Widget::Button::Flags::PUSHBUTTON) != 0
+                                    'button'
+                                elsif (flags & Origami::Annotation::Widget::Button::Flags::RADIO) != 0
+                                    'radiobox'
+                                else
+                                    'checkbox'
                                 end
                             end
-                        end).to_s
+                        when PDF::Field::Type::TEXT then 'text'
+                        when PDF::Field::Type::SIGNATURE then 'signature'
+                        when PDF::Field::Type::CHOICE
+                            if @field.key?(:Ff)
+                                if (@field.Ff.value & Origami::Annotation::Widget::Choice::Flags::COMBO).zero?
+                                    'listbox'
+                                else
+                                    'combobox'
+                                end
+                            end
+                        end
+
+                        type_name.to_s
                     end
                 end
 
@@ -553,6 +558,7 @@ module Origami
                 attr_reader :doc
                 attr_reader :context
                 attr_reader :options
+                attr_reader :privileged_mode
                 attr_reader :parseInt
 
                 def initialize(pdf)
@@ -563,14 +569,24 @@ module Origami
                         viewerVariation: JavaScript::Viewers::ADOBE_READER,
                         platform: JavaScript::Platforms::WINDOWS,
                         console: STDOUT,
-                        log_method_calls: false
+                        log_method_calls: false,
+                        privileged_mode: false
                     }
 
                     @doc = JavaScript::Doc.new(self, pdf)
                     @context = V8::Context.new(with: @doc)
+                    @privileged_mode = @options[:privileged_mode]
 
                     @parseInt = V8::Context.new['parseInt']
                     @hooks = {}
+                end
+
+                #
+                # Returns true if the engine is set to execute in privileged mode.
+                # Allows execution of security protected methods.
+                #
+                def privileged?
+                    @privileged_mode
                 end
 
                 #
