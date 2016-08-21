@@ -62,7 +62,7 @@ class TestPDFParser < Minitest::Test
         assert_instance_of Boolean, b_false
 
         assert b_false.false?
-        assert (not b_true.false?)
+        refute b_true.false?
     end
 
     def test_parse_real
