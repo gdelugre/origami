@@ -22,5 +22,5 @@ Rake::TestTask.new do |t|
 end
 
 task :clean do
-    Rake::Cleaner.cleanup_files Dir['*.gem', 'doc']
+    Rake::Cleaner.cleanup_files Dir['*.gem', 'doc', 'examples/**/*.pdf']
 end
