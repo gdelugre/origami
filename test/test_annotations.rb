@@ -7,55 +7,33 @@ class TestAnnotations < Minitest::Test
         @page = Page.new
         @action = Action::JavaScript["app.alert(null);"]
         @output = StringIO.new
+
+        @types = [ 
+            Annotation::Circle, Annotation::Square,
+            Annotation::Text, Annotation::Link,
+            Annotation::FileAttachment, Annotation::Screen,
+            Annotation::Sound, Annotation::Widget::CheckBox,
+            Annotation::Widget::Radio, Annotation::Widget::Text,
+            Annotation::Widget::ComboBox, Annotation::Widget::ListBox,
+            Annotation::Widget::Signature
+        ]
     end
 
     def test_annotations
-        circle = Annotation::Circle.new
-        square = Annotation::Square.new
-        text = Annotation::Text.new
-        link = Annotation::Link.new
-        file = Annotation::FileAttachment.new
-        screen = Annotation::Screen.new
-        sound = Annotation::Sound.new
-        pushbutton = Annotation::Widget::PushButton.new
-        checkbox = Annotation::Widget::CheckBox.new
-        radio = Annotation::Widget::Radio.new
-        edit = Annotation::Widget::Text.new
-        combo = Annotation::Widget::ComboBox.new
-        list = Annotation::Widget::ListBox.new
-        sig = Annotation::Widget::Signature.new
-
-        all_annots = [
-            circle, square, text, link,
-            file, screen, sound, pushbutton,
-            checkbox, radio, edit, combo,
-            list, sig
-        ]
-
         @target.append_page @page
 
-        @page.add_annotation circle
-        @page.add_annotation square
-        @page.add_annotation text
-        @page.add_annotation link
-        @page.add_annotation file
-        @page.add_annotation screen
-        @page.add_annotation sound
-        @page.add_annotation pushbutton
-        @page.add_annotation checkbox
-        @page.add_annotation radio
-        @page.add_annotation edit
-        @page.add_annotation combo
-        @page.add_annotation list
-        @page.add_annotation sig
+        annotations = @types.map(&:new)
+        annotations.each do |annotation|
+            @page.add_annotation(annotation)
+        end
 
         @page.each_annotation do |annotation|
             assert_kind_of Annotation, annotation
 
-            assert all_annots.include?(annotation)
+            assert annotations.include?(annotation)
         end
 
-        assert_equal @page.annotations.size, all_annots.size
+        assert_equal @page.annotations.size, annotations.size
 
         @target.save(@output)
     end
