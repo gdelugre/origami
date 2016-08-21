@@ -59,7 +59,7 @@ module Origami
             #
             class BitWriter
                 def initialize
-                    @data = ''
+                    @data = ''.b
                     @last_byte = nil
                     @ptr_bit = 0
                 end
@@ -68,7 +68,7 @@ module Origami
                 # Writes _data_ represented as Fixnum to a _length_ number of bits.
                 #
                 def write(data, length)
-                    return BitWriterError, "Invalid data length" unless length > 0 and (1 << length) > data
+                    return BitWriterError, "Invalid data length" unless length > 0 and length >= data.bit_length
 
                     # optimization for aligned byte writing
                     if length == 8 and @last_byte.nil? and @ptr_bit == 0
@@ -76,30 +76,7 @@ module Origami
                         return self
                     end
 
-                    while length > 0
-                        if length >= 8 - @ptr_bit
-                            length -= 8 - @ptr_bit
-                            @last_byte ||= 0
-                            @last_byte |= (data >> length) & ((1 << (8 - @ptr_bit)) - 1)
-
-                            data &= (1 << length) - 1
-                            @data << @last_byte.chr
-                            @last_byte = nil
-                            @ptr_bit = 0
-                        else
-                            @last_byte ||= 0
-                            @last_byte |= (data & ((1 << length) - 1)) << (8 - @ptr_bit - length)
-                            @ptr_bit += length
-
-                            if @ptr_bit == 8
-                                @data << @last_byte.chr
-                                @last_byte = nil
-                                @ptr_bit = 0
-                            end
-
-                            length = 0
-                        end
-                    end
+                    write_bits(data, length)
 
                     self
                 end
@@ -127,6 +104,39 @@ module Origami
                 #
                 def to_s
                     @data.dup
+                end
+
+                private
+
+                #
+                # Write the bits into the internal data.
+                #
+                def write_bits(data, length)
+
+                    while length > 0
+                        if length >= 8 - @ptr_bit
+                            length -= 8 - @ptr_bit
+                            @last_byte ||= 0
+                            @last_byte |= (data >> length) & ((1 << (8 - @ptr_bit)) - 1)
+
+                            data &= (1 << length) - 1
+                            @data << @last_byte.chr
+                            @last_byte = nil
+                            @ptr_bit = 0
+                        else
+                            @last_byte ||= 0
+                            @last_byte |= (data & ((1 << length) - 1)) << (8 - @ptr_bit - length)
+                            @ptr_bit += length
+
+                            if @ptr_bit == 8
+                                @data << @last_byte.chr
+                                @last_byte = nil
+                                @ptr_bit = 0
+                            end
+
+                            length = 0
+                        end
+                    end
                 end
             end
 
