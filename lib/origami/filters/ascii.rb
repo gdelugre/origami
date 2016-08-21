@@ -91,10 +91,7 @@ module Origami
                         addend = 0
                     end
 
-                    inblock = (input[i].ord * 256**3 +
-                               input[i+1].ord * 256**2 +
-                               input[i+2].ord * 256 +
-                               input[i+3].ord)
+                    inblock = input[i, 4].unpack("L>")[0]
                     outblock = ""
 
                     5.times do |p|
@@ -107,7 +104,7 @@ module Origami
                     outblock = "z" if outblock == "!!!!!" and addend == 0
 
                     if addend != 0
-                        outblock = outblock[0,(4 - addend) + 1]
+                        outblock = outblock[0, 4 - addend + 1]
                     end
 
                     code << outblock
@@ -126,16 +123,17 @@ module Origami
                 input = (string.include?(EOD) ? string[0..string.index(EOD) - 1] : string).delete(" \f\t\r\n\0")
 
                 i = 0
-                result = "".b
+                result = ''.b
+
                 while i < input.size do
 
                     outblock = ""
+                    inblock = 0
+                    addend = 0
 
                     if input[i] == "z"
-                        inblock = 0
                         codelen = 1
                     else
-                        inblock = 0
                         codelen = 5
 
                         if input.length - i < 5
@@ -143,20 +141,20 @@ module Origami
 
                             addend = 5 - (input.length - i)
                             input << "u" * addend
-                        else
-                            addend = 0
                         end
 
                         # Checking if this string is in base85
                         5.times do |j|
-                            if input[i+j].ord > "u".ord or input[i+j].ord < "!".ord
+                            byte = input[i + j].ord
+
+                            if byte > "u".ord or byte < "!".ord
                                 raise InvalidASCII85StringError.new(
-                                        "Invalid character sequence: #{input[i,5].inspect}",
+                                        "Invalid character sequence: #{input[i, 5].inspect}",
                                         input_data: string,
                                         decoded_data: result
                                 )
                             else
-                                inblock += (input[i+j].ord - "!".ord) * 85 ** (4 - j)
+                                inblock += (byte - "!".ord) * 85 ** (4 - j)
                             end
                         end
 
@@ -164,19 +162,11 @@ module Origami
                                 "Invalid value (#{inblock}) for block #{input[i,5].inspect}",
                                 input_data: string,
                                 decoded_data: result
-                        ) if inblock >= 2**32
+                        ) if inblock >= (1 << 32)
                     end
 
-                    4.times do |p|
-                        c = inblock / 256 ** (3 - p)
-                        outblock << c.chr
-
-                        inblock -= c * 256 ** (3 - p)
-                    end
-
-                    if addend != 0
-                        outblock = outblock[0, 4 - addend]
-                    end
+                    outblock = [ inblock ].pack "L>"
+                    outblock = outblock[0, 4 - addend] if addend != 0
 
                     result << outblock
 
