@@ -25,26 +25,15 @@ module Origami
         # Tries to strip any xrefs information off the document.
         #
         def remove_xrefs
-
-            # Delete a XRefStream and its ancestors.
-            delete_xrefstm = -> (xrefstm) do
-                prev = xrefstm.Prev
-                delete_object(xrefstm.reference)
-
-                if prev.is_a?(Integer) and (prev_stm = get_object_by_offset(prev)).is_a?(XRefStream)
-                    delete_xrefstm.call(prev_stm)
-                end
-            end
-
             @revisions.reverse_each do |rev|
                 if rev.has_xrefstm?
-                    delete_xrefstm.call(rev.xrefstm)
+                    delete_object(rev.xrefstm.reference)
                 end
 
-                if rev.trailer.has_dictionary? and rev.trailer.XRefStm.is_a?(Integer)
+                if rev.trailer.XRefStm.is_a?(Integer)
                     xrefstm = get_object_by_offset(rev.trailer.XRefStm)
 
-                    delete_xrefstm.call(xrefstm) if xrefstm.is_a?(XRefStream)
+                    delete_object(xrefstm.reference) if xrefstm.is_a?(XRefStream)
                 end
 
                 rev.xrefstm = rev.xreftable = nil
