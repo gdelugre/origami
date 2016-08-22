@@ -501,21 +501,7 @@ module Origami
 
                 encode!
 
-                if self.filters.first == :Crypt
-                    params = decode_params.first
-
-                    if params.is_a?(Dictionary) and params.Name.is_a?(Name)
-                        crypt_filter = params.Name.value
-                    else
-                        crypt_filter = :Identity
-                    end
-
-                    cipher = self.document.encryption_cipher(crypt_filter)
-                else
-                    cipher = self.document.stream_encryption_cipher
-                end
-                raise EncryptionError, "Cannot find stream encryption filter" if cipher.nil?
-
+                cipher = get_encryption_cipher
                 key = compute_object_key(cipher)
 
                 @encoded_data =
@@ -537,6 +523,22 @@ module Origami
             def decrypt!
                 return self if @decrypted
 
+                cipher = get_encryption_cipher
+                key = compute_object_key(cipher)
+
+                self.encoded_data = cipher.decrypt(key, @encoded_data)
+                @decrypted = true
+
+                self
+            end
+
+            private
+
+            #
+            # Get the stream encryption cipher.
+            # The cipher used may depend on the presence of a Crypt filter.
+            #
+            def get_encryption_cipher
                 if self.filters.first == :Crypt
                     params = decode_params.first
 
@@ -550,14 +552,10 @@ module Origami
                 else
                     cipher = self.document.stream_encryption_cipher
                 end
+
                 raise EncryptionError, "Cannot find stream encryption filter" if cipher.nil?
 
-                key = compute_object_key(cipher)
-
-                self.encoded_data = cipher.decrypt(key, @encoded_data)
-                @decrypted = true
-
-                self
+                cipher
             end
         end
 
