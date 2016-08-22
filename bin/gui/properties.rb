@@ -45,38 +45,50 @@ module PDFWalker
             def initialize(parent, pdf)
                 super("Document properties", parent, Dialog::MODAL, [Stock::CLOSE, Dialog::RESPONSE_NONE])
 
-                docframe = Frame.new(" File properties ")
-                stat = File.stat(parent.filename)
+                file_frame = create_file_frame(parent)
+                pdf_frame = create_document_frame(pdf)
 
-                creation_date = stat.ctime.to_s.encode("utf-8", :invalid => :replace, :undef => :replace)
-                last_modified = stat.mtime.to_s.encode("utf-8", :invalid => :replace, :undef => :replace)
-                md5sum = Digest::MD5.hexdigest(File.binread(parent.filename))
+                vbox.add(file_frame)
+                vbox.add(pdf_frame)
+
+                signal_connect('response') { destroy }
+
+                show_all
+            end
+
+            private
+
+            def create_file_frame(parent)
+                file_frame = Frame.new(" File properties ")
+                stat = File.stat(parent.filename)
 
                 labels =
                 [
                     [ "Filename:", parent.filename ],
                     [ "File size:", "#{File.size(parent.filename)} bytes" ],
-                    [ "MD5:", md5sum ],
+                    [ "MD5:", Digest::MD5.file(parent.filename).hexdigest ],
                     [ "Read-only:", "#{not stat.writable?}" ],
-                    [ "Creation date:", creation_date ],
-                    [ "Last modified:", last_modified ]
+                    [ "Creation date:", stat.ctime.to_s ],
+                    [ "Last modified:", stat.mtime.to_s ]
                 ]
 
-                doctable = Table.new(labels.size + 1, 3)
+                file_table = Table.new(labels.size + 1, 3)
 
                 row = 0
                 labels.each do |name, value|
-                    doctable.attach(Label.new(name).set_alignment(1,0), 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-                    doctable.attach(Label.new(value).set_alignment(0,0), 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                    file_table.attach(Label.new(name).set_alignment(1,0), 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                    file_table.attach(Label.new(value).set_alignment(0,0), 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
 
                     row = row.succ
                 end
 
-                docframe.border_width = 5
-                docframe.shadow_type = Gtk::SHADOW_IN
-                docframe.add(doctable)
+                file_frame.border_width = 5
+                file_frame.shadow_type = Gtk::SHADOW_IN
+                file_frame.add(file_table)
+            end
 
-                pdfframe = Frame.new(" PDF properties ")
+            def create_document_frame(pdf)
+                pdf_frame = Frame.new(" PDF properties ")
 
                 pdf_version = pdf.header.to_f
                 if pdf_version >= 1.0 and pdf_version <= 1.7
@@ -101,26 +113,19 @@ module PDFWalker
                     [ "Metadata:", pdf.metadata? ? 'yes' : 'no' ]
                 ]
 
-                pdftable = Table.new(labels.size + 1, 3)
+                pdf_table = Table.new(labels.size + 1, 3)
 
                 row = 0
                 labels.each do |name, value|
-                    pdftable.attach(Label.new(name).set_alignment(1,0), 0, 1, row, row + 1, Gtk::FILL,  Gtk::SHRINK, 4, 4)
-                    pdftable.attach(Label.new(value).set_alignment(0,0), 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                    pdf_table.attach(Label.new(name).set_alignment(1,0), 0, 1, row, row + 1, Gtk::FILL,  Gtk::SHRINK, 4, 4)
+                    pdf_table.attach(Label.new(value).set_alignment(0,0), 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
 
                     row = row.succ
                 end
 
-                pdfframe.border_width = 5
-                pdfframe.shadow_type = Gtk::SHADOW_IN
-                pdfframe.add(pdftable)
-
-                vbox.add(docframe)
-                vbox.add(pdfframe)
-
-                signal_connect('response') { destroy }
-
-                show_all
+                pdf_frame.border_width = 5
+                pdf_frame.shadow_type = Gtk::SHADOW_IN
+                pdf_frame.add(pdf_table)
             end
         end
     end
