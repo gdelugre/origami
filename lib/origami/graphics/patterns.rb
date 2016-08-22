@@ -51,11 +51,11 @@ module Origami
                 field   :PatternType,           :Type => Integer, :Default => Pattern::Type::TILING, :Required => true
                 field   :PaintType,             :Type => Integer, :Required => true
                 field   :TilingType,            :Type => Integer, :Required => true
-                field   :BBox,                  :Type => Array, :Required => true
+                field   :BBox,                  :Type => Rectangle, :Required => true
                 field   :XStep,                 :Type => Number, :Required => true
                 field   :YStep,                 :Type => Number, :Required => true
                 field   :Resources,             :Type => Resources, :Required => true
-                field   :Matrix,                :Type => Array, :Default => [ 1, 0, 0, 1, 0, 0 ]
+                field   :Matrix,                :Type => Array.of(Number, length: 6), :Default => [ 1, 0, 0, 1, 0, 0 ]
             end
 
             class Shading < Dictionary
@@ -63,27 +63,38 @@ module Origami
                 include Pattern
 
                 module Type
-                    FUNCTIONBASED               = 1
+                    FUNCTION_BASED              = 1
                     AXIAL                       = 2
                     RADIAL                      = 3
                     FREEFORM_TRIANGLE_MESH      = 4
                     LATTICEFORM_TRIANGLE_MESH   = 5
                     COONS_PATCH_MESH            = 6
-                    TENSORPRODUCT_PATCH_MESH     = 7
+                    TENSORPRODUCT_PATCH_MESH    = 7
                 end
 
                 field   :PatternType,           :Type => Integer, :Default => Pattern::Type::SHADING, :Required => true
                 field   :Shading,               :Type => [ Dictionary, Stream ], :Required => true
-                field   :Matrix,                :Type => Array, :Default => [ 1, 0, 0, 1, 0, 0 ]
-                field   :ExtGState,             :Type => Dictionary
+                field   :Matrix,                :Type => Array.of(Number, length: 6), :Default => [ 1, 0, 0, 1, 0, 0 ]
+                field   :ExtGState,             :Type => ExtGState
 
+                # Fields common to all shading objects.
                 module ShadingObject
                     def self.included(receiver)
                         receiver.field   :ShadingType,         :Type => Integer, :Required => true
                         receiver.field   :ColorSpace,          :Type => [ Name, Array ], :Required => true
                         receiver.field   :Background,          :Type => Array
-                        receiver.field   :BBox,                :Type => Array
+                        receiver.field   :BBox,                :Type => Rectangle
                         receiver.field   :AntiAlias,           :Type => Boolean, :Default => false
+                    end
+                end
+
+                # Fields common to all Mesh shadings.
+                module Mesh
+                    def self.included(receiver)
+                        receiver.field   :BitsPerCoordinate,   :Type => Integer, :Required => true
+                        receiver.field   :BitsPerComponent,    :Type => Integer, :Required => true
+                        receiver.field   :Decode,              :Type => Array.of(Number), :Required => true
+                        receiver.field   :Function,            :Type => [ Dictionary, Stream ]
                     end
                 end
 
@@ -91,9 +102,9 @@ module Origami
                     include StandardObject
                     include ShadingObject
 
-                    field   :ShadingType,         :Type => Integer, :Default => Shading::Type::FUNCTIONBASED, :Required => true
-                    field   :Domain,              :Type => Array, :Default => [ 0.0, 1.0, 0.0, 1.0 ]
-                    field   :Matrix,              :Type => Array, :Default => [ 1, 0, 0, 1, 0, 0 ]
+                    field   :ShadingType,         :Type => Integer, :Default => Shading::Type::FUNCTION_BASED, :Required => true
+                    field   :Domain,              :Type => Array.of(Number, length: 4), :Default => [ 0.0, 1.0, 0.0, 1.0 ]
+                    field   :Matrix,              :Type => Array.of(Number, length: 6), :Default => [ 1, 0, 0, 1, 0, 0 ]
                     field   :Function,            :Type => [ Dictionary, Stream ], :Required => true
                 end
 
@@ -102,10 +113,10 @@ module Origami
                     include ShadingObject
 
                     field   :ShadingType,         :Type => Integer, :Default => Shading::Type::AXIAL, :Required => true
-                    field   :Coords,              :Type => Array, :Required => true
-                    field   :Domain,              :Type => Array, :Default => [ 0.0, 1.0 ]
+                    field   :Coords,              :Type => Array.of(Number, length: 4), :Required => true
+                    field   :Domain,              :Type => Array.of(Number, length: 2), :Default => [ 0.0, 1.0 ]
                     field   :Function,            :Type => [ Dictionary, Stream ], :Required => true
-                    field   :Extend,              :Type => Array, :Default => [ false, false ]
+                    field   :Extend,              :Type => Array.of(Boolean, length: 2), :Default => [ false, false ]
                 end
 
                 class Radial < Dictionary
@@ -113,54 +124,41 @@ module Origami
                     include ShadingObject
 
                     field   :ShadingType,         :Type => Integer, :Default => Shading::Type::RADIAL, :Required => true
-                    field   :Coords,              :Type => Array, :Required => true
-                    field   :Domain,              :Type => Array, :Default => [ 0.0, 1.0 ]
+                    field   :Coords,              :Type => Array.of(Number, length: 6), :Required => true
+                    field   :Domain,              :Type => Array.of(Number, length: 2), :Default => [ 0.0, 1.0 ]
                     field   :Function,            :Type => [ Dictionary, Stream ], :Required => true
-                    field   :Extend,              :Type => Array, :Default => [ false, false ]
+                    field   :Extend,              :Type => Array.of(Boolean, length: 2), :Default => [ false, false ]
                 end
 
                 class FreeFormTriangleMesh < Stream
                     include ShadingObject
+                    include Mesh
 
                     field   :ShadingType,         :Type => Integer, :Default => Shading::Type::FREEFORM_TRIANGLE_MESH, :Required => true
-                    field   :BitsPerCoordinate,   :Type => Integer, :Required => true
-                    field   :BitsPerComponent,    :Type => Integer, :Required => true
                     field   :BitsPerFlag,         :Type => Integer, :Required => true
-                    field   :Decode,              :Type => Array, :Required => true
-                    field   :Function,            :Type => [ Dictionary, Stream ]
                 end
 
                 class LatticeFormTriangleMesh < Stream
                     include ShadingObject
+                    include Mesh
 
                     field   :ShadingType,         :Type => Integer, :Default => Shading::Type::LATTICEFORM_TRIANGLE_MESH, :Required => true
-                    field   :BitsPerCoordinate,   :Type => Integer, :Required => true
-                    field   :BitsPerComponent,    :Type => Integer, :Required => true
                     field   :VerticesPerRow,      :Type => Integer, :Required => true
-                    field   :Decode,              :Type => Array, :Required => true
-                    field   :Function,            :Type => [ Dictionary, Stream ]
                 end
 
                 class CoonsPathMesh < Stream
                     include ShadingObject
+                    include Mesh
 
                     field   :ShadingType,         :Type => Integer, :Default => Shading::Type::COONS_PATCH_MESH, :Required => true
-                    field   :BitsPerCoordinate,   :Type => Integer, :Required => true
-                    field   :BitsPerComponent,    :Type => Integer, :Required => true
                     field   :BitsPerFlag,         :Type => Integer, :Required => true
-                    field   :Decode,              :Type => Array, :Required => true
-                    field   :Function,            :Type => [ Dictionary, Stream ]
                 end
 
                 class TensorProductPatchMesh < Stream
                     include ShadingObject
 
                     field   :ShadingType,         :Type => Integer, :Default => Shading::Type::TENSORPRODUCT_PATCH_MESH, :Required => true
-                    field   :BitsPerCoordinate,   :Type => Integer, :Required => true
-                    field   :BitsPerComponent,    :Type => Integer, :Required => true
                     field   :BitsPerFlag,         :Type => Integer, :Required => true
-                    field   :Decode,              :Type => Array, :Required => true
-                    field   :Function,            :Type => [ Dictionary, Stream ]
                 end
             end
 
@@ -168,7 +166,7 @@ module Origami
     end
 
     class PDF::Instruction
-        insn  'sh', Name
+        insn 'sh',  Name
     end
 
 end
