@@ -52,28 +52,32 @@ module PDFWalker
             def load(object)
                 return if @current_obj.equal?(object)
 
-                begin
-                    self.clear
+                self.clear
 
-                    case object
-                    when Origami::Stream
-                        begin
-                            @view.set_data(object.data)
-                        rescue Origami::Filter::Error
-                            @view.set_data($!.input_data) if $!.input_data
-
-                            @parent.error("#{$!.class}: #{$!.message}") unless object.filters == [ :DCTDecode ]
-                        end
-
-                    when Origami::String
-                        @view.set_data(object.value)
-                    end
-
-                    @current_obj = object
-
-                rescue
-                  @parent.error("An error occured while loading this object.\n#{$!} (#{$!.class})")
+                case object
+                when Origami::Stream
+                    load_stream(object)
+                when Origami::String
+                    load_string(object)
                 end
+
+                @current_obj = object
+            end
+
+            private
+
+            def load_stream(object)
+                begin
+                    @view.set_data(object.data)
+                rescue Origami::Filter::Error
+                    @view.set_data($!.input_data) if $!.input_data
+
+                    @parent.error("#{$!.class}: #{$!.message}") unless object.filters == [ :DCTDecode ]
+                end
+            end
+
+            def load_string(object)
+                @view.set_data(object.value)
             end
         end
     end
