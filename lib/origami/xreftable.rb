@@ -497,17 +497,9 @@ module Origami
 
         def load! #:nodoc:
             if @xrefs.nil? and has_field?(:W)
-                widths = self.W
-
-                if not widths.is_a?(Array) or widths.length != 3 or widths.any?{|width| not width.is_a?(Integer) }
-                    raise InvalidXRefStreamObjectError, "W field must be an array of 3 integers"
-                end
-
                 decode!
 
-                type_w = self.W[0]
-                field1_w = self.W[1]
-                field2_w = self.W[2]
+                type_w, field1_w, field2_w = field_widths
 
                 entrymask = "B#{type_w << 3}B#{field1_w << 3}B#{field2_w << 3}"
                 size = @data.size / (type_w + field1_w + field2_w)
@@ -515,8 +507,7 @@ module Origami
                 xentries = @data.unpack(entrymask * size).map!{|field| field.to_i(2) }
 
                 @xrefs = []
-                size.times do |i|
-                    type,field1,field2 = xentries[i*3].ord,xentries[i*3+1].ord,xentries[i*3+2].ord
+                xentries.each_slice(3) do |type, field1, field2|
                     case type
                     when XREF_FREE
                         @xrefs << XRef.new(field1, field2, XRef::FREE)
@@ -538,6 +529,19 @@ module Origami
             @xrefs.each do |xref| @data << xref.to_xrefstm_data(type_w, field1_w, field2_w) end
 
             encode!
+        end
+
+        #
+        # Check and return the internal field widths.
+        #
+        def field_widths
+            widths = self.W
+
+            unless widths.is_a?(Array) and widths.length == 3 and widths.all? {|w| w.is_a?(Integer) and w >= 0 }
+                raise InvalidXRefStreamObjectError, "Invalid W field: #{widths}"
+            end
+
+            widths
         end
     end
 
