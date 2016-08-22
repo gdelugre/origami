@@ -770,127 +770,134 @@ module Origami
 
                 #
                 # Computes the key that will be used to encrypt/decrypt the document contents with user password.
+                # Called at all revisions.
                 #
-                def compute_user_encryption_key(userpassword, fileid)
-                    if self.R < 5
-                        padded = pad_password(userpassword)
-                        padded.force_encoding('binary')
+                def compute_user_encryption_key(user_password, file_id)
+                    return compute_legacy_user_encryption_key(user_password, file_id) if self.R < 5
 
-                        padded << self.O
-                        padded << [ self.P ].pack("i")
+                    passwd = password_to_utf8(user_password)
 
-                        padded << fileid
+                    uks = self.U[40, 8]
 
-                        encrypt_metadata = self.EncryptMetadata != false
-                        padded << [ -1 ].pack("i") if self.R >= 4 and not encrypt_metadata
-
-                        key = Digest::MD5.digest(padded)
-
-                        50.times { key = Digest::MD5.digest(key[0, self.Length / 8]) } if self.R >= 3
-
-                        if self.R == 2
-                            key[0, 5]
-                        elsif self.R >= 3
-                            key[0, self.Length / 8]
-                        end
+                    if self.R == 5
+                        ukey = Digest::SHA256.digest(passwd + uks)
                     else
-                        passwd = password_to_utf8(userpassword)
-
-                        uks = self.U[40, 8]
-
-                        if self.R == 5
-                            ukey = Digest::SHA256.digest(passwd + uks)
-                        else
-                            ukey = compute_hardened_hash(passwd, uks)
-                        end
-
-                        iv = ::Array.new(AES::BLOCKSIZE, 0).pack("C*")
-                        AES.new(ukey, nil, false).decrypt(iv + self.UE.value)
+                        ukey = compute_hardened_hash(passwd, uks)
                     end
+
+                    iv = ::Array.new(AES::BLOCKSIZE, 0).pack("C*")
+                    AES.new(ukey, nil, false).decrypt(iv + self.UE.value)
+                end
+
+                #
+                # Computes the key that will be used to encrypt/decrypt the document contents.
+                # Only for Revision 4 and less.
+                #
+                def compute_legacy_user_encryption_key(user_password, file_id)
+                    padded = pad_password(user_password)
+                    padded.force_encoding('binary')
+
+                    padded << self.O
+                    padded << [ self.P ].pack("i")
+
+                    padded << file_id
+
+                    encrypt_metadata = self.EncryptMetadata != false
+                    padded << [ -1 ].pack("i") if self.R >= 4 and not encrypt_metadata
+
+                    key = Digest::MD5.digest(padded)
+
+                    50.times { key = Digest::MD5.digest(key[0, self.Length / 8]) } if self.R >= 3
+
+                    truncate_key(key)
                 end
 
                 #
                 # Computes the key that will be used to encrypt/decrypt the document contents with owner password.
                 # Revision 5 and above.
                 #
-                def compute_owner_encryption_key(ownerpassword)
-                    if self.R >= 5
-                        passwd = password_to_utf8(ownerpassword)
+                def compute_owner_encryption_key(owner_password)
+                    return if self.R < 5
 
-                        oks = self.O[40, 8]
+                    passwd = password_to_utf8(owner_password)
+                    oks = self.O[40, 8]
 
-                        if self.R == 5
-                            okey = Digest::SHA256.digest(passwd + oks + self.U)
-                        else
-                            okey = compute_hardened_hash(passwd, oks, self.U)
-                        end
-
-                        iv = ::Array.new(AES::BLOCKSIZE, 0).pack("C*")
-                        AES.new(okey, nil, false).decrypt(iv + self.OE.value)
+                    if self.R == 5
+                        okey = Digest::SHA256.digest(passwd + oks + self.U)
+                    else
+                        okey = compute_hardened_hash(passwd, oks, self.U)
                     end
+
+                    iv = ::Array.new(AES::BLOCKSIZE, 0).pack("C*")
+                    AES.new(okey, nil, false).decrypt(iv + self.OE.value)
                 end
 
                 #
                 # Set up document passwords.
                 #
-                def set_passwords(ownerpassword, userpassword, salt = nil)
-                    if self.R < 5
-                        key = compute_owner_key(ownerpassword)
-                        upadded = pad_password(userpassword)
+                def set_passwords(owner_password, user_password, salt = nil)
+                    return set_legacy_passwords(owner_password, user_password, salt) if self.R < 5
 
-                        owner_key = RC4.encrypt(key, upadded)
-                        19.times { |i| owner_key = RC4.encrypt(xor(key,i+1), owner_key) } if self.R >= 3
+                    upass = password_to_utf8(user_password)
+                    opass = password_to_utf8(owner_password)
 
-                        self.O = owner_key
-                        self.U = compute_user_password(userpassword, salt)
+                    uvs, uks, ovs, oks = ::Array.new(4) { Encryption.rand_bytes(8) }
+                    file_key = Encryption.strong_rand_bytes(32)
+                    iv = ::Array.new(AES::BLOCKSIZE, 0).pack("C*")
 
+                    if self.R == 5
+                        self.U = Digest::SHA256.digest(upass + uvs) + uvs + uks
+                        self.O = Digest::SHA256.digest(opass + ovs + self.U) + ovs + oks
+                        ukey = Digest::SHA256.digest(upass + uks)
+                        okey = Digest::SHA256.digest(opass + oks + self.U)
                     else
-                        upass = password_to_utf8(userpassword)
-                        opass = password_to_utf8(ownerpassword)
-
-                        uvs, uks, ovs, oks = ::Array.new(4) { Encryption.rand_bytes(8) }
-                        file_key = Encryption.strong_rand_bytes(32)
-                        iv = ::Array.new(AES::BLOCKSIZE, 0).pack("C*")
-
-                        if self.R == 5
-                            self.U = Digest::SHA256.digest(upass + uvs) + uvs + uks
-                            self.O = Digest::SHA256.digest(opass + ovs + self.U) + ovs + oks
-                            ukey = Digest::SHA256.digest(upass + uks)
-                            okey = Digest::SHA256.digest(opass + oks + self.U)
-                        else
-                            self.U = compute_hardened_hash(upass, uvs) + uvs + uks
-                            self.O = compute_hardened_hash(opass, ovs, self.U) + ovs + oks
-                            ukey = compute_hardened_hash(upass, uks)
-                            okey = compute_hardened_hash(opass, oks, self.U)
-                        end
-
-                        self.UE = AES.new(ukey, iv, false).encrypt(file_key)[iv.size, 32]
-                        self.OE = AES.new(okey, iv, false).encrypt(file_key)[iv.size, 32]
-
-                        perms =
-                            [ self.P ].pack("V") +                              # 0-3
-                            [ -1 ].pack("V") +                                  # 4-7
-                            (self.EncryptMetadata == true ? "T" : "F") +        # 8
-                            "adb" +                                             # 9-11
-                            [ 0 ].pack("V")                                     # 12-15
-
-                        self.Perms = AES.new(file_key, iv, false).encrypt(perms)[iv.size, 16]
-
-                        file_key
+                        self.U = compute_hardened_hash(upass, uvs) + uvs + uks
+                        self.O = compute_hardened_hash(opass, ovs, self.U) + ovs + oks
+                        ukey = compute_hardened_hash(upass, uks)
+                        okey = compute_hardened_hash(opass, oks, self.U)
                     end
+
+                    self.UE = AES.new(ukey, iv, false).encrypt(file_key)[iv.size, 32]
+                    self.OE = AES.new(okey, iv, false).encrypt(file_key)[iv.size, 32]
+
+                    perms =
+                        [ self.P ].pack("V") +                              # 0-3
+                        [ -1 ].pack("V") +                                  # 4-7
+                        (self.EncryptMetadata == true ? "T" : "F") +        # 8
+                        "adb" +                                             # 9-11
+                        [ 0 ].pack("V")                                     # 12-15
+
+                    self.Perms = AES.new(file_key, iv, false).encrypt(perms)[iv.size, 16]
+
+                    file_key
+                end
+
+                #
+                # Set up document passwords. 
+                # Only for Revision 4 and less.
+                #
+                def set_legacy_passwords(owner_password, user_password, salt)
+                    owner_key = compute_owner_key(owner_password)
+                    upadded = pad_password(user_password)
+
+                    owner_key_hash = RC4.encrypt(owner_key, upadded)
+                    19.times { |i| owner_key_hash = RC4.encrypt(xor(owner_key, i + 1), owner_key_hash) } if self.R >= 3
+
+                    self.O = owner_key_hash
+                    self.U = compute_user_password_hash(user_password, salt)
                 end
 
                 #
                 # Checks user password.
-                # For version 2,3 and 4, _salt_ is the document ID.
+                # For version 2, 3 and 4, _salt_ is the document ID.
                 # For version 5 and 6, _salt_ is the User Key Salt.
                 #
                 def is_user_password?(pass, salt)
 
                     if self.R == 2
-                        compute_user_password(pass, salt) == self.U
+                        compute_user_password_hash(pass, salt) == self.U
                     elsif self.R == 3 or self.R == 4
-                        compute_user_password(pass, salt)[0, 16] == self.U[0, 16]
+                        compute_user_password_hash(pass, salt)[0, 16] == self.U[0, 16]
                     elsif self.R == 5
                         uvs = self.U[32, 8]
                         Digest::SHA256.digest(password_to_utf8(pass) + uvs) == self.U[0, 32]
@@ -923,9 +930,9 @@ module Origami
                 # Retrieve user password from owner password.
                 # Cannot be used with revision 5.
                 #
-                def retrieve_user_password(ownerpassword)
+                def retrieve_user_password(owner_password)
 
-                    key = compute_owner_key(ownerpassword)
+                    key = compute_owner_key(owner_password)
 
                     if self.R == 2
                         RC4.decrypt(key, self.O)
@@ -944,31 +951,27 @@ module Origami
                 # Rev 2,3,4: O = crypt(user_pass, owner_key).
                 # Rev 5: unused.
                 #
-                def compute_owner_key(ownerpassword) #:nodoc:
+                def compute_owner_key(owner_password) #:nodoc:
 
-                    opadded = pad_password(ownerpassword)
+                    opadded = pad_password(owner_password)
 
-                    hash = Digest::MD5.digest(opadded)
-                    50.times { hash = Digest::MD5.digest(hash) } if self.R >= 3
+                    owner_key = Digest::MD5.digest(opadded)
+                    50.times { owner_key = Digest::MD5.digest(owner_key) } if self.R >= 3
 
-                    if self.R == 2
-                        hash[0, 5]
-                    elsif self.R >= 3
-                        hash[0, self.Length / 8]
-                    end
+                    truncate_key(owner_key)
                 end
 
                 #
                 # Compute the value of the U field.
                 # Cannot be used with revision 5.
                 #
-                def compute_user_password(userpassword, salt) #:nodoc:
+                def compute_user_password_hash(user_password, salt) #:nodoc:
 
                     if self.R == 2
-                        key = compute_user_encryption_key(userpassword, salt)
+                        key = compute_user_encryption_key(user_password, salt)
                         user_key = RC4.encrypt(key, PADDING)
                     elsif self.R == 3 or self.R == 4
-                        key = compute_user_encryption_key(userpassword, salt)
+                        key = compute_user_encryption_key(user_password, salt)
 
                         upadded = PADDING + salt
                         hash = Digest::MD5.digest(upadded)
@@ -1024,6 +1027,19 @@ module Origami
                     end
 
                     h[0, 32]
+                end
+
+                #
+                # Some revision handlers require different key sizes.
+                # Revision 2 uses 40-bit keys.
+                # Revisions 3 and higher rely on the Length field for the key size.
+                #
+                def truncate_key(key)
+                    if self.R == 2
+                        key[0, 5]
+                    elsif self.R >= 3
+                        key[0, self.Length / 8]
+                    end
                 end
 
                 def xor(str, byte) #:nodoc:
