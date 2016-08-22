@@ -188,82 +188,13 @@ module Origami
                 :permissions => Encryption::Standard::Permissions::ALL    # Document permissions
             }.update(options)
 
-            userpasswd, ownerpasswd = params[:user_passwd], params[:owner_passwd]
+            # Get the cryptographic parameters.
+            version, revision, crypt_filters = crypto_revision_from_options(params)
 
-            case params[:cipher].upcase
-            when 'RC4'
-                algorithm = Encryption::RC4
-                if (40..128) === params[:key_size] and params[:key_size] % 8 == 0
-                    if params[:key_size] > 40
-                        version = 2
-                        revision = 3
-                    else
-                        version = 1
-                        revision = 2
-                    end
-                else
-                    raise EncryptionError, "Invalid RC4 key length"
-                end
+            # Create the security handler.
+            handler, encryption_key = create_security_handler(version, revision, params)
 
-                crypt_filters = Hash.new(algorithm)
-
-            when 'AES'
-                algorithm = Encryption::AES
-                if params[:key_size] == 128
-                    version = revision = 4
-                elsif params[:key_size] == 256
-                    version = 5
-                    if params[:hardened]
-                        revision = 6
-                    else
-                        revision = 5
-                    end
-                else
-                    raise EncryptionError, "Invalid AES key length (Only 128 and 256 bits keys are supported)"
-                end
-
-                crypt_filters = {
-                    Identity: Encryption::Identity,
-                    StdCF: algorithm
-                }
-
-            else
-                raise EncryptionNotSupportedError, "Cipher not supported : #{params[:cipher]}"
-            end
-
-            doc_id = (trailer_key(:ID) || generate_id).first
-
-            handler = Encryption::Standard::Dictionary.new
-            handler.Filter = :Standard #:nodoc:
-            handler.V = version
-            handler.R = revision
-            handler.Length = params[:key_size]
-            handler.P = -1 # params[:Permissions]
-
-            if revision >= 4
-                handler.EncryptMetadata = params[:encrypt_metadata]
-                handler.CF = Dictionary.new
-                cryptfilter = Encryption::CryptFilterDictionary.new
-                cryptfilter.AuthEvent = :DocOpen
-
-                if revision == 4
-                    cryptfilter.CFM = :AESV2
-                else
-                    cryptfilter.CFM = :AESV3
-                end
-
-                cryptfilter.Length = params[:key_size] >> 3
-
-                handler.CF[:StdCF] = cryptfilter
-                handler.StmF = handler.StrF = :StdCF
-            end
-
-            handler.set_passwords(ownerpasswd, userpasswd, doc_id)
-            encryption_key = handler.compute_user_encryption_key(userpasswd, doc_id)
-
-            file_info = get_trailer_info
-            file_info[:Encrypt] = self << handler
-
+            # Turn this document into an EncryptedDocument instance.
             self.extend(Encryption::EncryptedDocument)
             self.encryption_handler = handler
             self.encryption_key = encryption_key
@@ -271,6 +202,125 @@ module Origami
             self.stm_filter = self.str_filter = :StdCF
 
             self
+        end
+
+        private
+
+        #
+        # Installs the standard security dictionary, marking the document as being encrypted.
+        # Returns the handler and the encryption key used for protecting contents.
+        #
+        def create_security_handler(version, revision, params)
+
+            # Ensure the document has an ID.
+            doc_id = (trailer_key(:ID) || generate_id).first
+
+            # Create the standard encryption dictionary.
+            handler = Encryption::Standard::Dictionary.new
+            handler.Filter = :Standard
+            handler.V = version
+            handler.R = revision
+            handler.Length = params[:key_size]
+            handler.P = -1 # params[:Permissions]
+
+            # Build the crypt filter dictionary.
+            if revision >= 4
+                handler.EncryptMetadata = params[:encrypt_metadata]
+                handler.CF = Dictionary.new
+                crypt_filter = Encryption::CryptFilterDictionary.new
+                crypt_filter.AuthEvent = :DocOpen
+
+                if revision == 4
+                    crypt_filter.CFM = :AESV2
+                else
+                    crypt_filter.CFM = :AESV3
+                end
+
+                crypt_filter.Length = params[:key_size] >> 3
+
+                handler.CF[:StdCF] = crypt_filter
+                handler.StmF = handler.StrF = :StdCF
+            end
+
+            user_passwd, owner_passwd = params[:user_passwd], params[:owner_passwd]
+
+            # Setup keys.
+            handler.set_passwords(owner_passwd, user_passwd, doc_id)
+            encryption_key = handler.compute_user_encryption_key(user_passwd, doc_id)
+
+            # Install the encryption dictionary to the document.
+            file_info = get_trailer_info
+            file_info[:Encrypt] = self << handler
+
+            [ handler, encryption_key ]
+        end
+
+        #
+        # Converts the parameters passed to PDF#encrypt.
+        # Returns [ version, revision, crypt_filters ]
+        #
+        def crypto_revision_from_options(params)
+            case params[:cipher].upcase
+            when 'RC4'
+                algorithm = Encryption::RC4
+                version, revision = crypto_revision_from_rc4_key(params[:key_size])
+                crypt_filters = Hash.new(algorithm)
+
+            when 'AES'
+                algorithm = Encryption::AES
+                version, revision = crypto_revision_from_aes_key(params[:key_size], params[:hardened])
+
+                crypt_filters = {
+                    Identity: Encryption::Identity,
+                    StdCF: algorithm
+                }
+            else
+                raise EncryptionNotSupportedError, "Cipher not supported : #{params[:cipher]}"
+            end
+
+            [ version, revision, crypt_filters ]
+        end
+
+        #
+        # Compute the required standard security handler version based on the RC4 key size.
+        # _key_size_:: Key size in bits.
+        # Returns [ version, revision ].
+        #
+        def crypto_revision_from_rc4_key(key_size)
+            raise EncryptionError, "Invalid RC4 key length" unless (40..128) === key_size and key_size % 8 == 0
+
+            if key_size > 40
+                version = 2
+                revision = 3
+            else
+                version = 1
+                revision = 2
+            end
+            
+            [ version, revision ]
+        end
+
+        #
+        # Compute the required standard security handler version based on the AES key size.
+        # _key_size_:: Key size in bits.
+        # _hardened_:: Use the extension level 8 hardened derivation algorithm.
+        # Returns [ version, revision ].
+        #
+        def crypto_revision_from_aes_key(key_size, hardened)
+            if key_size == 128
+                version = revision = 4
+            elsif key_size == 256
+                version = 5
+                if hardened
+                    revision = 6
+                else
+                    revision = 5
+                end
+            else
+                raise EncryptionError, "Invalid AES key length (Only 128 and 256 bits keys are supported)"
+            end
+
+            [ version, revision ]
         end
     end
 
