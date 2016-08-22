@@ -42,36 +42,24 @@ module Origami
                 i = 0
 
                 while i < stream.size
-                    #
-                    # How many identical bytes coming?
-                    #
-                    length = 1
-                    while i+1 < stream.size and length < EOD and stream[i] == stream[i+1]
-                        length = length + 1
-                        i = i + 1
-                    end
 
-                    #
+                    # How many identical bytes coming?
+                    length = compute_run_length(stream, i)
+
                     # If more than 1, then compress them.
-                    #
                     if length > 1
                         result << (257 - length).chr << stream[i]
-                    #
+                        i += length
+
                     # Otherwise how many different bytes to copy?
-                    #
                     else
-                        j = i
-                        while j+1 < stream.size and (j - i + 1) < EOD and stream[j] != stream[j+1]
-                            j = j + 1
-                        end
+                        next_pos = find_next_run(stream, i)
+                        length = next_pos - i
 
-                        length = j - i
-                        result << length.chr << stream[i, length+1]
+                        result << (length - 1).chr << stream[i, length]
 
-                        i = j
+                        i += length
                     end
-
-                    i = i + 1
                 end
 
                 result << EOD.chr
@@ -83,7 +71,6 @@ module Origami
             #
             def decode(stream)
                 result = "".b
-                return result if stream.empty?
 
                 i = 0
                 until i >= stream.length or stream[i].ord == EOD do
@@ -104,11 +91,36 @@ module Origami
                 end
 
                 # Check if offset is beyond the end of data.
-                if i >= stream.length
+                if i > stream.length
                     raise InvalidRunLengthDataError.new("Truncated run-length data", input_data: stream, decoded_data: result)
                 end
 
                 result
+            end
+
+            private
+
+            #
+            # Find the position of the next byte at which a new run starts.
+            #
+            def find_next_run(input, pos)
+                start = pos
+                pos += 1 while pos + 1 < input.size and (pos - start + 1) < EOD and input[pos] != input[pos + 1]
+
+                pos + 1
+            end
+
+            #
+            # Computes the length of the run at the given position.
+            #
+            def compute_run_length(input, pos)
+                run_length = 1
+                while pos + 1 < input.size and run_length < EOD and input[pos] == input[pos + 1]
+                    run_length += 1
+                    pos += 1
+                end
+
+                run_length
             end
         end
         RL = RunLength
