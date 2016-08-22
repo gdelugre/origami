@@ -107,21 +107,8 @@ module Origami
                 obj = Object.parse(@data, self)
                 return if obj.nil?
 
-                if Origami::OPTIONS[:enable_type_propagation] and @deferred_casts.key?(obj.reference)
-                    types = @deferred_casts[obj.reference]
-                    types = [ types ] unless types.is_a?(::Array)
-
-                    # Promote object if a compatible type is found.
-                    if cast_type = types.find{|type| type < obj.class}
-                        obj = obj.cast_to(cast_type, self)
-                    end
-                end
-
-                trace "Read #{obj.type} object#{
-                    if obj.class != obj.native_type
-                        " (" + obj.native_type.to_s.split('::').last + ")"
-                    end
-                }, #{obj.reference}"
+                obj = try_object_promotion(obj)
+                trace "Read #{obj.type} object, #{obj.reference}"
 
                 @options[:callback].call(obj)
                 obj
@@ -205,54 +192,52 @@ module Origami
 
         private
 
-        def error(str = "") #:nodoc:
-            if @options[:colorize_log]
-                @logger.puts "[error] #{str}".red
+        #
+        # Attempt to promote an object using the deferred casts.
+        #
+        def try_object_promotion(obj)
+            return obj unless Origami::OPTIONS[:enable_type_propagation] and @deferred_casts.key?(obj.reference)
+
+            types = @deferred_casts[obj.reference]
+            types = [ types ] unless types.is_a?(::Array)
+
+            # Promote object if a compatible type is found.
+            cast_type = types.find {|type| type < obj.class }
+            if cast_type
+                obj = obj.cast_to(cast_type, self)
             else
-                @logger.puts "[error] #{str}"
+                obj
             end
         end
 
-        def warn(str = "") #:nodoc:
-            return unless @options[:verbosity] >= VERBOSE_INFO
-
-            if @options[:colorize_log]
-                @logger.puts "[info ] Warning: #{str}".yellow
-            else
-                @logger.puts "[info ] Warning: #{str}"
-            end
+        def error(msg = "") #:nodoc:
+            log(VERBOSE_QUIET, 'error', :red, msg.red)
         end
 
-        def info(str = "") #:nodoc:
-            return unless @options[:verbosity] >= VERBOSE_INFO
-
-            if @options[:colorize_log]
-                @logger.print "[info ] ".green
-                @logger.puts str
-            else
-                @logger.puts "[info ] #{str}"
-            end
+        def warn(msg = "") #:nodoc:
+            log(VERBOSE_INFO, 'warn ', :yellow, msg.yellow)
         end
 
-        def debug(str = "") #:nodoc:
-            return unless @options[:verbosity] >= VERBOSE_DEBUG
-
-            if @options[:colorize_log]
-                @logger.print "[debug] ".magenta
-                @logger.puts str
-            else
-                @logger.puts "[debug] #{str}"
-            end
+        def info(msg = "") #:nodoc:
+            log(VERBOSE_INFO, 'info ', :green, msg)
         end
 
-        def trace(str = "") #:nodoc:
-            return unless @options[:verbosity] >= VERBOSE_TRACE
+        def debug(msg = "") #:nodoc:
+            log(VERBOSE_DEBUG, 'debug', :magenta, msg)
+        end
+
+        def trace(msg = "") #:nodoc:
+            log(VERBOSE_TRACE, 'trace', :cyan, msg)
+        end
+
+        def log(level, prefix, color, message) #:nodoc:
+            return unless @options[:verbosity] >= level
 
             if @options[:colorize_log]
-                @logger.print "[trace] ".cyan
-                @logger.puts str
+                @logger.print "[#{prefix}] ".colorize(color)
+                @logger.puts message
             else
-                @logger.puts "[trace] #{str}"
+                @logger.puts "[#{prefix}] #{message}"
             end
         end
 
