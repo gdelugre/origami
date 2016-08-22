@@ -573,11 +573,11 @@ module Origami
                 if rev.body.include?(reference) and type < rev.body[reference].class
                     rev.body[reference] = rev.body[reference].cast_to(type, parser)
 
-                    rev.body[reference]
-                else
-                    nil
+                    return rev.body[reference]
                 end
             end
+
+            nil
         end
 
         #
