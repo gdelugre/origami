@@ -1093,12 +1093,11 @@ module Origami
                 end
 
                 def xor(str, byte) #:nodoc:
-                    str.split(//).map!{|c| (c[0].ord ^ byte).chr }.join
+                    str.bytes.map!{|b| b ^ byte }.pack("C*")
                 end
 
                 def pad_password(password) #:nodoc:
-                    return PADDING.dup if password.empty? # Fix for Ruby 1.9 bug
-                    password[0,32].ljust(32, PADDING)
+                    password[0, 32].ljust(32, PADDING)
                 end
 
                 def password_to_utf8(passwd) #:nodoc:
