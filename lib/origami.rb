@@ -28,7 +28,6 @@ module Origami
         enable_type_checking: true,      # set to false to disable type consistency checks during compilation.
         enable_type_guessing: true,      # set to false to prevent the parser to guess the type of special dictionary and streams (not recommended).
         enable_type_propagation: true,   # set to false to prevent the parser to propagate type from parents to children.
-        use_openssl: true,               # set to false to use Origami crypto backend.
         ignore_bad_references: false,    # set to interpret invalid references as Null objects, instead of raising an exception.
         ignore_zlib_errors: false,       # set to true to ignore exceptions on invalid Flate streams.
         ignore_png_errors: false,        # set to true to ignore exceptions on invalid PNG predictors.

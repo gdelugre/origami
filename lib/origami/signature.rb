@@ -18,12 +18,7 @@
 
 =end
 
-begin
-    require 'openssl' if Origami::OPTIONS[:use_openssl]
-rescue LoadError
-    Origami::OPTIONS[:use_openssl] = false
-end
-
+require 'openssl'
 require 'digest/sha1'
 
 module Origami
@@ -38,10 +33,6 @@ module Origami
         #   If no argument is passed, embedded certificates are treated as trusted.
         #
         def verify(trusted_certs: [])
-            unless Origami::OPTIONS[:use_openssl]
-                fail "OpenSSL is not present or has been disabled."
-            end
-
             digsig = self.signature
 
             unless digsig[:Contents].is_a?(String)
@@ -106,10 +97,6 @@ module Origami
                  location: nil,
                  contact: nil,
                  reason: nil)
-
-            unless Origami::OPTIONS[:use_openssl]
-                fail "OpenSSL is not present or has been disabled."
-            end
 
             unless certificate.is_a?(OpenSSL::X509::Certificate)
                 raise TypeError, "A OpenSSL::X509::Certificate object must be passed."
@@ -275,9 +262,6 @@ module Origami
         # _rights_:: list of rights defined in UsageRights::Rights
         #
         def enable_usage_rights(cert, pkey, *rights)
-            unless Origami::OPTIONS[:use_openssl]
-                fail "OpenSSL is not present or has been disabled."
-            end
 
             signfield_size = -> (crt, key, ca) do
                 OpenSSL::PKCS7.sign(
