@@ -289,29 +289,15 @@ module PDFWalker
             @file_menu_deserialize = MenuItem.new("Deserialize")
             @file_menu_refresh = ImageMenuItem.new(Stock::REFRESH).set_sensitive(false).set_accel_path("<PDF Walker>/File/Refresh")
             @file_menu_close = ImageMenuItem.new(Stock::CLOSE).set_sensitive(false).set_accel_path("<PDF Walker>/File/Close")
-            @file_menu_saveas = ImageMenuItem.new(Stock::SAVE_AS).set_sensitive(false)
+            @file_menu_saveas = ImageMenuItem.new(Stock::SAVE_AS).set_sensitive(false).set_accel_path("<PDF Walker>/File/Save")
             @file_menu_serialize = MenuItem.new("Serialize").set_sensitive(false)
             @file_menu_exit = ImageMenuItem.new(Stock::QUIT).set_accel_path("<PDF Walker>/File/Quit")
-
-            @export_menu = Menu.new
-            @export_pdf_menu = MenuItem.new("As PDF").set_accel_path("<PDF Walker>/File/Save")
-            @export_graph_menu = MenuItem.new("As GraphViz dot file")
-            @export_graphml_menu = MenuItem.new("As GraphML file")
-
-            @export_pdf_menu.signal_connect('activate') do save end
-            @export_graph_menu.signal_connect('activate') do save_dot end
-            @export_graphml_menu.signal_connect('activate') do save_graphml end
-
-            @export_menu.append(@export_pdf_menu)
-            @export_menu.append(@export_graph_menu)
-            @export_menu.append(@export_graphml_menu)
-
-            @file_menu_saveas.set_submenu(@export_menu)
 
             @file_menu_open.signal_connect('activate') do open end
             @file_menu_deserialize.signal_connect('activate') do deserialize end
             @file_menu_refresh.signal_connect('activate') do open(@filename) end
             @file_menu_close.signal_connect('activate') do close end
+            @file_menu_saveas.signal_connect('activate') do save end
             @file_menu_serialize.signal_connect('activate') do serialize end
             @file_menu_exit.signal_connect('activate') do self.destroy end
 

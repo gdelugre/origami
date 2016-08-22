@@ -297,56 +297,6 @@ module PDFWalker
             dialog.destroy
         end
 
-        def save_dot
-            dialog = Gtk::FileChooserDialog.new("Save dot file",
-                        self,
-                        Gtk::FileChooser::ACTION_SAVE,
-                        nil,
-                        [Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL],
-                        [Gtk::Stock::SAVE, Gtk::Dialog::RESPONSE_ACCEPT]
-            )
-
-            dialog.filter = FileFilter.new.add_pattern("*.dot")
-
-            folder = File.dirname(@filename)
-            dialog.set_current_folder(folder)
-
-            if dialog.run == Gtk::Dialog::RESPONSE_ACCEPT
-                begin
-                    @opened.export_to_graph(dialog.filename)
-                rescue
-                    error("Error: #{$!.message}")
-                end
-            end
-
-            dialog.destroy
-        end
-
-        def save_graphml
-            dialog = Gtk::FileChooserDialog.new("Save GraphML file",
-                        self,
-                        Gtk::FileChooser::ACTION_SAVE,
-                        nil,
-                        [Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL],
-                        [Gtk::Stock::SAVE, Gtk::Dialog::RESPONSE_ACCEPT]
-            )
-
-            dialog.filter = FileFilter.new.add_pattern("*.graphml")
-
-            folder = File.dirname(@filename)
-            dialog.set_current_folder(folder)
-
-            if dialog.run == Gtk::Dialog::RESPONSE_ACCEPT
-                begin
-                    @opened.export_to_graphml(dialog.filename)
-                rescue
-                    error("Error: #{$!.message}")
-                end
-            end
-
-            dialog.destroy
-        end
-
         private
 
         def parse_file(path)
