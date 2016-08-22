@@ -119,44 +119,13 @@ module Origami
                 raise EncryptionInvalidPasswordError
             end
 
-            encrypt_metadata = (handler.EncryptMetadata != false)
-
             self.extend(Encryption::EncryptedDocument)
             self.encryption_handler = handler
             self.crypt_filters = crypt_filters
             self.encryption_key = encryption_key
             self.stm_filter, self.str_filter = stream_filter, string_filter
 
-            #
-            # Should be fixed to exclude only the active XRefStream
-            #
-            metadata = self.Catalog.Metadata
-
-            self.each_object
-                .lazy
-                .flat_map { |object|
-                    case object
-                    when String, Stream then object
-                    when Dictionary, Array then object.strings_cache
-                    end
-                }
-                .select { |object| not object.nil? }
-                .each do |object|
-                    case object
-                    when String
-                        next if object.parent.equal?(handler) or
-                                (object.parent.is_a?(Signature::DigitalSignature) and
-                                 object.equal?(obj.parent[:Contents]))
-
-                        object.extend(Encryption::EncryptedString) unless object.is_a?(Encryption::EncryptedString)
-                        object.decrypt!
-
-                    when Stream
-                        next if object.is_a?(XRefStream) or (not encrypt_metadata and object.equal?(metadata))
-
-                        object.extend(Encryption::EncryptedStream) unless object.is_a?(Encryption::EncryptedStream)
-                    end
-                end
+            decrypt_objects(handler)
 
             self
         end
@@ -202,6 +171,43 @@ module Origami
         end
 
         private
+
+        #
+        # For each object subject to encryption, convert it into an EncryptedObject and decrypt it if necessary.
+        #
+        def decrypt_objects(handler)
+            each_encryptable_object(handler) do |object|
+                case object
+                when String
+                    object.extend(Encryption::EncryptedString) unless object.is_a?(Encryption::EncryptedString)
+                    object.decrypt!
+
+                when Stream
+                    object.extend(Encryption::EncryptedStream) unless object.is_a?(Encryption::EncryptedStream)
+                end
+            end
+        end
+
+        #
+        # Iterates over each encryptable objects in the document.
+        #
+        def each_encryptable_object(handler, &b)
+
+            # Metadata may not be encrypted depending on the security handler configuration.
+            encrypt_metadata = (handler.EncryptMetadata != false)
+            metadata = self.Catalog.Metadata
+
+            self.each_object
+                .lazy
+                .flat_map { |object|
+                    case object
+                    when String, Stream then object unless object.is_a?(XRefStream) or (not encrypt_metadata and object.equal?(metadata))
+                    when Dictionary, Array then object.strings_cache unless object.equal?(handler)
+                    end
+                }
+                .select { |object| not object.nil? }
+                .each(&b)
+        end
 
         #
         # Installs the standard security dictionary, marking the document as being encrypted.
