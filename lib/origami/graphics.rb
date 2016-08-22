@@ -29,10 +29,10 @@ module Origami
 end
 
 require 'origami/graphics/instruction'
+require 'origami/graphics/state'
 require 'origami/graphics/colors'
 require 'origami/graphics/path'
 require 'origami/graphics/xobject'
 require 'origami/graphics/text'
-require 'origami/graphics/state'
 require 'origami/graphics/patterns'
 require 'origami/graphics/render'

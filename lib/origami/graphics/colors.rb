@@ -105,99 +105,125 @@ module Origami
             def Color.to_a(color)
                 return color if color.is_a?(::Array)
 
-                if (color.respond_to? :r and color.respond_to? :g and color.respond_to? :b)
-                    r = (color.respond_to?(:r) ? color.r : color[0]).to_f / 255
-                    g = (color.respond_to?(:g) ? color.g : color[1]).to_f / 255
-                    b = (color.respond_to?(:b) ? color.b : color[2]).to_f / 255
+                if %i(r g b).all? {|c| color.respond_to?(c)}
+                    r = color.r.to_f / 255
+                    g = color.g.to_f / 255
+                    b = color.b.to_f / 255
                     return [r, g, b]
 
-                elsif (color.respond_to? :c and color.respond_to? :m and color.respond_to? :y and color.respond_to? :k)
-                    c = (color.respond_to?(:c) ? color.c : color[0]).to_f
-                    m = (color.respond_to?(:m) ? color.m : color[1]).to_f
-                    y = (color.respond_to?(:y) ? color.y : color[2]).to_f
-                    k = (color.respond_to?(:k) ? color.k : color[3]).to_f
+                elsif %i(c m y k).all? {|c| color.respond_to?(c)}
+                    c = color.c
+                    m = color.m
+                    y = color.y
+                    k = color.k
                     return [c,m,y,k]
 
-                elsif color.respond_to?:g or (0.0..1.0) === color
-                    g = color.respond_to?(:g) ? color.g : color
-                    return [ g ]
+                elsif color.respond_to?(:g)
+                    g = color.g
+                    return [g]
 
                 else
                     raise TypeError, "Invalid color : #{color}"
                 end
             end
         end
+
+        class State
+            def set_stroking_color(color, space = @stroking_color_space)
+                check_color(space, color) 
+
+                @stroking_colorspace = space
+                @stroking_color = color
+            end
+
+            def set_nonstroking_color(color, space = @nonstroking_colorspace)
+                check_color(space, color)
+
+                @nonstroking_colorspace = space
+                @nonstroking_color = color
+            end
+
+            def set_stroking_colorspace(space)
+                check_color_space(space, @stroking_color)
+
+                @stroking_color_space = space
+            end
+
+            def set_nonstroking_colorspace(space)
+                check_color_space(space, @nonstroking_color)
+
+                @nonstroking_color_space = space
+            end
+
+            private
+
+            def check_color_space(space)
+                case space
+                when Color::Space::DEVICE_GRAY, Color::Space::DEVICE_RGB, Color::Space::DEVICE_CMYK
+                else
+                   raise InvalidColorError, "Unknown color space #{space}"
+                end 
+            end
+
+            def check_color(space, color)
+                valid_color =
+                    case space
+                    when Color::Space::DEVICE_GRAY
+                        check_gray_color(color)
+                    when Color::Space::DEVICE_RGB
+                        check_rgb_color(color)
+                    when Color::Space::DEVICE_CMYK
+                        check_cmyk_color(color)
+                    else
+                        raise InvalidColorError, "Unknown color space #{space}"
+                    end
+
+                raise InvalidColorError, "Invalid color #{color.inspect} for #{space}" unless valid_color
+            end
+
+            def check_gray_color(color)
+                color.is_a?(::Array) and color.length == 1 and (0..1).include?(color[0])
+            end
+
+            def check_rgb_color(color)
+                color.is_a?(::Array) and color.length == 3 and color.all? {|c| (0..1).include?(c) }
+            end
+
+            def check_cmyk_color(color)
+                color.is_a?(::Array) and color.length == 4 and color.all? {|c| (0..1).include?(c) }
+            end
+        end
     end
 
     class PDF::Instruction
 
-        insn  'CS', Name do |canvas, cs| canvas.gs.stroking_colorspace = cs end
-        insn  'cs', Name do |canvas, cs| canvas.gs.nonstroking_colorspace = cs end
-        insn  'SC', '*' do |canvas, *c| canvas.gs.stroking_color = c end
-        insn  'sc', '*' do |canvas, *c| canvas.gs.nonstroking_color = c end
+        insn 'CS', Name do |canvas, cs| canvas.gs.set_stroking_colorspace(cs) end
+        insn 'cs', Name do |canvas, cs| canvas.gs.set_nonstroking_colorspace(cs) end
+        insn 'SC', '*' do |canvas, *c| canvas.gs.set_stroking_color(c) end
+        insn 'sc', '*' do |canvas, *c| canvas.gs.set_nonstroking_color(c) end
 
-        insn  'G', Real do |canvas, c|
-            unless (0..1).include? c
-                raise Graphics::InvalidColorError,
-                        "Not a valid color for DeviceGray: #{c}"
-            end
-
-            canvas.gs.stroking_colorspace = Graphics::Color::Space::DEVICE_GRAY
-            canvas.gs.stroking_color = [ c ]
+        insn 'G', Real do |canvas, c|
+            canvas.gs.set_stroking_color([c], Graphics::Color::SPACE::DEVICE_GRAY)
         end
 
-        insn  'g', Real do |canvas, c|
-            unless (0..1).include? c
-                raise Graphics::InvalidColorError,
-                        "Not a valid color for DeviceGray: #{c}"
-            end
-
-            canvas.gs.nonstroking_colorspace = Graphics::Color::Space::DEVICE_GRAY
-            canvas.gs.nonstroking_color = [ c ]
+        insn 'g', Real do |canvas, c|
+            canvas.gs.set_nonstroking_color([c], Graphics::Color::SPACE::DEVICE_GRAY)
         end
 
-        insn  'RG', Real, Real, Real do |canvas, r,g,b|
-            color = [ r, g, b ]
-            unless color.all? {|comp| (0..1).include? comp}
-                raise Graphics::InvalidColorError,
-                        "Not a valid color for DeviceRGB: #{color.inspect}"
-            end
-
-            canvas.gs.stroking_colorspace = Graphics::Color::Space::DEVICE_RGB
-            canvas.gs.stroking_color = color
+        insn 'RG', Real, Real, Real do |canvas, r, g, b|
+            canvas.gs.set_stroking_color([r, g, b], Graphics::Color::Space::DEVICE_RGB)
         end
 
-        insn  'rg', Real, Real, Real do |canvas, r,g,b|
-            color = [ r, g, b ]
-            unless color.all? {|comp| (0..1).include? comp}
-                raise Graphics::InvalidColorError,
-                        "Not a valid color for DeviceRGB: #{color.inspect}"
-            end
-
-            canvas.gs.nonstroking_colorspace = Graphics::Color::Space::DEVICE_RGB
-            canvas.gs.nonstroking_color = color
+        insn 'rg', Real, Real, Real do |canvas, r, g, b|
+            canvas.gs.set_nonstroking_color([r, g, b], Graphics::Color::Space::DEVICE_RGB)
         end
 
-        insn  'K', Real, Real, Real, Real do |canvas, c,m,y,k|
-            color = [ c, m, y, k ]
-            unless color.all? {|comp| (0..1).include? comp}
-                raise Graphics::InvalidColorError,
-                        "Not a valid color for DeviceCMYK: #{color.inspect}"
-            end
-
-            canvas.gs.stroking_colorspace = Graphics::Color::Space::DEVICE_CMYK
-            canvas.gs.stroking_color = color
+        insn 'K', Real, Real, Real, Real do |canvas, c, m, y, k|
+            canvas.gs.set_stroking_color([c, m, y, k], Graphics::Color::Space::DEVICE_CMYK)
         end
 
-        insn  'k', Real, Real, Real, Real do |canvas, c,m,y,k|
-            color = [ c, m, y, k ]
-            unless color.all? {|comp| (0..1).include? comp}
-                raise Graphics::InvalidColorError,
-                        "Not a valid color for DeviceCMYK: #{color.inspect}"
-            end
-
-            canvas.gs.nonstroking_colorspace = Graphics::Color::Space::DEVICE_CMYK
-            canvas.gs.nonstroking_color = color
+        insn 'k', Real, Real, Real, Real do |canvas, c, m, y, k|
+            canvas.gs.set_nonstroking_color([c, m, y, k], Graphics::Color::Space::DEVICE_CMYK)
         end
     end
 
