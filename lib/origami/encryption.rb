@@ -51,7 +51,7 @@ module Origami
             raise EncryptionError, "PDF is not encrypted" unless self.encrypted?
 
             encrypt_dict = trailer_key(:Encrypt)
-            handler = Encryption::Standard::Dictionary.new(encrypt_dict.dup)
+            handler = self.cast_object(encrypt_dict.reference, Encryption::Standard::Dictionary)
 
             unless handler.Filter == :Standard
                 raise EncryptionNotSupportedError, "Unknown security handler : '#{handler.Filter}'"
@@ -132,34 +132,31 @@ module Origami
             #
             metadata = self.Catalog.Metadata
 
-            self.indirect_objects.each do |indobj|
-                encrypted_objects = []
-                case indobj
-                when String,Stream then encrypted_objects << indobj
-                when Dictionary,Array then encrypted_objects |= indobj.strings_cache
-                end
-
-                encrypted_objects.each do |obj|
-                    case obj
+            self.each_object
+                .lazy
+                .flat_map { |object|
+                    case object
+                    when String, Stream then object
+                    when Dictionary, Array then object.strings_cache
+                    end
+                }
+                .select { |object| not object.nil? }
+                .each do |object|
+                    case object
                     when String
-                        next if obj.equal?(encrypt_dict[:U]) or
-                                obj.equal?(encrypt_dict[:O]) or
-                                obj.equal?(encrypt_dict[:UE]) or
-                                obj.equal?(encrypt_dict[:OE]) or
-                                obj.equal?(encrypt_dict[:Perms]) or
-                                (obj.parent.is_a?(Signature::DigitalSignature) and
-                                 obj.equal?(obj.parent[:Contents]))
+                        next if object.parent.equal?(handler) or
+                                (object.parent.is_a?(Signature::DigitalSignature) and
+                                 object.equal?(obj.parent[:Contents]))
 
-                        obj.extend(Encryption::EncryptedString) unless obj.is_a?(Encryption::EncryptedString)
-                        obj.decrypt!
+                        object.extend(Encryption::EncryptedString) unless object.is_a?(Encryption::EncryptedString)
+                        object.decrypt!
 
                     when Stream
-                        next if obj.is_a?(XRefStream) or (not encrypt_metadata and obj.equal?(metadata))
+                        next if object.is_a?(XRefStream) or (not encrypt_metadata and object.equal?(metadata))
 
-                        obj.extend(Encryption::EncryptedStream) unless obj.is_a?(Encryption::EncryptedStream)
+                        object.extend(Encryption::EncryptedStream) unless object.is_a?(Encryption::EncryptedStream)
                     end
                 end
-            end
 
             self
         end
