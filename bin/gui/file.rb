@@ -231,44 +231,6 @@ module PDFWalker
         private
 
         def parse_file(path)
-            update_bar = lambda do |_obj|
-                @progressbar.pulse if @progressbar
-                Gtk.main_iteration while Gtk.events_pending?
-            end
-
-            prompt_passwd = lambda do
-                passwd = ""
-
-                dialog = Gtk::Dialog.new(
-                            "This document is encrypted",
-                            nil,
-                            Gtk::Dialog::MODAL,
-                            [ Gtk::Stock::OK, Gtk::Dialog::RESPONSE_OK ],
-                            [ Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL ]
-                )
-
-                dialog.set_default_response(Gtk::Dialog::RESPONSE_OK)
-
-                label = Gtk::Label.new("Please enter password:")
-                entry = Gtk::Entry.new
-                entry.signal_connect('activate') {
-                    dialog.response(Gtk::Dialog::RESPONSE_OK)
-                }
-
-                dialog.vbox.add(label)
-                dialog.vbox.add(entry)
-                dialog.show_all
-
-                dialog.run do |response|
-                    if response == Gtk::Dialog::RESPONSE_OK
-                        passwd = entry.text
-                    end
-                end
-
-                dialog.destroy
-                return passwd
-            end
-
             #
             # Try to detect the file type of the document.
             # Fallback to PDF if none is found.
@@ -284,10 +246,46 @@ module PDFWalker
             file_type.read(path,
                 verbosity: Origami::Parser::VERBOSE_TRACE,
                 ignore_errors: false,
-                callback: update_bar,
-                prompt_password: prompt_passwd,
+                callback: method(:update_progressbar),
+                prompt_password: method(:prompt_password),
                 force: force_mode
             )
+        end
+
+        def update_progressbar(_obj)
+            @progressbar.pulse if @progressbar
+            Gtk.main_iteration while Gtk.events_pending?
+        end
+
+        def prompt_password
+            passwd = ""
+
+            dialog = Gtk::Dialog.new(
+                        "This document is encrypted",
+                        nil,
+                        Gtk::Dialog::MODAL,
+                        [ Gtk::Stock::OK, Gtk::Dialog::RESPONSE_OK ],
+                        [ Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL ]
+            )
+
+            dialog.set_default_response(Gtk::Dialog::RESPONSE_OK)
+
+            label = Gtk::Label.new("Please enter password:")
+            entry = Gtk::Entry.new
+            entry.signal_connect('activate') {
+                dialog.response(Gtk::Dialog::RESPONSE_OK)
+            }
+
+            dialog.vbox.add(label)
+            dialog.vbox.add(entry)
+            dialog.show_all
+
+            dialog.run do |response|
+                passwd = entry.text if response == Gtk::Dialog::RESPONSE_OK
+            end
+
+            dialog.destroy
+            passwd
         end
 
         def detect_file_type(path)
