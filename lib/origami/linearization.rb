@@ -50,29 +50,17 @@ module Origami
             #
             prev_trailer = @revisions.first.trailer
 
-            lin_dict = @revisions.first.objects.min_by{|obj| obj.file_offset}
-            hints = lin_dict[:H]
+            linear_dict = @revisions.first.objects.min_by{|obj| obj.file_offset}
 
             #
             # Removes hint streams used by linearization.
             #
-            if hints.is_a?(::Array)
-                if hints.length > 0 and hints[0].is_a?(Integer)
-                    hint_stream = get_object_by_offset(hints[0])
-                    delete_object(hint_stream.reference) if hint_stream.is_a?(Stream)
-                end
-
-                if hints.length > 2 and hints[2].is_a?(Integer)
-                    overflow_stream = get_object_by_offset(hints[2])
-                    delete_object(overflow_stream.reference) if overflow_stream.is_a?(Stream)
-                end
-            end
+            delete_hint_streams(linear_dict)
 
             #
             # Update the trailer.
             #
             last_trailer = (@revisions.last.trailer ||= Trailer.new)
-
             last_trailer.dictionary ||= Dictionary.new
 
             if prev_trailer.has_dictionary?
@@ -98,12 +86,29 @@ module Origami
             #
             # Remove the linearization revision.
             #
-            @revisions.first.body.delete(lin_dict.reference)
+            @revisions.first.body.delete(linear_dict.reference)
             @revisions.last.body.merge! @revisions.first.body
 
             remove_revision(0)
 
             self
+        end
+
+        private
+
+        #
+        # Strip the document from Hint streams given a linearization dictionary.
+        #
+        def delete_hint_streams(linearization_dict)
+            hints = linearization_dict[:H]
+            return unless hints.is_a?(Array)
+
+            hints.each_slice(2) do |offset, _length|
+                next unless offset.is_a?(Integer)
+
+                stream = get_object_by_offset(offset)
+                delete_object(stream.reference) if stream.is_a?(Stream)
+            end
         end
     end
 
@@ -192,10 +197,9 @@ module Origami
                 data << [ item_data ].pack("B*")
             end
 
-            i = 0
             nitems = self.class.nb_entry_items
-            @entries.each do |entry|
-                for no in (1..items)
+            @entries.each_with_index do |entry, i|
+                for no in (1..nitems)
                     unless entry.include?(no)
                         raise InvalidHintTableError, "Missing item #{no} in entry #{i} of #{self.class}"
                     end
@@ -209,8 +213,6 @@ module Origami
 
                     data << [ item_data ].pack("B*")
                 end
-
-                i = i + 1
             end
 
             data
