@@ -23,7 +23,7 @@ module PDFWalker
     module Popable
 
         @@menus = Hash.new([])
-        @@menus[:"PDF File"] =
+        @@menus['PDF'] =
         [
             {
                 Name: Stock::SAVE_AS,
@@ -54,7 +54,7 @@ module PDFWalker
             }
         ]
 
-        @@menus[:Reference] =
+        @@menus['Reference'] =
         [
             {
                 Name: Stock::JUMP_TO,
@@ -65,7 +65,7 @@ module PDFWalker
             }
         ]
 
-        @@menus[:Revision] =
+        @@menus['Revision'] =
         [
             {
                 Name: "Save to this revision",
@@ -95,7 +95,7 @@ module PDFWalker
             }
         ]
 
-        @@menus[:Stream] =
+        @@menus['Stream'] =
         [
             {
                 Name: "Dump encoded stream",
@@ -103,7 +103,7 @@ module PDFWalker
                 Callback: lambda { |_widget, viewer, path|
                     stream = viewer.model.get_value(viewer.model.get_iter(path), viewer.class::OBJCOL)
 
-                    viewer.parent.save_data("Save stream to file", stream.encoded_data)
+                    viewer.parent.save_data("Save encoded stream to file", stream.encoded_data)
                 }
             },
             {
@@ -112,12 +112,12 @@ module PDFWalker
                 Callback: lambda { |_widget, viewer, path|
                     stream = viewer.model.get_value(viewer.model.get_iter(path), viewer.class::OBJCOL)
 
-                    viewer.parent.save_data("Save stream to file", stream.data)
+                    viewer.parent.save_data("Save decoded stream to file", stream.data)
                 }
             }
         ]
 
-        @@menus[:String] =
+        @@menus['String'] =
         [
             {
                 Name: "Dump string",
@@ -130,7 +130,7 @@ module PDFWalker
             }
         ]
 
-        @@menus[:Image] = @@menus[:Stream] +
+        @@menus['Image'] = @@menus['Stream'] +
         [
             {
                 Name: :"---"
@@ -173,70 +173,55 @@ module PDFWalker
             }
         ]
 
-        def popup_menu(obj, event, path)
+        def popup_menu(obj, event, _path)
             menu = Menu.new
 
-            type =
-                if obj.is_a?(Origami::Object)
-                      if obj.is_a?(Origami::Graphics::ImageXObject)
-                          :Image
-                      else
-                          obj.native_type.to_s.split("::").last.to_sym
-                      end
-                else
-                      case obj
-                      when Origami::PDF
-                          :"PDF File"
-                      when Origami::PDF::Revision, Origami::FDF::Revision, Origami::PPKLite::Revision
-                          :Revision
-                      when ::Array
-                          :Body
-                      when Origami::PDF::Header, Origami::FDF::Header, Origami::PPKLite::Header
-                          :Header
-                      when Origami::Trailer
-                          :Trailer
-                      when Origami::XRef::Section
-                          :XRefSection
-                      when Origami::XRef::Subsection
-                          :XRefSubsection
-                      when Origami::XRef, Origami::XRefToCompressedObj
-                          :XRef
-                      else
-                          :Unknown
-                      end
-                end
+            type = popup_menu_key(obj)
 
+            # Create menu title.
             title = obj.is_a?(Origami::Object) ? "Object : " : ""
             title << type.to_s
             menu.append(MenuItem.new(title).set_sensitive(false).modify_text(Gtk::STATE_INSENSITIVE, Gdk::Color.new(255,0,255)))
 
-            if obj.is_a?(Origami::Object)
-                if obj.indirect?
-                    menu.append(MenuItem.new("Number : #{obj.no}; Generation : #{obj.generation}").set_sensitive(false))
-                    menu.append(MenuItem.new("File offset : #{obj.file_offset}").set_sensitive(false))
+            # Object information.
+            create_object_menu(menu, obj) if obj.is_a?(Origami::Object)
 
-                    getxrefs = MenuItem.new("Search references to this object").set_sensitive(true)
-                    getxrefs.signal_connect("activate") do
-                        ref = self.model.get_value(self.model.get_iter(path), self.class::OBJCOL)
-                        self.parent.show_xrefs(ref)
-                    end
+            # Type-specific menu.
+            create_type_menu(menu, type)
 
-                    menu.append(getxrefs)
-                elsif not obj.parent.nil?
-                    gotoparent = MenuItem.new("Goto Parent Object").set_sensitive(true)
-                    gotoparent.signal_connect("activate") do
-                        dest = self.model.get_value(self.model.get_iter(path), self.class::OBJCOL).parent
-                        self.goto(dest)
-                    end
+            menu.show_all
+            menu.popup(nil, nil, event.button, event.time)
+        end
 
-                    menu.append(gotoparent)
+        private
+
+        def create_object_menu(menu, object)
+            if object.indirect?
+                menu.append(MenuItem.new("Number : #{object.no}; Generation : #{object.generation}").set_sensitive(false))
+                menu.append(MenuItem.new("File offset : #{object.file_offset}").set_sensitive(false))
+
+                getxrefs = MenuItem.new("Search references to this object").set_sensitive(true)
+                getxrefs.signal_connect("activate") do
+                    ref = self.model.get_value(self.model.get_iter(path), self.class::OBJCOL)
+                    self.parent.show_xrefs(ref)
                 end
-            end
+                menu.append(getxrefs)
 
+            elsif not object.parent.nil?
+                gotoparent = MenuItem.new("Goto Parent Object").set_sensitive(true)
+                gotoparent.signal_connect("activate") do
+                    dest = self.model.get_value(self.model.get_iter(path), self.class::OBJCOL).parent
+                    self.goto(dest)
+                end
+                menu.append(gotoparent)
+            end
+        end
+
+        def create_type_menu(menu, type)
             items = @@menus[type]
             menu.append(SeparatorMenuItem.new) if not items.empty?
 
-            items.each { |item|
+            items.each do |item|
                 if item[:Name] == :"---"
                     entry = SeparatorMenuItem.new
                 else
@@ -251,10 +236,34 @@ module PDFWalker
                 end
 
                 menu.append(entry)
-            }
+            end
+        end
 
-            menu.show_all
-            menu.popup(nil, nil, event.button, event.time)
+        def popup_menu_key(object)
+            if object.is_a?(Origami::Object)
+                popup_menu_object_key(object)
+            else
+                popup_menu_struct_key(object)
+            end
+        end
+
+        def popup_menu_object_key(object)
+            if object.is_a?(Origami::Graphics::ImageXObject)
+                'Image'
+            else
+                object.native_type.to_s.split("::").last
+            end
+        end
+
+        def popup_menu_struct_key(struct)
+            case struct
+            when ::Array
+                'Body'
+            when Origami::XRef, Origami::XRefToCompressedObj
+                'XRef'
+            else
+                struct.class.name.split('::').last
+            end
         end
     end
 
