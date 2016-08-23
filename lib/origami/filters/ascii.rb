@@ -91,15 +91,9 @@ module Origami
                         addend = 0
                     end
 
-                    inblock = input[i, 4].unpack("L>")[0]
-                    outblock = ""
-
-                    5.times do |p|
-                        c = inblock / 85 ** (4 - p)
-                        outblock << ("!".ord + c).chr
-
-                        inblock -= c * 85 ** (4 - p)
-                    end
+                    # Encode the 4 bytes input value into a 5 character string.
+                    value = input[i, 4].unpack("L>")[0]
+                    outblock = encode_block(value)
 
                     outblock = "z" if outblock == "!!!!!" and addend == 0
 
@@ -120,15 +114,15 @@ module Origami
             # _string_:: The data to decode.
             #
             def decode(string)
-                input = (string.include?(EOD) ? string[0..string.index(EOD) - 1] : string).delete(" \f\t\r\n\0")
+                input = filter_input(string)
 
                 i = 0
                 result = ''.b
 
-                while i < input.size do
+                while i < input.size
 
                     outblock = ""
-                    inblock = 0
+                    value = 0
                     addend = 0
 
                     if input[i] == "z"
@@ -136,37 +130,25 @@ module Origami
                     else
                         codelen = 5
 
-                        if input.length - i < 5
+                        if input.length - i < codelen
                             raise InvalidASCII85StringError.new("Invalid length", input_data: string, decoded_data: result) if input.length - i == 1
 
-                            addend = 5 - (input.length - i)
+                            addend = codelen - (input.length - i)
                             input << "u" * addend
                         end
 
-                        # Checking if this string is in base85
-                        5.times do |j|
-                            byte = input[i + j].ord
-
-                            if byte > "u".ord or byte < "!".ord
-                                raise InvalidASCII85StringError.new(
-                                        "Invalid character sequence: #{input[i, 5].inspect}",
-                                        input_data: string,
-                                        decoded_data: result
-                                )
-                            else
-                                inblock += (byte - "!".ord) * 85 ** (4 - j)
-                            end
+                        # Decode the 5 characters input block into a 32 bit integer.
+                        begin
+                            value = decode_block input[i, codelen]
+                        rescue InvalidASCII85StringError => error
+                            error.input_data = string
+                            error.decoded_data = result
+                            raise(error)
                         end
-
-                        raise InvalidASCII85StringError.new(
-                                "Invalid value (#{inblock}) for block #{input[i,5].inspect}",
-                                input_data: string,
-                                decoded_data: result
-                        ) if inblock >= (1 << 32)
                     end
 
-                    outblock = [ inblock ].pack "L>"
-                    outblock = outblock[0, 4 - addend] if addend != 0
+                    outblock = [ value ].pack "L>"
+                    outblock = outblock[0, 4 - addend]
 
                     result << outblock
 
@@ -174,6 +156,52 @@ module Origami
                 end
 
                 result
+            end
+
+            private
+
+            def filter_input(string)
+                string = string[0, string.index(EOD)] if string.include?(EOD)
+                string.delete(" \f\t\r\n\0")
+            end
+
+            #
+            # Encodes an integer value into an ASCII85 block of 5 characters.
+            #
+            def encode_block(value)
+                block = "".b
+
+                5.times do |p|
+                    c = value / 85 ** (4 - p)
+                    block << ("!".ord + c).chr
+
+                    value -= c * 85 ** (4 - p)
+                end
+                
+                block
+            end
+
+            #
+            # Decodes a 5 character ASCII85 block into an integer value.
+            #
+            def decode_block(block)
+                value = 0
+
+                5.times do |i|
+                    byte = block[i].ord
+
+                    if byte > "u".ord or byte < "!".ord
+                        raise InvalidASCII85StringError, "Invalid character sequence: #{block.inspect}"
+                    else
+                        value += (byte - "!".ord) * 85 ** (4 - i)
+                    end
+                end
+
+                if value >= (1 << 32)
+                    raise InvalidASCII85StringError, "Invalid value (#{value}) for block #{block.inspect}"
+                end
+
+                value
             end
 
         end
