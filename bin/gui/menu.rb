@@ -272,90 +272,90 @@ module PDFWalker
 
             @menu = MenuBar.new
 
-            ####################################################
+            create_file_menu 
+            create_document_menu
+            create_help_menu
+        end
+
+        def create_file_menu
             file_ag = Gtk::AccelGroup.new
             @file_menu = Menu.new.set_accel_group(file_ag).set_accel_path("<PDF Walker>/File")
             add_accel_group(file_ag)
 
-            @file_menu_open = ImageMenuItem.new(Stock::OPEN).set_accel_path("<PDF Walker>/File/Open")
-            @file_menu_recent = MenuItem.new("Last opened")
-            @file_menu_refresh = ImageMenuItem.new(Stock::REFRESH).set_sensitive(false).set_accel_path("<PDF Walker>/File/Refresh")
-            @file_menu_close = ImageMenuItem.new(Stock::CLOSE).set_sensitive(false).set_accel_path("<PDF Walker>/File/Close")
-            @file_menu_saveas = ImageMenuItem.new(Stock::SAVE_AS).set_sensitive(false).set_accel_path("<PDF Walker>/File/Save")
-            @file_menu_exit = ImageMenuItem.new(Stock::QUIT).set_accel_path("<PDF Walker>/File/Quit")
+            entries = [
+                @file_menu_open = ImageMenuItem.new(Stock::OPEN).set_accel_path("<PDF Walker>/File/Open"),
+                @file_menu_recent = MenuItem.new("Last opened"),
+                @file_menu_refresh = ImageMenuItem.new(Stock::REFRESH).set_sensitive(false).set_accel_path("<PDF Walker>/File/Refresh"),
+                @file_menu_close = ImageMenuItem.new(Stock::CLOSE).set_sensitive(false).set_accel_path("<PDF Walker>/File/Close"),
+                @file_menu_saveas = ImageMenuItem.new(Stock::SAVE_AS).set_sensitive(false).set_accel_path("<PDF Walker>/File/Save"),
+                @file_menu_exit = ImageMenuItem.new(Stock::QUIT).set_accel_path("<PDF Walker>/File/Quit"),
+            ]
 
-            @file_menu_open.signal_connect('activate') do open end
-            @file_menu_refresh.signal_connect('activate') do open(@filename) end
-            @file_menu_close.signal_connect('activate') do close end
-            @file_menu_saveas.signal_connect('activate') do save end
-            @file_menu_exit.signal_connect('activate') do self.destroy end
+            @file_menu_open.signal_connect('activate') { open }
+            @file_menu_refresh.signal_connect('activate') { open(@filename) }
+            @file_menu_close.signal_connect('activate') { close }
+            @file_menu_saveas.signal_connect('activate') { save }
+            @file_menu_exit.signal_connect('activate') { self.destroy }
 
             update_recent_menu
 
-            @file_menu.append(@file_menu_open)
-            @file_menu.append(@file_menu_recent)
-            @file_menu.append(@file_menu_refresh)
-            @file_menu.append(@file_menu_close)
-            @file_menu.append(@file_menu_saveas)
-            @file_menu.append(@file_menu_exit)
+            entries.each do |entry|
+                @file_menu.append(entry)
+            end
 
             @menu.append(MenuItem.new('_File').set_submenu(@file_menu))
-            ####################################################
+        end
 
+        def create_document_menu
             doc_ag = Gtk::AccelGroup.new
             @document_menu = Menu.new.set_accel_group(doc_ag)
             add_accel_group(doc_ag)
 
-            @document_menu_search = ImageMenuItem.new(Stock::FIND).set_sensitive(false).set_accel_path("<PDF Walker>/Document/Search")
-            @document_menu_gotocatalog = MenuItem.new("Jump to Catalog").set_sensitive(false)
-            @document_menu_gotodocinfo = MenuItem.new("Jump to Document Info").set_sensitive(false)
-            @document_menu_gotometadata = MenuItem.new("Jump to Metadata").set_sensitive(false)
-            @document_menu_gotorev = MenuItem.new("Jump to Revision...").set_sensitive(false)
-            @document_menu_gotopage = MenuItem.new("Jump to Page...").set_sensitive(false)
-            @document_menu_gotofield = MenuItem.new("Jump to Field...").set_sensitive(false)
-            @document_menu_gotoobj = MenuItem.new("Jump to Object...").set_sensitive(false)
-            @document_menu_properties = ImageMenuItem.new(Stock::PROPERTIES).set_sensitive(false)
-            @document_menu_sign = MenuItem.new("Sign the document").set_sensitive(false)
-            @document_menu_ur = MenuItem.new("Enable Usage Rights").set_sensitive(false)
+            entries = [
+                @document_menu_search = ImageMenuItem.new(Stock::FIND).set_sensitive(false).set_accel_path("<PDF Walker>/Document/Search"),
+                MenuItem.new,
+                @document_menu_gotocatalog = MenuItem.new("Jump to Catalog").set_sensitive(false),
+                @document_menu_gotodocinfo = MenuItem.new("Jump to Document Info").set_sensitive(false),
+                @document_menu_gotometadata = MenuItem.new("Jump to Metadata").set_sensitive(false),
+                @document_menu_gotorev = MenuItem.new("Jump to Revision...").set_sensitive(false),
+                @document_menu_gotopage = MenuItem.new("Jump to Page...").set_sensitive(false),
+                @document_menu_gotofield = MenuItem.new("Jump to Field...").set_sensitive(false),
+                @document_menu_gotoobj = MenuItem.new("Jump to Object...").set_sensitive(false),
+                MenuItem.new,
+                @document_menu_sign = MenuItem.new("Sign the document").set_sensitive(false),
+                @document_menu_ur = MenuItem.new("Enable Usage Rights").set_sensitive(false),
+                @document_menu_properties = ImageMenuItem.new(Stock::PROPERTIES).set_sensitive(false),
+            ]
 
-            @document_menu_search.signal_connect('activate') do search end
-            @document_menu_gotocatalog.signal_connect('activate') do goto_catalog end
-            @document_menu_gotodocinfo.signal_connect('activate') do goto_docinfo end
-            @document_menu_gotometadata.signal_connect('activate') do goto_metadata end
-            @document_menu_gotoobj.signal_connect('activate') do goto_object end
-            @document_menu_properties.signal_connect('activate') do display_file_properties end
-            @document_menu_sign.signal_connect('activate') do display_signing_wizard end
-            @document_menu_ur.signal_connect('activate') do display_usage_rights_wizard end
+            @document_menu_search.signal_connect('activate') { search }
+            @document_menu_gotocatalog.signal_connect('activate') { goto_catalog }
+            @document_menu_gotodocinfo.signal_connect('activate') { goto_docinfo }
+            @document_menu_gotometadata.signal_connect('activate') { goto_metadata }
+            @document_menu_gotoobj.signal_connect('activate') { goto_object }
+            @document_menu_properties.signal_connect('activate') { display_file_properties }
+            @document_menu_sign.signal_connect('activate') { display_signing_wizard }
+            @document_menu_ur.signal_connect('activate') { display_usage_rights_wizard }
 
-            @document_menu.append(@document_menu_search)
-            @document_menu.append(MenuItem.new)
-            @document_menu.append(@document_menu_gotocatalog)
-            @document_menu.append(@document_menu_gotodocinfo)
-            @document_menu.append(@document_menu_gotometadata)
-            @document_menu.append(@document_menu_gotorev)
-            @document_menu.append(@document_menu_gotopage)
-            @document_menu.append(@document_menu_gotofield)
-            @document_menu.append(@document_menu_gotoobj)
-            @document_menu.append(MenuItem.new)
-            @document_menu.append(@document_menu_sign)
-            @document_menu.append(@document_menu_ur)
-            @document_menu.append(@document_menu_properties)
+            entries.each do |entry|
+                @document_menu.append(entry)
+            end
 
             @menu.append(MenuItem.new('_Document').set_submenu(@document_menu))
-            ####################################################
-            @help_menu = Menu.new
-            @help_menu_profile = CheckMenuItem.new("Profiling (Debug purposes only)").set_active(@config.profile?)
-            @help_menu_profile.signal_connect('toggled') do @config.set_profiling(@help_menu_profile.active?) end
+        end
 
+        def create_help_menu
+            @help_menu = Menu.new
+
+            @help_menu_profile = CheckMenuItem.new("Profiling (Debug purposes only)").set_active(@config.profile?)
             @help_menu_about = ImageMenuItem.new(Stock::ABOUT)
 
-            @help_menu_about.signal_connect('activate') do about end
+            @help_menu_profile.signal_connect('toggled') do @config.set_profiling(@help_menu_profile.active?) end
+            @help_menu_about.signal_connect('activate') { about }
 
             @help_menu.append(@help_menu_profile)
             @help_menu.append(@help_menu_about)
 
             @menu.append(MenuItem.new('_Help').set_submenu(@help_menu))
-            ####################################################
         end
 
         def update_recent_menu
