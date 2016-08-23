@@ -101,8 +101,8 @@ module Origami
         # Flags relative to signature fields.
         #
         module SigFlags
-            SIGNATURESEXIST = 1 << 0
-            APPENDONLY      = 1 << 1
+            SIGNATURES_EXIST = 1 << 0
+            APPEND_ONLY      = 1 << 1
         end
 
         field   :Fields,            :Type => Array, :Required => true, :Default => []

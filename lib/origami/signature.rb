@@ -159,7 +159,7 @@ module Origami
             annotation.V = digsig
             add_fields(annotation)
             self.Catalog.AcroForm.SigFlags =
-                InteractiveForm::SigFlags::SIGNATURESEXIST | InteractiveForm::SigFlags::APPENDONLY
+                InteractiveForm::SigFlags::SIGNATURES_EXIST | InteractiveForm::SigFlags::APPEND_ONLY
 
             digsig.Type = :Sig #:nodoc:
             digsig.Contents = HexaString.new("\x00" * signfield_size[certificate, key, ca]) #:nodoc:
@@ -251,7 +251,7 @@ module Origami
             begin
                 self.Catalog.AcroForm.is_a?(Dictionary) and
                 self.Catalog.AcroForm.has_key?(:SigFlags) and
-                (self.Catalog.AcroForm.SigFlags & InteractiveForm::SigFlags::SIGNATURESEXIST != 0)
+                (self.Catalog.AcroForm.SigFlags & InteractiveForm::SigFlags::SIGNATURES_EXIST != 0)
             rescue InvalidReferenceError
                 false
             end
@@ -285,7 +285,7 @@ module Origami
             digsig = Signature::DigitalSignature.new.set_indirect(true)
 
             self.Catalog.AcroForm ||= InteractiveForm.new
-            #self.Catalog.AcroForm.SigFlags = InteractiveForm::SigFlags::APPENDONLY
+            #self.Catalog.AcroForm.SigFlags = InteractiveForm::SigFlags::APPEND_ONLY
 
             digsig.Type = :Sig #:nodoc:
             digsig.Contents = HexaString.new("\x00" * signfield_size[certificate, key, []]) #:nodoc:
