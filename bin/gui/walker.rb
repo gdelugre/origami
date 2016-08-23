@@ -74,38 +74,9 @@ module PDFWalker  #:nodoc:all
                 :type => :body
             }
 
-            @explorer_history = Array.new
+            @explorer_history = []
 
-            signal_connect('destroy') {
-                @config.save
-                Gtk.main_quit
-            }
-
-            add_events(Gdk::Event::KEY_RELEASE_MASK)
-            signal_connect('key_release_event') { |_w, event|
-                if event.keyval == Gdk::Keyval::GDK_F1 then about
-                elsif event.keyval == Gdk::Keyval::GDK_Escape and @opened and not @explorer_history.empty?
-                    @treeview.goto(@explorer_history.pop)
-                end
-            }
-
-            create_menus
-            create_treeview
-            create_hexview
-            create_objectview
-            create_panels
-            create_statusbar
-
-            @vbox = VBox.new
-            @vbox.pack_start(@menu, false, false)
-            @vbox.pack_start(@hpaned)
-            @vbox.pack_end(@statusbar, false, false)
-
-            add @vbox
-
-            set_default_size(self.screen.width * 0.5, self.screen.height * 0.5)
-            #maximize
-            show_all
+            init_interface
 
             open(target_file)
         end
@@ -161,44 +132,7 @@ module PDFWalker  #:nodoc:all
                     next
                 end
 
-                search =
-                {
-                    :expr => entry.text,
-                    :regexp => button_regexp.active?,
-                    :type => button_byname.active? ? :name : :body
-                }
-
-                if search == @last_search
-                    @last_search_result.push @last_search_result.shift
-                    results = @last_search_result
-                else
-                    expr = search[:regexp] ? Regexp.new(search[:expr]) : search[:expr]
-
-                    results =
-                        if search[:type] == :body
-                            @opened.grep(expr)
-                        else
-                            @opened.ls(expr, follow_references: false)
-                        end
-
-                    @last_search = search
-                end
-
-                if results.empty?
-                    error("No result found.")
-                else
-                    if results != @last_search_result
-                        # Reset the previous search highlighting.
-                        @last_search_result.each do |obj| @treeview.highlight(obj, nil) end
-
-                        # Highlight the new results.
-                        results.each do |obj| @treeview.highlight(obj, "lightpink") end
-
-                        @last_search_result = results
-                    end
-
-                    @treeview.goto(results.first, follow_references: false)
-                end
+                search_document(entry.text, regexp: button_regexp.active?, type: (button_bydata.active? ? 'body' : 'name'))
             end
 
             dialog.show_all
@@ -244,11 +178,88 @@ module PDFWalker  #:nodoc:all
             if obj.nil?
                 error("Object #{no} not found.")
             else
-              @treeview.goto(obj)
+                @treeview.goto(obj)
             end
         end
 
         private
+
+        def init_interface
+            signal_connect('destroy') {
+                @config.save
+                Gtk.main_quit
+            }
+
+            add_events(Gdk::Event::KEY_RELEASE_MASK)
+            signal_connect('key_release_event') { |_w, event|
+                if event.keyval == Gdk::Keyval::GDK_F1 then about
+                elsif event.keyval == Gdk::Keyval::GDK_Escape and @opened and not @explorer_history.empty?
+                    @treeview.goto(@explorer_history.pop)
+                end
+            }
+
+            create_menus
+            create_treeview
+            create_hexview
+            create_objectview
+            create_panels
+            create_statusbar
+
+            @vbox = VBox.new
+            @vbox.pack_start(@menu, false, false)
+            @vbox.pack_start(@hpaned)
+            @vbox.pack_end(@statusbar, false, false)
+
+            add @vbox
+
+            set_default_size(self.screen.width * 0.5, self.screen.height * 0.5)
+            show_all
+        end
+
+        def search_document(expr, regexp: false, type: 'body')
+            search =
+            {
+                expr: expr,
+                regexp: regexp,
+                type: type,
+            }
+
+            if search == @last_search
+                @last_search_result.push @last_search_result.shift
+                results = @last_search_result
+            else
+                expr = Regexp.new(expr) if search[:regexp]
+
+                results =
+                    if search[:type] == 'body'
+                        @opened.grep(expr)
+                    else
+                        @opened.ls(expr, follow_references: false)
+                    end
+
+                @last_search = search
+            end
+
+            goto_next_search_result(results)
+        end
+
+        def goto_next_search_result(results)
+            if results.empty?
+                error("No result found.")
+            else
+                if results != @last_search_result
+                    # Reset the previous search highlighting.
+                    @last_search_result.each do |obj| @treeview.highlight(obj, nil) end
+
+                    # Highlight the new results.
+                    results.each do |obj| @treeview.highlight(obj, "lightpink") end
+
+                    @last_search_result = results
+                end
+
+                @treeview.goto(results.first, follow_references: false)
+            end
+        end
 
         def create_panels
             @hpaned = HPaned.new
