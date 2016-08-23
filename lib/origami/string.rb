@@ -381,13 +381,6 @@ module Origami
         attr_reader :year, :month, :day, :hour, :min, :sec, :utc_offset
 
         def initialize(year:, month: 1, day: 1, hour: 0, min: 0, sec: 0, utc_offset: 0)
-            raise InvalidDateError, "Invalid year #{year}" unless (0..9999) === year
-            raise InvalidDateError, "Invalid month #{month}" unless (1..12) === month
-            raise InvalidDateError, "Invalid day #{day}" unless (1..31) === day
-            raise InvalidDateError, "Invalid hour #{hour}" unless (0..23) === hour
-            raise InvalidDateError, "Invalid minute #{min}" unless (0..59) === min
-            raise InvalidDateError, "Invalid second #{sec}" unless (0..59) === sec
-
             @year, @month, @day, @hour, @min, @sec = year, month, day, hour, min, sec
             @utc_offset = utc_offset
 
