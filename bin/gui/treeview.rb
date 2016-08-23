@@ -41,7 +41,7 @@ module PDFWalker
     end
 
     class PDFTree < TreeView
-        include Popable
+        include PopupMenu
 
         OBJCOL = 0
         TEXTCOL = 1

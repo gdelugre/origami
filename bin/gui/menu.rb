@@ -20,7 +20,7 @@
 
 module PDFWalker
 
-    module Popable
+    module PopupMenu
 
         @@menus = Hash.new([])
         @@menus['PDF'] =
