@@ -44,10 +44,9 @@ module Origami
             def encode(string)
                 input = pre_prediction(string)
 
-                codesize = 9
+                table, codesize = reset_state
                 result = Utils::BitWriter.new
                 result.write(CLEARTABLE, codesize)
-                table = clear({})
 
                 s = ''
                 input.each_byte do |byte|
@@ -59,8 +58,7 @@ module Origami
                     when 2048 then codesize = 12
                     when 4096
                         result.write(CLEARTABLE, codesize)
-                        codesize = 9
-                        clear table
+                        table, codesize = reset_state
                         redo
                     end
 
@@ -87,64 +85,28 @@ module Origami
             def decode(string)
                 result = "".b
                 bstring = Utils::BitReader.new(string)
-                codesize = 9
-                table = clear(Hash.new)
-                prevbyte = nil
+                table, codesize, prevbyte = reset_state
 
                 until bstring.eod? do
                     byte = bstring.read(codesize)
-
-                    case table.size
-                    when 510 then codesize = 10
-                    when 1022 then codesize = 11
-                    when 2046 then codesize = 12
-                    when 4095
-                        if byte != CLEARTABLE
-                            raise InvalidLZWDataError.new(
-                                    "LZW table is full and no clear flag was set (codeword #{byte.to_s(2).rjust(codesize,'0')} at bit #{bstring.pos - codesize}/#{bstring.size})",
-                                    input_data: string,
-                                    decoded_data: result
-                            )
-                        end
-                    end
+                    break if byte == EOD
 
                     if byte == CLEARTABLE
-                        codesize = 9
-                        clear table
-                        prevbyte = nil
+                        table, codesize, prevbyte = reset_state
                         redo
-                    elsif byte == EOD
-                        break
-                    else
-                        if prevbyte.nil?
-                            raise InvalidLZWDataError.new(
-                                    "No entry for codeword #{byte.to_s(2).rjust(codesize,'0')}.",
-                                    input_data: string,
-                                    decoded_data: result
-                            ) unless table.value?(byte)
-
-                            prevbyte = byte
-                            result << table.key(byte)
-                            redo
-                        else
-                            raise InvalidLZWDataError.new(
-                                    "No entry for codeword #{prevbyte.to_s(2).rjust(codesize,'0')}.",
-                                    input_data: string,
-                                    decoded_data: result
-                            ) unless table.value?(prevbyte)
-
-                            if table.value?(byte)
-                                entry = table.key(byte)
-                            else
-                                entry = table.key(prevbyte)
-                                entry += entry[0,1]
-                            end
-
-                            result << entry
-                            table[table.key(prevbyte) + entry[0,1]] = table.size
-                            prevbyte = byte
-                        end
                     end
+
+                    begin
+                        codesize = decode_codeword_size(table)
+                        result << decode_byte(table, prevbyte, byte, codesize)
+                    rescue InvalidLZWDataError => error
+                        error.message.concat " (bit pos #{bstring.pos - codesize})"
+                        error.input_data = string
+                        error.decoded_data = result
+                        raise(error)
+                    end
+
+                    prevbyte = byte
                 end
 
                 post_prediction(result)
@@ -152,8 +114,47 @@ module Origami
 
             private
 
-            def clear(table) #:nodoc:
-                table.clear
+            def decode_codeword_size(table)
+                case table.size
+                when 258...510 then 9
+                when 510...1022 then 10
+                when 1022...2046 then 11
+                when 2046...4095 then 12
+                when 4095
+                    raise InvalidLZWDataError, "LZW table is full and no clear flag was set"
+                end
+            end
+
+            def decode_byte(table, previous_byte, byte, codesize) #:nodoc:
+
+                # Ensure the codeword can be decoded in the current state.
+                check_codeword(table, previous_byte, byte, codesize)
+
+                if previous_byte.nil?
+                    table.key(byte)
+                else
+                    if table.value?(byte)
+                        entry = table.key(byte)
+                    else
+                        entry = table.key(previous_byte)
+                        entry += entry[0, 1]
+                    end
+
+                    table[table.key(previous_byte) + entry[0,1]] = table.size
+
+                    entry
+                end
+            end
+
+            def check_codeword(table, previous_byte, byte, codesize) #:nodoc:
+                if (previous_byte.nil? and not table.value?(byte)) or (previous_byte and not table.value?(previous_byte))
+                    codeword = previous_byte || byte
+                    raise InvalidLZWDataError, "No entry for codeword #{codeword.to_s(2).rjust(codesize, '0')}"
+                end
+            end
+
+            def reset_state #:nodoc:
+                table = {}
                 256.times do |i|
                     table[i.chr] = i
                 end
@@ -161,7 +162,8 @@ module Origami
                 table[CLEARTABLE] = CLEARTABLE
                 table[EOD] = EOD
 
-                table
+                # Codeword table, codeword size, previous_byte
+                [table, 9, nil]
             end
         end
 
