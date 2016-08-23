@@ -546,10 +546,15 @@ module Origami
         #
         def cast_object(reference, type, parser = nil) #:nodoc:
             @revisions.each do |rev|
-                if rev.body.include?(reference) and type < rev.body[reference].class
-                    rev.body[reference] = rev.body[reference].cast_to(type, parser)
+                if rev.body.include?(reference)
+                    object = rev.body[reference]
+                    return object if object.is_a?(type)
 
-                    return rev.body[reference]
+                    if type < rev.body[reference].class
+                        rev.body[reference] = object.cast_to(type, parser)
+
+                        return rev.body[reference]
+                    end
                 end
             end
 
