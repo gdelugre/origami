@@ -101,7 +101,7 @@ module PDFWalker
                 Name: "Dump encoded stream",
                 Sensitive: true,
                 Callback: lambda { |_widget, viewer, path|
-                    stream = viewer.model.get_value(viewer.model.get_iter(path), viewer.class::OBJCOL)
+                    stream = viewer.object_by_path(path)
 
                     viewer.parent.save_data("Save encoded stream to file", stream.encoded_data)
                 }
@@ -110,7 +110,7 @@ module PDFWalker
                 Name: "Dump decoded stream",
                 Sensitive: true,
                 Callback: lambda { |_widget, viewer, path|
-                    stream = viewer.model.get_value(viewer.model.get_iter(path), viewer.class::OBJCOL)
+                    stream = viewer.object_by_path(path)
 
                     viewer.parent.save_data("Save decoded stream to file", stream.data)
                 }
@@ -123,7 +123,7 @@ module PDFWalker
                 Name: "Dump string",
                 Sensitive: true,
                 Callback: lambda { |_widget, viewer, path|
-                    string = viewer.model.get_value(viewer.model.get_iter(path), viewer.class::OBJCOL)
+                    string = viewer.object_by_path(path)
 
                     viewer.parent.save_data("Save string to file", string.value)
                 }
@@ -139,7 +139,7 @@ module PDFWalker
                 Name: "View image",
                 Sensitive: true,
                 Callback: lambda { |_widget, viewer, path|
-                    stm = viewer.model.get_value(viewer.model.get_iter(path), viewer.class::OBJCOL)
+                    stm = viewer.object_by_path(path)
                     w,h = stm.Width, stm.Height
 
                     if stm.ColorSpace.nil?
@@ -173,7 +173,7 @@ module PDFWalker
             }
         ]
 
-        def popup_menu(obj, event, _path)
+        def popup_menu(obj, event, path)
             menu = Menu.new
 
             type = popup_menu_key(obj)
@@ -187,7 +187,7 @@ module PDFWalker
             create_object_menu(menu, obj) if obj.is_a?(Origami::Object)
 
             # Type-specific menu.
-            create_type_menu(menu, type)
+            create_type_menu(menu, type, path)
 
             menu.show_all
             menu.popup(nil, nil, event.button, event.time)
@@ -202,22 +202,20 @@ module PDFWalker
 
                 getxrefs = MenuItem.new("Search references to this object").set_sensitive(true)
                 getxrefs.signal_connect("activate") do
-                    ref = self.model.get_value(self.model.get_iter(path), self.class::OBJCOL)
-                    self.parent.show_xrefs(ref)
+                    self.parent.show_xrefs(object)
                 end
                 menu.append(getxrefs)
 
             elsif not object.parent.nil?
                 gotoparent = MenuItem.new("Goto Parent Object").set_sensitive(true)
                 gotoparent.signal_connect("activate") do
-                    dest = self.model.get_value(self.model.get_iter(path), self.class::OBJCOL).parent
-                    self.goto(dest)
+                    self.goto(object.parent)
                 end
                 menu.append(gotoparent)
             end
         end
 
-        def create_type_menu(menu, type)
+        def create_type_menu(menu, type, path)
             items = @@menus[type]
             menu.append(SeparatorMenuItem.new) if not items.empty?
 

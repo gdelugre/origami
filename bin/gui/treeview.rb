@@ -209,6 +209,12 @@ module PDFWalker
             end
         end
 
+        def object_by_path(path)
+            iter = @treestore.get_iter(path)
+
+            @treestore.get_value(iter, OBJCOL)
+        end
+
         private
 
         def object_to_tree_pos(obj)
