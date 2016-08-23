@@ -50,6 +50,7 @@ module Origami
         def decrypt(passwd = "")
             raise EncryptionError, "PDF is not encrypted" unless self.encrypted?
 
+            # Turn the encryption dictionary into a standard encryption dictionary.
             encrypt_dict = trailer_key(:Encrypt)
             handler = self.cast_object(encrypt_dict.reference, Encryption::Standard::Dictionary)
 
@@ -147,7 +148,7 @@ module Origami
             {
                 :user_passwd => '',
                 :owner_passwd => '',
-                :cipher => 'rc4',            # :RC4 or :AES
+                :cipher => 'aes',            # :RC4 or :AES
                 :key_size => 128,            # Key size in bits
                 :hardened => false,          # Use newer password validation (since Reader X)
                 :encrypt_metadata => true,   # Metadata shall be encrypted?
@@ -480,7 +481,7 @@ module Origami
                     no, gen = parent.no, parent.generation
                     k = encryption_key + [no].pack("I")[0..2] + [gen].pack("I")[0..1]
 
-                    key_len = (k.length > 16) ? 16 : k.length
+                    key_len = [k.length, 16].min
                     k << "sAlT" if cipher == Encryption::AES
 
                     Digest::MD5.digest(k)[0, key_len]
