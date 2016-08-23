@@ -37,7 +37,7 @@ module PDFWalker
 
             # disable all menus.
             [
-                @file_menu_close, @file_menu_saveas, @file_menu_serialize, @file_menu_refresh,
+                @file_menu_close, @file_menu_saveas, @file_menu_refresh,
                 @document_menu_search,
                 @document_menu_gotocatalog, @document_menu_gotodocinfo, @document_menu_gotometadata,
                 @document_menu_gotopage, @document_menu_gotofield, @document_menu_gotorev, @document_menu_gotoobj,
@@ -128,7 +128,7 @@ module PDFWalker
 
                         # Enable save and document menu.
                         [
-                            @file_menu_saveas, @file_menu_serialize,
+                            @file_menu_saveas,
                             @document_menu_search,
                             @document_menu_gotocatalog, @document_menu_gotopage, @document_menu_gotorev, @document_menu_gotoobj,
                             @document_menu_properties, @document_menu_sign, @document_menu_ur
@@ -177,75 +177,6 @@ module PDFWalker
 
             close_progressbar
             self.activate_focus
-        end
-
-        def deserialize
-            dialog = Gtk::FileChooserDialog.new("Open dump file",
-                        self,
-                        FileChooser::ACTION_OPEN,
-                        nil,
-                        [Stock::CANCEL, Dialog::RESPONSE_CANCEL],
-                        [Stock::OPEN, Dialog::RESPONSE_ACCEPT]
-            )
-
-            dialog.current_folder = File.join(Dir.pwd, "dumps")
-            dialog.filter = FileFilter.new.add_pattern("*.gz")
-
-            if dialog.run == Gtk::Dialog::RESPONSE_ACCEPT
-                close if @opened
-                filename = dialog.filename
-
-                begin
-                    @opened = Origami::PDF.deserialize(filename)
-                    self.reload
-
-                    [
-                        @file_menu_close, @file_menu_saveas, @file_menu_serialize, @file_menu_refresh,
-                        @document_menu_search,
-                        @document_menu_gotocatalog, @document_menu_gotopage, @document_menu_gotorev, @document_menu_gotoobj,
-                        @document_menu_properties, @document_menu_sign, @document_menu_ur
-                    ].each do |menu|
-                        menu.sensitive = true
-                    end
-
-                    @document_menu_gotodocinfo.sensitive = true if @opened.document_info?
-                    @document_menu_gotometadata.sensitive = true if @opened.metadata?
-                    @document_menu_gotofield.sensitive = true if @opened.form?
-
-                    @explorer_history.clear
-
-                    @statusbar.push(@main_context, "Viewing dump of #{filename}")
-                rescue
-                    error("This file cannot be loaded.\n#{$!} (#{$!.class})")
-                end
-            end
-
-            dialog.destroy
-        end
-
-        def serialize
-            dialog = Gtk::FileChooserDialog.new("Save dump file",
-                        self,
-                        Gtk::FileChooser::ACTION_SAVE,
-                        nil,
-                        [Gtk::Stock::CANCEL, Gtk::Dialog::RESPONSE_CANCEL],
-                        [Gtk::Stock::SAVE, Gtk::Dialog::RESPONSE_ACCEPT]
-            )
-
-            dialog.do_overwrite_confirmation = true
-            dialog.current_folder = File.join(Dir.pwd, "dumps")
-            dialog.current_name = "#{File.basename(@filename)}.dmp.gz"
-            dialog.filter = FileFilter.new.add_pattern("*.gz")
-
-            if dialog.run == Gtk::Dialog::RESPONSE_ACCEPT
-                begin
-                    @opened.serialize(dialog.filename)
-                rescue
-                    error("Error: #{$!.message}")
-                end
-            end
-
-            dialog.destroy
         end
 
         def save_data(caption, data, filename = "")

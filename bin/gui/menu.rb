@@ -33,13 +33,6 @@ module PDFWalker
                 }
             },
             {
-                Name: "Serialize",
-                Sensitive: true,
-                Callback: lambda { |_widget, viewer, _path|
-                    viewer.parent.serialize
-                }
-            },
-            {
                 Name: :"---"
             },
             {
@@ -286,30 +279,24 @@ module PDFWalker
 
             @file_menu_open = ImageMenuItem.new(Stock::OPEN).set_accel_path("<PDF Walker>/File/Open")
             @file_menu_recent = MenuItem.new("Last opened")
-            @file_menu_deserialize = MenuItem.new("Deserialize")
             @file_menu_refresh = ImageMenuItem.new(Stock::REFRESH).set_sensitive(false).set_accel_path("<PDF Walker>/File/Refresh")
             @file_menu_close = ImageMenuItem.new(Stock::CLOSE).set_sensitive(false).set_accel_path("<PDF Walker>/File/Close")
             @file_menu_saveas = ImageMenuItem.new(Stock::SAVE_AS).set_sensitive(false).set_accel_path("<PDF Walker>/File/Save")
-            @file_menu_serialize = MenuItem.new("Serialize").set_sensitive(false)
             @file_menu_exit = ImageMenuItem.new(Stock::QUIT).set_accel_path("<PDF Walker>/File/Quit")
 
             @file_menu_open.signal_connect('activate') do open end
-            @file_menu_deserialize.signal_connect('activate') do deserialize end
             @file_menu_refresh.signal_connect('activate') do open(@filename) end
             @file_menu_close.signal_connect('activate') do close end
             @file_menu_saveas.signal_connect('activate') do save end
-            @file_menu_serialize.signal_connect('activate') do serialize end
             @file_menu_exit.signal_connect('activate') do self.destroy end
 
             update_recent_menu
 
             @file_menu.append(@file_menu_open)
             @file_menu.append(@file_menu_recent)
-            @file_menu.append(@file_menu_deserialize)
             @file_menu.append(@file_menu_refresh)
             @file_menu.append(@file_menu_close)
             @file_menu.append(@file_menu_saveas)
-            @file_menu.append(@file_menu_serialize)
             @file_menu.append(@file_menu_exit)
 
             @menu.append(MenuItem.new('_File').set_submenu(@file_menu))

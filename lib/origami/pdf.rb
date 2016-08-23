@@ -145,15 +145,6 @@ module Origami
                 pdf.save(output, options)
             end
             alias write create
-
-            #
-            # Deserializes a PDF dump.
-            #
-            def deserialize(filename)
-                Zlib::GzipReader.open(filename) { |gz|
-                    return Marshal.load(gz.read)
-                }
-            end
         end
 
         #
@@ -195,21 +186,6 @@ module Origami
         #
         def original_data
             @parser.target_data if @parser
-        end
-
-        #
-        # Serializes the current PDF.
-        #
-        def serialize(filename)
-            parser = @parser
-            @parser = nil # do not serialize the parser
-
-            Zlib::GzipWriter.open(filename) { |gz|
-                gz.write Marshal.dump(self)
-            }
-
-            @parser = parser
-            self
         end
 
         #
