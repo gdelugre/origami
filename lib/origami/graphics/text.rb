@@ -109,22 +109,22 @@ module Origami
         #
         # Text instructions definitions
         #
-        insn  'Tc', Real do |canvas, cS| canvas.gs.text_state.char_spacing = cS end
-        insn  'Tw', Real do |canvas, wS| canvas.gs.text_state.word_spacing = wS end
-        insn  'Tz', Real do |canvas, s| canvas.gs.text_state.scaling = s end
-        insn  'TL', Real do |canvas, l| canvas.gs.text_state.leading = l end
+        insn 'Tc', Real do |canvas, cS| canvas.gs.text_state.char_spacing = cS end
+        insn 'Tw', Real do |canvas, wS| canvas.gs.text_state.word_spacing = wS end
+        insn 'Tz', Real do |canvas, s| canvas.gs.text_state.scaling = s end
+        insn 'TL', Real do |canvas, l| canvas.gs.text_state.leading = l end
 
-        insn  'Tf', Name, Real do |canvas, font, size|
+        insn 'Tf', Name, Real do |canvas, font, size|
             canvas.gs.text_state.font = font
             canvas.gs.text_state.font_size = size
         end
 
-        insn  'Tr', Integer do |canvas, r| canvas.gs.text_state.rendering_mode = r end
-        insn  'Ts', Real do |canvas, s| canvas.gs.text_state.text_rise = s end
-        insn  'BT' do |canvas| canvas.gs.text_state.begin_text_object end
-        insn  'ET' do |canvas| canvas.gs.text_state.end_text_object end
+        insn 'Tr', Integer do |canvas, r| canvas.gs.text_state.rendering_mode = r end
+        insn 'Ts', Real do |canvas, s| canvas.gs.text_state.text_rise = s end
+        insn 'BT' do |canvas| canvas.gs.text_state.begin_text_object end
+        insn 'ET' do |canvas| canvas.gs.text_state.end_text_object end
 
-        insn  'Td', Real, Real do |canvas, tx, ty|
+        insn 'Td', Real, Real do |canvas, tx, ty|
             unless canvas.gs.text_state.is_in_text_object?
                 raise TextStateError, "Must be in a text object to use operator : Td"
             end
@@ -134,7 +134,7 @@ module Origami
             Matrix.rows([[1,0,0],[0,1,0],[tx, ty, 1]]) * canvas.gs.text_state.text_line_matrix
         end
 
-        insn  'TD', Real, Real do |canvas, tx, ty|
+        insn 'TD', Real, Real do |canvas, tx, ty|
             unless canvas.gs.text_state.is_in_text_object?
                 raise TextStateError, "Must be in a text object to use operator : TD"
             end
@@ -146,7 +146,7 @@ module Origami
             Matrix.rows([[1,0,0],[0,1,0],[tx,ty,1]]) * canvas.gs.text_state.text_line_matrix
         end
 
-        insn  'Tm', Real, Real, Real, Real, Real, Real do |canvas, a, b, c, d, e, f|
+        insn 'Tm', Real, Real, Real, Real, Real, Real do |canvas, a, b, c, d, e, f|
             unless canvas.gs.text_state.is_in_text_object?
                 raise TextStateError, "Must be in a text object to use operator : Tm"
             end
@@ -156,7 +156,7 @@ module Origami
             Matrix.rows([[a,b,0],[c,d,0],[e,f,1]])
         end
 
-        insn  'T*' do |canvas|
+        insn 'T*' do |canvas|
             unless canvas.gs.text_state.is_in_text_object?
                 raise TextStateError, "Must be in a text object to use operator : T*"
             end
@@ -168,7 +168,7 @@ module Origami
             Matrix.rows([[1,0,0],[0,1,0],[tx, ty, 1]]) * canvas.gs.text_state.text_line_matrix
         end
 
-        insn  'Tj', String do |canvas, s|
+        insn 'Tj', String do |canvas, s|
             unless canvas.gs.text_state.is_in_text_object?
                 raise TextStateError, "Must be in a text object to use operator : Tj"
             end
@@ -176,7 +176,7 @@ module Origami
             canvas.write_text(s)
         end
 
-        insn  "'", String do |canvas, s|
+        insn "'", String do |canvas, s|
             unless canvas.gs.text_state.is_in_text_object?
                 raise TextStateError, "Must be in a text object to use operator : '"
             end
@@ -190,7 +190,7 @@ module Origami
             canvas.write_text(s)
         end
 
-        insn  '"', Real, Real, String do |canvas, w, c, s|
+        insn '"', Real, Real, String do |canvas, w, c, s|
             unless canvas.gs.text_state.is_in_text_object?
                 raise TextStateError, "Must be in a text object to use operator : \""
             end
@@ -207,7 +207,7 @@ module Origami
             canvas.write_text(s)
         end
 
-        insn  'TJ', Array do |canvas, arr|
+        insn 'TJ', Array do |canvas, arr|
             arr.each do |g|
                 case g
                 when Fixnum,Float then
