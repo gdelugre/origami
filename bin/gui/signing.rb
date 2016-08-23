@@ -106,22 +106,6 @@ module PDFWalker
 
             def open_pkcs12_file_dialog(page)
 
-                get_passwd = -> () do
-                    dialog = Dialog.new("Enter passphrase",
-                                @parent,
-                                Dialog::MODAL,
-                                [Stock::OK, Dialog::RESPONSE_OK]
-                    )
-
-                    pwd_entry = Entry.new.set_visibility(false).show
-                    dialog.vbox.pack_start(pwd_entry, true, true, 0)
-
-                    pwd = (dialog.run == Dialog::RESPONSE_OK) ? pwd_entry.text : ""
-
-                    dialog.destroy
-                    return pwd
-                end
-
                 dialog = FileChooserDialog.new("Open PKCS12 container",
                             @parent,
                             FileChooser::ACTION_OPEN,
@@ -136,7 +120,7 @@ module PDFWalker
 
                 if dialog.run == Dialog::RESPONSE_ACCEPT
                     begin
-                        p12 = OpenSSL::PKCS12::PKCS12.new(File.binread(dialog.filename), get_passwd)
+                        p12 = OpenSSL::PKCS12::PKCS12.new(File.binread(dialog.filename), method(:prompt_passphrase))
 
                         raise TypeError, "PKCS12 does not contain a RSA key" unless p12.key.is_a?(OpenSSL::PKey::RSA)
                         raise TypeError, "PKCS12 does not contain a x509 certificate" unless p12.certificate.is_a?(OpenSSL::X509::Certificate)
@@ -159,6 +143,22 @@ module PDFWalker
 
                 dialog.destroy
             end
+
+            def prompt_passphrase
+                dialog = Dialog.new("Enter passphrase",
+                            @parent,
+                            Dialog::MODAL,
+                            [Stock::OK, Dialog::RESPONSE_OK]
+                )
+
+                pwd_entry = Entry.new.set_visibility(false).show
+                dialog.vbox.pack_start(pwd_entry, true, true, 0)
+
+                pwd = pwd_entry.text if dialog.run == Dialog::RESPONSE_OK
+
+                dialog.destroy
+                pwd.to_s
+            end
         end
 
         class UsageRightsWizard < Assistant
@@ -180,33 +180,7 @@ module PDFWalker
                 signal_connect('close') { self.destroy }
 
                 signal_connect('apply') {
-                    rights = []
-
-                    rights << Origami::UsageRights::Rights::DOCUMENT_FULLSAVE if @document_fullsave.active?
-
-                    rights << Origami::UsageRights::Rights::ANNOTS_CREATE if @annots_create.active?
-                    rights << Origami::UsageRights::Rights::ANNOTS_DELETE if @annots_delete.active?
-                    rights << Origami::UsageRights::Rights::ANNOTS_MODIFY if @annots_modify.active?
-                    rights << Origami::UsageRights::Rights::ANNOTS_COPY if @annots_copy.active?
-                    rights << Origami::UsageRights::Rights::ANNOTS_IMPORT if @annots_import.active?
-                    rights << Origami::UsageRights::Rights::ANNOTS_EXPORT if @annots_export.active?
-                    rights << Origami::UsageRights::Rights::ANNOTS_ONLINE if @annots_online.active?
-                    rights << Origami::UsageRights::Rights::ANNOTS_SUMMARYVIEW if @annots_sumview.active?
-
-                    rights << Origami::UsageRights::Rights::FORM_FILLIN if @form_fillin.active?
-                    rights << Origami::UsageRights::Rights::FORM_IMPORT if @form_import.active?
-                    rights << Origami::UsageRights::Rights::FORM_EXPORT if @form_export.active?
-                    rights << Origami::UsageRights::Rights::FORM_SUBMITSTANDALONE if @form_submit.active?
-                    rights << Origami::UsageRights::Rights::FORM_SPAWNTEMPLATE if @form_spawntemplate.active?
-                    rights << Origami::UsageRights::Rights::FORM_BARCODEPLAINTEXT if @form_barcode.active?
-                    rights << Origami::UsageRights::Rights::FORM_ONLINE if @form_online.active?
-
-                    rights << Origami::UsageRights::Rights::SIGNATURE_MODIFY if @signature_modify.active?
-
-                    rights << Origami::UsageRights::Rights::EF_CREATE if @ef_create.active?
-                    rights << Origami::UsageRights::Rights::EF_DELETE if @ef_delete.active?
-                    rights << Origami::UsageRights::Rights::EF_MODIFY if @ef_modify.active?
-                    rights << Origami::UsageRights::Rights::EF_IMPORT if @ef_import.active?
+                    rights = selected_usage_rights
 
                     begin
                         pdf.enable_usage_rights(@cert, @pkey, *rights)
@@ -230,12 +204,71 @@ module PDFWalker
 
             private
 
-            def create_intro_page
-                intro = <<-INTRO
-You are about to enable Usage Rights for the current PDF document.
-To enable these features, you need to have an Adobe public/private key pair in your possession.
+            def selected_usage_rights
+                selected_document_rights +
+                selected_annotations_rights +
+                selected_form_rights +
+                selected_signature_rights +
+                selected_file_rights
+            end
 
-Make sure you have adobe.crt and adobe.key located in the current directory.
+            def selected_document_rights
+                rights = []
+                rights << Origami::UsageRights::Rights::DOCUMENT_FULLSAVE if @document_fullsave.active?
+
+                rights
+            end
+
+            def selected_annotations_rights
+                rights = []
+                rights << Origami::UsageRights::Rights::ANNOTS_CREATE if @annots_create.active?
+                rights << Origami::UsageRights::Rights::ANNOTS_DELETE if @annots_delete.active?
+                rights << Origami::UsageRights::Rights::ANNOTS_MODIFY if @annots_modify.active?
+                rights << Origami::UsageRights::Rights::ANNOTS_COPY if @annots_copy.active?
+                rights << Origami::UsageRights::Rights::ANNOTS_IMPORT if @annots_import.active?
+                rights << Origami::UsageRights::Rights::ANNOTS_EXPORT if @annots_export.active?
+                rights << Origami::UsageRights::Rights::ANNOTS_ONLINE if @annots_online.active?
+                rights << Origami::UsageRights::Rights::ANNOTS_SUMMARYVIEW if @annots_sumview.active?
+
+                rights
+            end
+
+            def selected_form_rights
+                rights = []
+                rights << Origami::UsageRights::Rights::FORM_FILLIN if @form_fillin.active?
+                rights << Origami::UsageRights::Rights::FORM_IMPORT if @form_import.active?
+                rights << Origami::UsageRights::Rights::FORM_EXPORT if @form_export.active?
+                rights << Origami::UsageRights::Rights::FORM_SUBMITSTANDALONE if @form_submit.active?
+                rights << Origami::UsageRights::Rights::FORM_SPAWNTEMPLATE if @form_spawntemplate.active?
+                rights << Origami::UsageRights::Rights::FORM_BARCODEPLAINTEXT if @form_barcode.active?
+                rights << Origami::UsageRights::Rights::FORM_ONLINE if @form_online.active?
+
+                rights
+            end
+
+            def selected_signature_rights
+                rights = []
+                rights << Origami::UsageRights::Rights::SIGNATURE_MODIFY if @signature_modify.active?
+
+                rights
+            end
+
+            def selected_file_rights
+                rights = []
+                rights << Origami::UsageRights::Rights::EF_CREATE if @ef_create.active?
+                rights << Origami::UsageRights::Rights::EF_DELETE if @ef_delete.active?
+                rights << Origami::UsageRights::Rights::EF_MODIFY if @ef_modify.active?
+                rights << Origami::UsageRights::Rights::EF_IMPORT if @ef_import.active?
+
+                rights
+            end
+
+            def create_intro_page
+                intro = <<-INTRO.gsub(/^\s+/, '')
+                    You are about to enable Usage Rights for the current PDF document.
+                    To enable these features, you need to have an Adobe public/private key pair in your possession.
+
+                    Make sure you have adobe.crt and adobe.key located in the current directory.
                 INTRO
 
                 vbox = VBox.new(false, 5)
@@ -461,11 +494,11 @@ Make sure you have adobe.crt and adobe.key located in the current directory.
             private
 
             def create_intro_page
-                intro = <<-INTRO
-You are about to sign the current PDF document.
-Once the document will be signed, no further modification will be allowed.
+                intro = <<-INTRO.gsub(/^\s+/, '')
+                    You are about to sign the current PDF document.
+                    Once the document will be signed, no further modification will be allowed.
 
-The signature process is based on assymetric cryptography, so you will basically need a public/private RSA key pair (between 1024 and 4096 bits).
+                    The signature process is based on assymetric cryptography, so you will basically need a public/private RSA key pair (between 1024 and 4096 bits).
                 INTRO
 
                 vbox = VBox.new(false, 5)
