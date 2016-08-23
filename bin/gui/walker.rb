@@ -270,6 +270,26 @@ module PDFWalker  #:nodoc:all
             @main_context = @statusbar.get_context_id 'Main'
             @statusbar.push(@main_context, 'No file selected')
         end
+
+        def start_profiling
+            if @help_menu_profile.active?
+                require 'ruby-prof'
+                RubyProf.start
+            end
+
+            result = yield
+
+            if @help_menu_profile.active?
+                result = RubyProf.stop
+                multiprinter = RubyProf::MultiPrinter.new(result)
+
+                Dir.mkdir(@config.profile_output_dir) unless Dir.exist?(@config.profile_output_dir) 
+
+                multiprinter.print(path: @config.profile_output_dir, profile: File.basename(filename))
+            end
+
+            result
+        end
     end
 
 end

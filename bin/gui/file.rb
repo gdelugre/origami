@@ -78,105 +78,18 @@ module PDFWalker
             dialog.destroy
 
             begin
-                if @help_menu_profile.active?
-                    require 'ruby-prof'
-                    RubyProf.start
+                document = start_profiling do
+                    parse_file(filename)
                 end
 
-                target = parse_file(filename)
-
-                if @help_menu_profile.active?
-                    result = RubyProf.stop
-                    multiprinter = RubyProf::MultiPrinter.new(result)
-
-                    Dir.mkdir(@config.profile_output_dir) unless Dir.exist?(@config.profile_output_dir) 
-
-                    multiprinter.print(path: @config.profile_output_dir, profile: File.basename(filename))
-                end
-
-                if target
-                    close if @opened
-                    @opened = target
-                    @filename = filename
-
-                    @config.last_opened_file(filename)
-                    @config.save
-                    update_recent_menu
-
-                    @last_search_result = []
-                    @last_search =
-                    {
-                        :expr => "",
-                        :regexp => false,
-                        :type => :body
-                    }
-
-                    self.reload
-
-                    # Enable basic file menus.
-                    [
-                        @file_menu_close, @file_menu_refresh,
-                    ].each do |menu|
-                        menu.sensitive = true
-                    end
-
-                    @explorer_history.clear
-
-                    @statusbar.push(@main_context, "Viewing #{filename}")
-
-                    if @opened.is_a?(Origami::PDF)
-
-                        # Enable save and document menu.
-                        [
-                            @file_menu_saveas,
-                            @document_menu_search,
-                            @document_menu_gotocatalog, @document_menu_gotopage, @document_menu_gotorev, @document_menu_gotoobj,
-                            @document_menu_properties, @document_menu_sign, @document_menu_ur
-                        ].each do |menu|
-                            menu.sensitive = true
-                        end
-
-                        @document_menu_gotodocinfo.sensitive = true if @opened.document_info?
-                        @document_menu_gotometadata.sensitive = true if @opened.metadata?
-                        @document_menu_gotofield.sensitive = true if @opened.form?
-
-                        page_menu = Menu.new
-                        @document_menu_gotopage.remove_submenu
-                        @opened.each_page.with_index(1) do |page, index|
-                            page_menu.append(item = MenuItem.new(index.to_s).show)
-                            item.signal_connect("activate") do @treeview.goto(page) end
-                        end
-                        @document_menu_gotopage.set_submenu(page_menu)
-
-                        field_menu = Menu.new
-                        @document_menu_gotofield.remove_submenu
-                        @opened.each_field do |field|
-                            field_name = field.T || "<unnamed field>"
-                            field_menu.append(item = MenuItem.new(field_name).show)
-                            item.signal_connect("activate") do @treeview.goto(field) end
-                        end
-                        @document_menu_gotofield.set_submenu(field_menu)
-
-                        rev_menu = Menu.new
-                        @document_menu_gotorev.remove_submenu
-                        rev_index = 1
-                        @opened.revisions.each do |rev|
-                            rev_menu.append(item = MenuItem.new(rev_index.to_s).show)
-                            item.signal_connect("activate") do @treeview.goto(rev) end
-                            rev_index = rev_index + 1
-                        end
-                        @document_menu_gotorev.set_submenu(rev_menu)
-
-                        goto_catalog
-                    end
-                end
+                set_active_document(filename, document)
 
             rescue
                 error("Error while parsing file.\n#{$!} (#{$!.class})\n" + $!.backtrace.join("\n"))
+            ensure
+                close_progressbar
+                self.activate_focus
             end
-
-            close_progressbar
-            self.activate_focus
         end
 
         def save_data(caption, data, filename = "")
@@ -229,6 +142,92 @@ module PDFWalker
         end
 
         private
+
+        def set_active_document(filename, document)
+            close if @opened
+            @opened = document
+            @filename = filename
+
+            @config.last_opened_file(filename)
+            @config.save
+            update_recent_menu
+
+            @last_search_result = []
+            @last_search =
+            {
+                :expr => "",
+                :regexp => false,
+                :type => :body
+            }
+
+            self.reload
+
+            # Enable basic file menus.
+            [
+                @file_menu_close, @file_menu_refresh,
+            ].each do |menu|
+                menu.sensitive = true
+            end
+
+            @explorer_history.clear
+
+            @statusbar.push(@main_context, "Viewing #{filename}")
+
+            setup_pdf_interface if @opened.is_a?(Origami::PDF)
+        end
+
+        def setup_pdf_interface
+            # Enable save and document menu.
+            [
+                @file_menu_saveas,
+                @document_menu_search,
+                @document_menu_gotocatalog, @document_menu_gotopage, @document_menu_gotorev, @document_menu_gotoobj,
+                @document_menu_properties, @document_menu_sign, @document_menu_ur
+            ].each do |menu|
+                menu.sensitive = true
+            end
+
+            @document_menu_gotodocinfo.sensitive = true if @opened.document_info?
+            @document_menu_gotometadata.sensitive = true if @opened.metadata?
+            @document_menu_gotofield.sensitive = true if @opened.form?
+
+            setup_page_menu
+            setup_field_menu
+            setup_revision_menu
+
+            goto_catalog
+        end
+
+        def setup_page_menu
+            page_menu = Menu.new
+            @document_menu_gotopage.remove_submenu
+            @opened.each_page.with_index(1) do |page, index|
+                page_menu.append(item = MenuItem.new(index.to_s).show)
+                item.signal_connect("activate") { @treeview.goto(page) }
+            end
+            @document_menu_gotopage.set_submenu(page_menu)
+        end
+
+        def setup_field_menu
+            field_menu = Menu.new
+            @document_menu_gotofield.remove_submenu
+            @opened.each_field do |field|
+                field_name = field.T || "<unnamed field>"
+                field_menu.append(item = MenuItem.new(field_name).show)
+                item.signal_connect("activate") { @treeview.goto(field) }
+            end
+            @document_menu_gotofield.set_submenu(field_menu)
+        end
+
+        def setup_revision_menu
+            rev_menu = Menu.new
+            @document_menu_gotorev.remove_submenu
+            @opened.revisions.each.with_index(1) do |rev, index|
+                rev_menu.append(item = MenuItem.new(index.to_s).show)
+                item.signal_connect("activate") { @treeview.goto(rev) }
+            end
+            @document_menu_gotorev.set_submenu(rev_menu)
+        end
 
         def parse_file(path)
             #
