@@ -26,14 +26,14 @@ class String #:nodoc:
         dump = ""
         counter = 0
     
-        while counter < length
+        while counter < self.length
             offset = sprintf("%010X", counter + delta)
       
-            linelen = (counter < length - bytesperline) ? bytesperline : (length - counter)
+            linelen = [ self.length - counter, bytesperline ].min
             bytes = ""
             linelen.times do |i|
-                byte = self[counter + i].ord.to_s(16)
-                byte.insert(0, "0") if byte.size < 2
+                byte = self[counter + i].ord.to_s(16).rjust(2, '0')
+
                 bytes << byte
                 bytes << " " unless i == bytesperline - 1
             end
