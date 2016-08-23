@@ -72,19 +72,7 @@ module PDFWalker
                     [ "Last modified:", stat.mtime.to_s ]
                 ]
 
-                file_table = Table.new(labels.size + 1, 3)
-
-                row = 0
-                labels.each do |name, value|
-                    file_table.attach(Label.new(name).set_alignment(1,0), 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-                    file_table.attach(Label.new(value).set_alignment(0,0), 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-
-                    row = row.succ
-                end
-
-                file_frame.border_width = 5
-                file_frame.shadow_type = Gtk::SHADOW_IN
-                file_frame.add(file_table)
+                create_table(file_frame, labels)
             end
 
             def create_document_frame(pdf)
@@ -99,33 +87,38 @@ module PDFWalker
 
                 labels =
                 [
-                    [ "Version:", "#{pdf_version} (Acrobat #{acrobat_version})" ],
-                    [ "Number of revisions:", "#{pdf.revisions.size}" ],
+                    [ "Version:",                    "#{pdf_version} (Acrobat #{acrobat_version})" ],
+                    [ "Number of revisions:",        "#{pdf.revisions.size}" ],
                     [ "Number of indirect objects:", "#{pdf.indirect_objects.size}" ],
-                    [ "Number of pages:", "#{pdf.pages.count}" ],
-                    [ "Linearized:", pdf.linearized? ? 'yes' : 'no' ],
-                    [ "Encrypted:", pdf.encrypted? ? 'yes' : 'no' ],
-                    [ "Signed:", pdf.signed? ? 'yes' : 'no' ],
-                    [ "Has usage rights:", pdf.usage_rights? ? 'yes' : 'no' ],
-                    [ "Form:", pdf.form? ? 'yes' : 'no' ],
-                    [ "XFA form:", pdf.xfa_form? ? 'yes' : 'no' ],
-                    [ "Document information:", pdf.document_info? ? 'yes' : 'no' ],
-                    [ "Metadata:", pdf.metadata? ? 'yes' : 'no' ]
+                    [ "Number of pages:",            "#{pdf.pages.count}" ],
+                    [ "Linearized:",           boolean_text(pdf.linearized?) ],
+                    [ "Encrypted:",            boolean_text(pdf.encrypted?) ],
+                    [ "Signed:",               boolean_text(pdf.signed?) ],
+                    [ "Has usage rights:",     boolean_text(pdf.usage_rights?) ],
+                    [ "Form:",                 boolean_text(pdf.form?) ],
+                    [ "XFA form:",             boolean_text(pdf.xfa_form?) ],
+                    [ "Document information:", boolean_text(pdf.document_info?) ],
+                    [ "Metadata:",             boolean_text(pdf.metadata?) ]
                 ]
 
-                pdf_table = Table.new(labels.size + 1, 3)
+                create_table(pdf_frame, labels)
+            end
 
-                row = 0
-                labels.each do |name, value|
-                    pdf_table.attach(Label.new(name).set_alignment(1,0), 0, 1, row, row + 1, Gtk::FILL,  Gtk::SHRINK, 4, 4)
-                    pdf_table.attach(Label.new(value).set_alignment(0,0), 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+            def create_table(frame, labels)
+                table = Table.new(labels.size + 1, 3)
 
-                    row = row.succ
+                labels.each_with_index do |label, row|
+                    table.attach(Label.new(label[0]).set_alignment(1,0), 0, 1, row, row + 1, Gtk::FILL,  Gtk::SHRINK, 4, 4)
+                    table.attach(Label.new(label[1]).set_alignment(0,0), 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
                 end
 
-                pdf_frame.border_width = 5
-                pdf_frame.shadow_type = Gtk::SHADOW_IN
-                pdf_frame.add(pdf_table)
+                frame.border_width = 5
+                frame.shadow_type = Gtk::SHADOW_IN
+                frame.add(table)
+            end
+
+            def boolean_text(value)
+                value ? 'yes' : 'no'
             end
         end
     end
