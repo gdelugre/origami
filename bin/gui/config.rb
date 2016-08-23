@@ -46,8 +46,9 @@ module PDFWalker
 
             def initialize(configfile = DEFAULT_CONFIG_FILE)
                 begin
-                    @conf = YAML.load(File.open(configfile)) or DEFAULT_CONFIG
+                    @conf = YAML.load(File.open(configfile))
                 rescue
+                    @conf = DEFAULT_CONFIG
                 ensure
                     @filename = configfile
                     set_missing_values
