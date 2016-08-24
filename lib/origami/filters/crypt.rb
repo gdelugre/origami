@@ -30,7 +30,7 @@ module Origami
             class DecodeParms < Dictionary
                 include StandardObject
 
-                field   :Type,      :Type => Name, :Default => :Crypt
+                field   :Type,      :Type => Name, :Default => :CryptFilterDecodeParms
                 field   :Name,      :Type => Name, :Default => :Identity
             end
         end
