@@ -25,6 +25,23 @@ module Origami
     #
     module Filter
 
+        autoload :ASCIIHex,     "origami/filters/ascii"
+        autoload :AHx,          "origami/filters/ascii"
+        autoload :ASCII85,      "origami/filters/ascii"
+        autoload :A85,          "origami/filters/ascii"
+        autoload :CCITTFax,     "origami/filters/ccitt"
+        autoload :CCF,          "origami/filters/ccitt"
+        autoload :Crypt,        "origami/filters/crypt"
+        autoload :DCT,          "origami/filters/dct"
+        autoload :Flate,        "origami/filters/flate"
+        autoload :Fl,           "origami/filters/flate"
+        autoload :JBIG2,        "origami/filters/jbig2"
+        autoload :JPX,          "origami/filters/jpx"
+        autoload :LZW,          "origami/filters/lzw"
+        autoload :RunLength,    "origami/filters/runlength"
+        autoload :RL,           "origami/filters/runlength"
+
+
         #
         # Base class for filter Exceptions.
         #
@@ -346,13 +363,3 @@ module Origami
     end
 
 end
-
-require 'origami/filters/ascii'
-require 'origami/filters/lzw'
-require 'origami/filters/flate'
-require 'origami/filters/runlength'
-require 'origami/filters/ccitt'
-require 'origami/filters/dct'
-require 'origami/filters/jbig2'
-require 'origami/filters/jpx'
-require 'origami/filters/crypt'
