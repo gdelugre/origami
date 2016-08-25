@@ -34,7 +34,7 @@ module PDFWalker
             private
 
             def open_private_key_dialog(page)
-                file_chooser_dialog('Choose a private RSA key', '*.key', '*.pem', '*.der') do
+                file_chooser_dialog('Choose a private RSA key', '*.key', '*.pem', '*.der') do |dialog|
                     begin
                         @pkey = OpenSSL::PKey::RSA.new(File.binread(dialog.filename))
 
@@ -53,7 +53,7 @@ module PDFWalker
             end
 
             def open_certificate_dialog(page)
-                file_chooser_dialog('Choose a x509 certificate', '*.crt', '*.cer', '*.pem', '*.der') do
+                file_chooser_dialog('Choose a x509 certificate', '*.crt', '*.cer', '*.pem', '*.der') do |dialog|
                     begin
                         @cert = OpenSSL::X509::Certificate.new(File.binread(dialog.filename))
 
@@ -74,7 +74,7 @@ module PDFWalker
 
             def open_pkcs12_file_dialog(page)
 
-                file_chooser_dialog('Open PKCS12 container', '*.pfx', '*.p12') do
+                file_chooser_dialog('Open PKCS12 container', '*.pfx', '*.p12') do |dialog|
                     begin
                         p12 = OpenSSL::PKCS12::PKCS12.new(File.binread(dialog.filename), method(:prompt_passphrase))
 
@@ -93,7 +93,6 @@ module PDFWalker
                         @pkey, @cert, @ca = nil, nil, []
                         @p12filename.text = ""
                         set_page_complete(page, false)
-
                     end
                 end
             end
