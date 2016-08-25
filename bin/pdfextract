@@ -135,7 +135,13 @@ begin
 
         pdf.root_objects.find_all{|obj| obj.is_a?(Stream)}.each do |stream|
             stream_file = File.join(stream_dir, "stream_#{stream.reference.refno}.dmp")
-            File.binwrite(stream_file, stream.data)
+            begin
+                File.binwrite(stream_file, stream.data)
+            rescue
+                STDERR.puts "Cannot decode stream #{stream.reference}: #{$!.message}"
+                next
+            end
+
             nstreams += 1
         end
 
@@ -161,7 +167,7 @@ begin
 
         # Also checking for presence of JavaScript in XML forms.
         if pdf.form? and pdf.Catalog.AcroForm.has_key?(:XFA)
-            xfa = pdf.Catalog.AcroForm[:XFA].solve
+            xfa = pdf.Catalog.AcroForm.XFA
 
             case xfa
             when Array then
@@ -197,10 +203,11 @@ begin
         Dir::mkdir(attachments_dir) unless File.directory?(attachments_dir)
 
         pdf.each_attachment do |name, attachment|
+            name = name.to_utf8.tr("\/\x00", "_")
             attached_file = File.join(attachments_dir, "attached_#{File.basename(name)}")
-            spec = attachment.solve
-            if spec and spec.EF and f = spec.EF.F and f.is_a?(Stream)
-                File.binwrite(attached_file, f.data)
+
+            if attachment and attachment.EF and attachment.EF.F.is_a?(Stream)
+                File.binwrite(attached_file, attachment.EF.F.data)
                 nattach += 1
             end
         end
@@ -257,6 +264,7 @@ begin
                 nimages += 1
             rescue
                 STDERR.puts "Unable to decode image (stream #{stream.reference.refno}). #{$!.message}"
+                STDERR.puts $!.backtrace.join($/)
             end
         end
 
@@ -264,5 +272,6 @@ begin
     end
 
 rescue
+    STDERR.puts $!.backtrace.join($/)
     abort "#{$!.class}: #{$!.message}"
 end
