@@ -34,21 +34,7 @@ module PDFWalker
             private
 
             def open_private_key_dialog(page)
-                dialog = FileChooserDialog.new("Choose a private RSA key",
-                            @parent,
-                            FileChooser::ACTION_OPEN,
-                            nil,
-                            [Stock::CANCEL, Dialog::RESPONSE_CANCEL],
-                            [Stock::OPEN, Dialog::RESPONSE_ACCEPT])
-
-                filter = FileFilter.new
-                filter.add_pattern("*.key")
-                filter.add_pattern("*.pem")
-                filter.add_pattern("*.der")
-
-                dialog.set_filter(filter)
-
-                if dialog.run == Dialog::RESPONSE_ACCEPT
+                file_chooser_dialog('Choose a private RSA key', '*.key', '*.pem', '*.der') do
                     begin
                         @pkey = OpenSSL::PKey::RSA.new(File.binread(dialog.filename))
 
@@ -64,31 +50,15 @@ module PDFWalker
                         @ca = [] # Shall be added to the GUI
                     end
                 end
-
-                dialog.destroy
             end
 
             def open_certificate_dialog(page)
-                dialog = FileChooserDialog.new("Choose a x509 certificate",
-                            @parent,
-                            FileChooser::ACTION_OPEN,
-                            nil,
-                            [Stock::CANCEL, Dialog::RESPONSE_CANCEL],
-                            [Stock::OPEN, Dialog::RESPONSE_ACCEPT])
-                filter = FileFilter.new
-                filter.add_pattern("*.crt")
-                filter.add_pattern("*.cer")
-                filter.add_pattern("*.pem")
-                filter.add_pattern("*.der")
-
-                dialog.set_filter(filter)
-
-                if dialog.run == Dialog::RESPONSE_ACCEPT
+                file_chooser_dialog('Choose a x509 certificate', '*.crt', '*.cer', '*.pem', '*.der') do
                     begin
                         @cert = OpenSSL::X509::Certificate.new(File.binread(dialog.filename))
 
                         @certfilename.set_text(dialog.filename)
-                        if @pkey then set_page_complete(page, true) end
+                        set_page_complete(page, true) if @pkey
 
                     rescue
                         @parent.error("Error loading file '#{File.basename(dialog.filename)}'")
@@ -100,25 +70,11 @@ module PDFWalker
                         @ca = [] # Shall be added to the GUI
                     end
                 end
-
-                dialog.destroy
             end
 
             def open_pkcs12_file_dialog(page)
 
-                dialog = FileChooserDialog.new("Open PKCS12 container",
-                            @parent,
-                            FileChooser::ACTION_OPEN,
-                            nil,
-                            [Stock::CANCEL, Dialog::RESPONSE_CANCEL],
-                            [Stock::OPEN, Dialog::RESPONSE_ACCEPT])
-                filter = FileFilter.new
-                filter.add_pattern("*.pfx")
-                filter.add_pattern("*.p12")
-
-                dialog.filter = filter
-
-                if dialog.run == Dialog::RESPONSE_ACCEPT
+                file_chooser_dialog('Open PKCS12 container', '*.pfx', '*.p12') do
                     begin
                         p12 = OpenSSL::PKCS12::PKCS12.new(File.binread(dialog.filename), method(:prompt_passphrase))
 
@@ -140,8 +96,33 @@ module PDFWalker
 
                     end
                 end
+            end
 
-                dialog.destroy
+            def create_keypair_import_page
+                labels =
+                [
+                    [ "Private RSA key:", @pkeyfilename = Entry.new,  pkeychoosebtn = Button.new(Gtk::Stock::OPEN) ],
+                    [ "Public certificate:", @certfilename = Entry.new, certchoosebtn = Button.new(Gtk::Stock::OPEN) ]
+                ]
+
+                row = 0
+                table = Table.new(2, 3)
+                labels.each do |lbl, entry, btn|
+                    entry.editable = entry.sensitive = false
+
+                    table.attach(Label.new(lbl).set_alignment(1,0), 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                    table.attach(entry, 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                    table.attach(btn, 2, 3, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+
+                    row = row.succ
+                end
+
+                pkeychoosebtn.signal_connect('clicked') { open_private_key_dialog(table) }
+                certchoosebtn.signal_connect('clicked') { open_certificate_dialog(table) }
+
+                append_page(table)
+                set_page_title(table, "Import a public/private key pair")
+                set_page_type(table, Assistant::PAGE_CONTENT)
             end
 
             def prompt_passphrase
@@ -158,6 +139,28 @@ module PDFWalker
 
                 dialog.destroy
                 pwd.to_s
+            end
+
+            def file_chooser_dialog(title, *patterns)
+                dialog = FileChooserDialog.new(title,
+                            @parent,
+                            FileChooser::ACTION_OPEN,
+                            nil,
+                            [Stock::CANCEL, Dialog::RESPONSE_CANCEL],
+                            [Stock::OPEN, Dialog::RESPONSE_ACCEPT])
+
+                filter = FileFilter.new
+                patterns.each do |pattern|
+                    filter.add_pattern(pattern)
+                end
+
+                dialog.set_filter(filter)
+
+                if dialog.run == Dialog::RESPONSE_ACCEPT
+                    yield(dialog)
+                end
+
+                dialog.destroy
             end
         end
 
@@ -205,62 +208,34 @@ module PDFWalker
             private
 
             def selected_usage_rights
-                selected_document_rights +
-                selected_annotations_rights +
-                selected_form_rights +
-                selected_signature_rights +
-                selected_file_rights
-            end
+                [
+                    [ Origami::UsageRights::Rights::DOCUMENT_FULLSAVE, @document_fullsave ],
 
-            def selected_document_rights
-                rights = []
-                rights << Origami::UsageRights::Rights::DOCUMENT_FULLSAVE if @document_fullsave.active?
+                    [ Origami::UsageRights::Rights::ANNOTS_CREATE, @annots_create ],
+                    [ Origami::UsageRights::Rights::ANNOTS_DELETE, @annots_delete ],
+                    [ Origami::UsageRights::Rights::ANNOTS_MODIFY, @annots_modify ],
+                    [ Origami::UsageRights::Rights::ANNOTS_COPY, @annots_copy ],
+                    [ Origami::UsageRights::Rights::ANNOTS_IMPORT, @annots_import ],
+                    [ Origami::UsageRights::Rights::ANNOTS_EXPORT, @annots_export ],
+                    [ Origami::UsageRights::Rights::ANNOTS_ONLINE, @annots_online ],
+                    [ Origami::UsageRights::Rights::ANNOTS_SUMMARYVIEW, @annots_sumview ],
 
-                rights
-            end
+                    [ Origami::UsageRights::Rights::FORM_FILLIN, @form_fillin ],
+                    [ Origami::UsageRights::Rights::FORM_IMPORT, @form_import ],
+                    [ Origami::UsageRights::Rights::FORM_EXPORT, @form_export ],
+                    [ Origami::UsageRights::Rights::FORM_SUBMITSTANDALONE, @form_submit ],
+                    [ Origami::UsageRights::Rights::FORM_SPAWNTEMPLATE, @form_spawntemplate ],
+                    [ Origami::UsageRights::Rights::FORM_BARCODEPLAINTEXT, @form_barcode ],
+                    [ Origami::UsageRights::Rights::FORM_ONLINE, @form_online ],
 
-            def selected_annotations_rights
-                rights = []
-                rights << Origami::UsageRights::Rights::ANNOTS_CREATE if @annots_create.active?
-                rights << Origami::UsageRights::Rights::ANNOTS_DELETE if @annots_delete.active?
-                rights << Origami::UsageRights::Rights::ANNOTS_MODIFY if @annots_modify.active?
-                rights << Origami::UsageRights::Rights::ANNOTS_COPY if @annots_copy.active?
-                rights << Origami::UsageRights::Rights::ANNOTS_IMPORT if @annots_import.active?
-                rights << Origami::UsageRights::Rights::ANNOTS_EXPORT if @annots_export.active?
-                rights << Origami::UsageRights::Rights::ANNOTS_ONLINE if @annots_online.active?
-                rights << Origami::UsageRights::Rights::ANNOTS_SUMMARYVIEW if @annots_sumview.active?
+                    [ Origami::UsageRights::Rights::SIGNATURE_MODIFY, @signature_modify ],
 
-                rights
-            end
-
-            def selected_form_rights
-                rights = []
-                rights << Origami::UsageRights::Rights::FORM_FILLIN if @form_fillin.active?
-                rights << Origami::UsageRights::Rights::FORM_IMPORT if @form_import.active?
-                rights << Origami::UsageRights::Rights::FORM_EXPORT if @form_export.active?
-                rights << Origami::UsageRights::Rights::FORM_SUBMITSTANDALONE if @form_submit.active?
-                rights << Origami::UsageRights::Rights::FORM_SPAWNTEMPLATE if @form_spawntemplate.active?
-                rights << Origami::UsageRights::Rights::FORM_BARCODEPLAINTEXT if @form_barcode.active?
-                rights << Origami::UsageRights::Rights::FORM_ONLINE if @form_online.active?
-
-                rights
-            end
-
-            def selected_signature_rights
-                rights = []
-                rights << Origami::UsageRights::Rights::SIGNATURE_MODIFY if @signature_modify.active?
-
-                rights
-            end
-
-            def selected_file_rights
-                rights = []
-                rights << Origami::UsageRights::Rights::EF_CREATE if @ef_create.active?
-                rights << Origami::UsageRights::Rights::EF_DELETE if @ef_delete.active?
-                rights << Origami::UsageRights::Rights::EF_MODIFY if @ef_modify.active?
-                rights << Origami::UsageRights::Rights::EF_IMPORT if @ef_import.active?
-
-                rights
+                    [ Origami::UsageRights::Rights::EF_CREATE, @ef_create ],
+                    [ Origami::UsageRights::Rights::EF_DELETE, @ef_delete ],
+                    [ Origami::UsageRights::Rights::EF_MODIFY, @ef_modify ],
+                    [ Origami::UsageRights::Rights::EF_IMPORT, @ef_import ],
+                ].select { |_, button| button.active? }
+                 .map { |right, _| right }
             end
 
             def create_intro_page
@@ -284,125 +259,115 @@ module PDFWalker
                 set_page_complete(vbox, true)
             end
 
-            def create_keypair_import_page
+            def create_rights_frame(name)
+                frame = Frame.new(name)
+                frame.border_width = 5
+                frame.shadow_type = Gtk::SHADOW_IN
 
-                labels =
+                frame
+            end
+
+            def create_document_rights_frame
+                frame = create_rights_frame(" Document ")
+
+                @document_fullsave = CheckButton.new("Full Save").set_active(true)
+
+                doc_table = Table.new(1, 2)
+                doc_table.attach(@document_fullsave, 0, 1, 0, 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                frame.add(doc_table)
+            end
+
+            def create_annotations_rights_frame
+                frame = create_rights_frame(" Annotations ")
+
+                annots_table = Table.new(4, 2)
+                annots =
                 [
-                    [ "Private RSA key:", @pkeyfilename = Entry.new,  pkeychoosebtn = Button.new(Gtk::Stock::OPEN) ],
-                    [ "Public certificate:", @certfilename = Entry.new, certchoosebtn = Button.new(Gtk::Stock::OPEN) ]
+                    [ @annots_create = CheckButton.new("Create"), @annots_import = CheckButton.new("Import") ],
+                    [ @annots_delete = CheckButton.new("Delete"), @annots_export = CheckButton.new("Export") ],
+                    [ @annots_modify = CheckButton.new("Modify"), @annots_online = CheckButton.new("Online") ],
+                    [ @annots_copy = CheckButton.new("Copy"), @annots_sumview = CheckButton.new("Summary View") ]
                 ]
 
-                row = 0
-                table = Table.new(2, 3)
-                labels.each do |lbl, entry, btn|
-                    entry.editable = entry.sensitive = false
+                annots.each_with_index do |cols, row|
+                    col1, col2 = cols
 
-                    table.attach(Label.new(lbl).set_alignment(1,0), 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-                    table.attach(entry, 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-                    table.attach(btn, 2, 3, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                    col1.active = true
+                    col2.active = true
 
-                    row = row.succ
+                    annots_table.attach(col1, 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                    annots_table.attach(col2, 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
                 end
 
-                pkeychoosebtn.signal_connect('clicked') { open_private_key_dialog(table) }
-                certchoosebtn.signal_connect('clicked') { open_certificate_dialog(table) }
+                frame.add(annots_table)
+            end
 
-                append_page(table)
-                set_page_title(table, "Import a public/private key pair")
-                set_page_type(table, Assistant::PAGE_CONTENT)
+            def create_form_rights_frame
+                frame = create_rights_frame(" Forms ")
+
+                form_table = Table.new(4, 2)
+                forms =
+                [
+                    [ @form_fillin = CheckButton.new("Fill in"), @form_spawntemplate = CheckButton.new("Spawn template") ],
+                    [ @form_import = CheckButton.new("Import"), @form_barcode = CheckButton.new("Barcode plaintext") ],
+                    [ @form_export = CheckButton.new("Export"), @form_online = CheckButton.new("Online") ],
+                    [ @form_submit = CheckButton.new("Submit stand-alone"), nil ]
+                ]
+
+                forms.each_with_index do |cols, row|
+                    col1, col2 = cols
+
+                    col1.active = true
+                    col2.active = true unless col2.nil?
+
+                    form_table.attach(col1, 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                    form_table.attach(col2, 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4) unless col2.nil?
+                end
+
+                frame.add(form_table)
+            end
+
+            def create_signature_rights_frame
+                frame = create_rights_frame(" Signature ")
+
+                @signature_modify = CheckButton.new("Modify").set_active(true)
+
+                signature_table = Table.new(1, 2)
+                signature_table.attach(@signature_modify, 0, 1, 0, 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                frame.add(signature_table)
+            end
+
+            def create_embedded_files_rights_frame
+                frame = create_rights_frame(" Embedded files ")
+
+                ef_table = Table.new(2,2)
+                ef_buttons =
+                [
+                    [ @ef_create = CheckButton.new("Create"), @ef_modify = CheckButton.new("Modify") ],
+                    [ @ef_delete = CheckButton.new("Delete"), @ef_import = CheckButton.new("Import") ]
+                ]
+
+                ef_buttons.each_with_index do |cols, row|
+                    col1, col2 = cols
+
+                    col1.active = true
+                    col2.active = true
+
+                    ef_table.attach(col1, 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                    ef_table.attach(col2, 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
+                end
+
+                frame.add(ef_table)
             end
 
             def create_rights_selection_page
                 vbox = VBox.new(false, 5)
 
-                docframe = Frame.new(" Document ")
-                docframe.border_width = 5
-                docframe.shadow_type = Gtk::SHADOW_IN
-
-                doctable = Table.new(1, 2)
-                doctable.attach(@document_fullsave = CheckButton.new("Full Save").set_active(true), 0, 1, 0, 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-                docframe.add(doctable)
-
-                annotsframe = Frame.new(" Annotations ")
-                annotsframe.border_width = 5
-                annotsframe.shadow_type = Gtk::SHADOW_IN
-
-                annotstable = Table.new(4,2)
-                annots =
-                [
-                    [ @annots_create = CheckButton.new("Create").set_active(true), @annots_import = CheckButton.new("Import").set_active(true) ],
-                    [ @annots_delete = CheckButton.new("Delete").set_active(true), @annots_export = CheckButton.new("Export").set_active(true) ],
-                    [ @annots_modify = CheckButton.new("Modify").set_active(true), @annots_online = CheckButton.new("Online").set_active(true) ],
-                    [ @annots_copy = CheckButton.new("Copy").set_active(true), @annots_sumview = CheckButton.new("Summary View").set_active(true) ]
-                ]
-
-                row = 0
-                annots.each do |col1, col2|
-                    annotstable.attach(col1, 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-                    annotstable.attach(col2, 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-
-                    row = row.succ
-                end
-
-                annotsframe.add(annotstable)
-
-                formframe = Frame.new(" Forms ")
-                formframe.border_width = 5
-                formframe.shadow_type = Gtk::SHADOW_IN
-
-                formtable = Table.new(4,2)
-                forms =
-                [
-                    [ @form_fillin = CheckButton.new("Fill in").set_active(true), @form_spawntemplate = CheckButton.new("Spawn template").set_active(true) ],
-                    [ @form_import = CheckButton.new("Import").set_active(true), @form_barcode = CheckButton.new("Barcode plaintext").set_active(true) ],
-                    [ @form_export = CheckButton.new("Export").set_active(true), @form_online = CheckButton.new("Online").set_active(true) ],
-                    [ @form_submit = CheckButton.new("Submit stand-alone").set_active(true), nil ]
-                ]
-
-                row = 0
-                forms.each do |col1, col2|
-                    formtable.attach(col1, 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-                    formtable.attach(col2, 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4) unless col2.nil?
-
-                    row = row.succ
-                end
-
-                formframe.add(formtable)
-
-                signatureframe = Frame.new(" Signature ")
-                signatureframe.border_width = 5
-                signatureframe.shadow_type = Gtk::SHADOW_IN
-
-                signaturetable = Table.new(1, 2)
-                signaturetable.attach(@signature_modify = CheckButton.new("Modify").set_active(true), 0, 1, 0, 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-                signatureframe.add(signaturetable)
-
-                efframe = Frame.new(" Embedded files ")
-                efframe.border_width = 5
-                efframe.shadow_type = Gtk::SHADOW_IN
-
-                eftable = Table.new(2,2)
-                efitems =
-                [
-                    [ @ef_create = CheckButton.new("Create").set_active(true), @ef_modify = CheckButton.new("Modify").set_active(true) ],
-                    [ @ef_delete = CheckButton.new("Delete").set_active(true), @ef_import = CheckButton.new("Import").set_active(true) ]
-                ]
-
-                row = 0
-                efitems.each do |col1, col2|
-                    eftable.attach(col1, 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-                    eftable.attach(col2, 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-
-                    row = row.succ
-                end
-
-                efframe.add(eftable)
-
-                vbox.add(docframe)
-                vbox.add(annotsframe)
-                vbox.add(formframe)
-                vbox.add(signatureframe)
-                vbox.add(efframe)
+                vbox.add create_document_rights_frame
+                vbox.add create_annotations_rights_frame
+                vbox.add create_form_rights_frame
+                vbox.add create_signature_rights_frame
+                vbox.add create_embedded_files_rights_frame
 
                 append_page(vbox)
                 set_page_title(vbox, "Select Usage Rights to enable")
@@ -546,34 +511,6 @@ module PDFWalker
                 append_page(vbox)
                 set_page_title(vbox, "Import a PKCS12 container")
                 set_page_type(vbox, Assistant::PAGE_CONTENT)
-            end
-
-            def create_keypair_import_page
-
-                labels =
-                [
-                    [ "Private RSA key:", @pkeyfilename = Entry.new,  pkeychoosebtn = Button.new(Gtk::Stock::OPEN) ],
-                    [ "Public certificate:", @certfilename = Entry.new, certchoosebtn = Button.new(Gtk::Stock::OPEN) ]
-                ]
-
-                row = 0
-                table = Table.new(2, 3)
-                labels.each do |lbl, entry, btn|
-                    entry.editable = entry.sensitive = false
-
-                    table.attach(Label.new(lbl).set_alignment(1,0), 0, 1, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-                    table.attach(entry, 1, 2, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-                    table.attach(btn, 2, 3, row, row + 1, Gtk::EXPAND | Gtk::FILL, Gtk::SHRINK, 4, 4)
-
-                    row = row.succ
-                end
-
-                pkeychoosebtn.signal_connect('clicked') { open_private_key_dialog(table) }
-                certchoosebtn.signal_connect('clicked') { open_certificate_dialog(table) }
-
-                append_page(table)
-                set_page_title(table, "Import a public/private key pair")
-                set_page_type(table, Assistant::PAGE_CONTENT)
             end
 
             def create_signature_info_page
