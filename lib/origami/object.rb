@@ -395,31 +395,18 @@ module Origami
         #
         def xrefs
             raise InvalidObjectError, "Cannot find xrefs to a direct object" unless self.indirect?
+            raise InvalidObjectError, "Not attached to any document" if self.document.nil?
 
-            if self.document.nil?
-                raise InvalidObjectError, "Not attached to any document"
-            end
-
-            refs = []
-            @document.root_objects.each do |obj|
-                if obj.is_a?(ObjectStream)
-                    obj.each do |child|
-                        case child
+            @document.each_object(compressed: true)
+                     .flat_map { |object|
+                        case object
+                        when Stream
+                            object.dictionary.xref_cache[self.reference]
                         when Dictionary, Array
-                            refs.concat child.xref_cache[self.reference] if child.xref_cache.key?(self.reference)
+                            object.xref_cache[self.reference]
                         end
-                    end
-                end
-
-                obj = obj.dictionary if obj.is_a?(Stream)
-
-                case obj
-                when Dictionary, Array
-                    refs.concat obj.xref_cache[self.reference] if obj.xref_cache.key?(self.reference)
-                end
-            end
-
-            refs
+                     }
+                     .compact!
         end
 
         #
