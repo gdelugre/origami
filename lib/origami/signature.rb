@@ -34,43 +34,28 @@ module Origami
         #
         def verify(trusted_certs: [])
             digsig = self.signature
+            digsig = digsig.cast_to(Signature::DigitalSignature) unless digsig.is_a?(Signature::DigitalSignature)
 
             unless digsig[:Contents].is_a?(String)
                 raise SignatureError, "Invalid digital signature contents"
             end
 
             store = OpenSSL::X509::Store.new
-            trusted_certs.each do |ca| store.add_cert(ca) end
+            trusted_certs.each { |ca| store.add_cert(ca) }
             flags = 0
             flags |= OpenSSL::PKCS7::NOVERIFY if trusted_certs.empty?
 
-            stream = StringScanner.new(self.original_data)
-            stream.pos = digsig[:Contents].file_offset
-            Object.typeof(stream).parse(stream)
-            endofsig_offset = stream.pos
-            stream.terminate
+            data = extract_signed_data(digsig)
+            signature = digsig[:Contents]
+            subfilter = digsig.SubFilter.value
 
-            s1,l1,s2,l2 = digsig.ByteRange
-            if s1.value != 0 or
-                (s2.value + l2.value) != self.original_data.size or
-                (s1.value + l1.value) != digsig[:Contents].file_offset or
-                s2.value != endofsig_offset
+            case subfilter
+            when Signature::DigitalSignature::PKCS7_DETACHED
+                Signature.verify_pkcs7_detached_signature(data, signature, store, flags)
 
-                raise SignatureError, "Invalid signature byte range"
-            end
 
-            data = self.original_data[s1,l1] + self.original_data[s2,l2]
-
-            case digsig.SubFilter.value.to_s
-            when 'adbe.pkcs7.detached'
-                flags |= OpenSSL::PKCS7::DETACHED
-                p7 = OpenSSL::PKCS7.new(digsig[:Contents].value)
-                raise SignatureError, "Not a PKCS7 detached signature" unless p7.detached?
-                p7.verify([], store, data, flags)
-
-            when 'adbe.pkcs7.sha1'
-                p7 = OpenSSL::PKCS7.new(digsig[:Contents].value)
-                p7.verify([], store, nil, flags) and p7.data == Digest::SHA1.digest(data)
+            when Signature::DigitalSignature::PKCS7_SHA1
+                Signature.verify_pkcs7_sha1_signature(data, signature, store, flags)
 
             else
                 raise NotImplementedError, "Unsupported method #{digsig.SubFilter}"
@@ -127,7 +112,7 @@ module Origami
                 end
 
             when 'adbe.pkcs7.sha1'
-              signfield_size = -> (crt, pkey, certs) do
+                signfield_size = -> (crt, pkey, certs) do
                     OpenSSL::PKCS7.sign(
                         crt,
                         pkey,
@@ -250,7 +235,7 @@ module Origami
         def signed?
             begin
                 self.Catalog.AcroForm.is_a?(Dictionary) and
-                self.Catalog.AcroForm.has_key?(:SigFlags) and
+                self.Catalog.AcroForm.SigFlags.is_a?(Integer) and
                 (self.Catalog.AcroForm.SigFlags & InteractiveForm::SigFlags::SIGNATURES_EXIST != 0)
             rescue InvalidReferenceError
                 false
@@ -374,6 +359,34 @@ module Origami
 
             raise SignatureError, "Cannot find digital signature"
         end
+
+        private
+
+        #
+        # Verifies the ByteRange field of a digital signature and returned the signed data.
+        #
+        def extract_signed_data(digsig)
+            # Computes the boundaries of the Contents field.
+            start_sig = digsig[:Contents].file_offset
+
+            stream = StringScanner.new(self.original_data)
+            stream.pos = digsig[:Contents].file_offset
+            Object.typeof(stream).parse(stream)
+            end_sig = stream.pos
+            stream.terminate
+
+            r1, r2 = digsig.ranges
+            if r1.begin != 0 or
+                r2.end != self.original_data.size or
+                r1.end != start_sig or
+                r2.begin != end_sig
+
+                raise SignatureError, "Invalid signature byte range"
+            end
+
+            self.original_data[r1] + self.original_data[r2]
+        end
+
     end
 
     class Perms < Dictionary
@@ -385,6 +398,21 @@ module Origami
     end
 
     module Signature
+
+        # Verifies a PKCS7 detached signature.
+        def self.verify_pkcs7_detached_signature(data, signature, store, flags)
+            pkcs7 = OpenSSL::PKCS7.new(signature)
+            raise SignatureError, "Not a PKCS7 detached signature" unless pkcs7.detached?
+
+            flags |= OpenSSL::PKCS7::DETACHED
+            pkcs7.verify([], store, data, flags)
+        end
+
+        # Verifies a PKCS7-SHA1 signature.
+        def self.verify_pkcs7_sha1_signature(data, signature, store, flags)
+            pkcs7 = OpenSSL::PKCS7.new(signature)
+            pkcs7.verify([], store, nil, flags) and pkcs7.data == Digest::SHA1.digest(data)
+        end
 
         #
         # Class representing a signature which can be embedded in DigitalSignature dictionary.
@@ -478,6 +506,10 @@ module Origami
         class DigitalSignature < Dictionary
             include StandardObject
 
+            PKCS1_RSA_SHA1  = :"adbe.x509.rsa_sha1"
+            PKCS7_SHA1      = :"adbe.pkcs7.sha1"
+            PKCS7_DETACHED  = :"adbe.pkcs7.detached"
+
             field   :Type,            :Type => Name, :Default => :Sig
             field   :Filter,          :Type => Name, :Default => :"Adobe.PPKLite", :Required => true
             field   :SubFilter,       :Type => Name
@@ -519,6 +551,18 @@ module Origami
                 content << tab * (indent - 1) << TOKENS.last
 
                 output(content)
+            end
+
+            def ranges
+                byte_range = self.ByteRange
+
+                unless byte_range.is_a?(Array) and byte_range.length == 4 and byte_range.all? {|i| i.is_a?(Integer) }
+                    raise SignatureError, "Invalid ByteRange field value"
+                end
+
+                byte_range.map(&:to_i).each_slice(2).map do |start, length|
+                    (start...start + length)
+                end
             end
 
             def signature_offset #:nodoc:
