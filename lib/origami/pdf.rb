@@ -155,16 +155,13 @@ module Origami
         def initialize(parser = nil)
             @header = PDF::Header.new
             @revisions = []
+            @parser = parser
+            @loaded = false
 
             add_new_revision
             @revisions.first.trailer = Trailer.new
 
-            if parser
-                @loaded = false
-                @parser = parser
-            else
-                init
-            end
+            init if parser.nil?
         end
 
         #
@@ -544,14 +541,14 @@ module Origami
         # Casts a PDF object into another object type.
         # The target type must be a subtype of the original type.
         #
-        def cast_object(reference, type, parser = nil) #:nodoc:
+        def cast_object(reference, type) #:nodoc:
             @revisions.each do |rev|
                 if rev.body.include?(reference)
                     object = rev.body[reference]
                     return object if object.is_a?(type)
 
                     if type < rev.body[reference].class
-                        rev.body[reference] = object.cast_to(type, parser)
+                        rev.body[reference] = object.cast_to(type, @parser)
 
                         return rev.body[reference]
                     end

@@ -27,7 +27,7 @@ module Origami
             def parse(stream) #:nodoc:
                 super(stream)
 
-                fdf = FDF.new
+                fdf = FDF.new(self)
                 fdf.header = FDF::Header.parse(@data)
                 @options[:callback].call(fdf.header)
 
@@ -43,7 +43,7 @@ module Origami
                     trailer = fdf.revisions.first.trailer
 
                     if trailer[:Root].is_a?(Reference)
-                        fdf.cast_object(trailer[:Root], FDF::Catalog, self)
+                        fdf.cast_object(trailer[:Root], FDF::Catalog)
                     end
 
                     propagate_types(fdf)

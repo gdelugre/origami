@@ -44,7 +44,7 @@ module Origami
                     trailer = address_book.revisions.first.trailer
 
                     if trailer[:Root].is_a?(Reference)
-                        address_book.cast_object(trailer[:Root], PPKLite::Catalog, self)
+                        address_book.cast_object(trailer[:Root], PPKLite::Catalog)
                     end
 
                     propagate_types(address_book)

@@ -209,6 +209,7 @@ module Origami
             @header = FDF::Header.new
             @revisions = [ Revision.new(self) ]
             @revisions.first.trailer = Trailer.new
+            @parser = parser
 
             init if parser.nil?
         end
@@ -249,10 +250,10 @@ module Origami
         end
         alias root_objects indirect_objects
 
-        def cast_object(reference, type, parser = nil) #:nodoc:
+        def cast_object(reference, type) #:nodoc:
             @revisions.each do |rev|
                 if rev.body.include?(reference) and type < rev.body[reference].class
-                    rev.body[reference] = rev.body[reference].cast_to(type, parser)
+                    rev.body[reference] = rev.body[reference].cast_to(type, @parser)
 
                     rev.body[reference]
                 else

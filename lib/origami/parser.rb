@@ -251,7 +251,7 @@ module Origami
                 current_state.each_pair do |ref, type|
                     type = [ type ] unless type.is_a?(::Array)
                     type.each do |hint|
-                        break if document.cast_object(ref, hint, self)
+                        break if document.cast_object(ref, hint)
                     end
                 end
             end
