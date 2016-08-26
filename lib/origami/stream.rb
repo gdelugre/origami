@@ -534,7 +534,7 @@ module Origami
         end
 
         def pre_build #:nodoc:
-            load! if @objects.nil?
+            load!
 
             prolog = ""
             data = ""
@@ -580,16 +580,11 @@ module Origami
             end
 
             # The object already belongs to a document.
-            unless (obj_doc = object.document).nil?
-                # Remove the previous instance if the object is indirect to avoid duplicates.
-                if obj_doc.equal?(@document)
-                    @document.delete_object(object.reference) if object.indirect?
-                else
-                    object = object.export
-                end
+            unless object.document.nil?
+                object = import_object_from_document(object)
             end
 
-            load! if @objects.nil?
+            load!
 
             object.no, object.generation = @document.allocate_new_object_number if object.no == 0
             store_object(object)
@@ -602,7 +597,7 @@ module Origami
         # Deletes Object _no_.
         #
         def delete(no)
-            load! if @objects.nil?
+            load!
 
             @objects.delete(no)
         end
@@ -619,7 +614,7 @@ module Origami
         # _no_:: The Object number.
         #
         def extract(no)
-            load! if @objects.nil?
+            load!
 
             @objects[no]
         end
@@ -629,7 +624,7 @@ module Origami
         # _index_:: The Object index in the ObjectStream.
         #
         def extract_by_index(index)
-            load! if @objects.nil?
+            load!
 
             raise TypeError, "index must be an integer" unless index.is_a?(::Integer)
             raise IndexError, "index #{index} out of range" if index < 0 or index >= @objects.size
@@ -642,7 +637,7 @@ module Origami
         # _no_:: The Object number.
         #
         def include?(no)
-            load! if @objects.nil?
+            load!
 
             @objects.include?(no)
         end
@@ -651,7 +646,7 @@ module Origami
         # Iterates over each object in the stream.
         #
         def each(&b)
-            load! if @objects.nil?
+            load!
 
             @objects.values.each(&b)
         end
@@ -670,12 +665,32 @@ module Origami
         # Returns the array of inner objects.
         #
         def objects
-            load! if @objects.nil?
+            load!
 
             @objects.values
         end
 
         private
+
+        #
+        # Preprocess the object in case it already belongs to a document.
+        # If the document is the same as the current object stream, remove the duplicate object from our document.
+        # If the object comes from another document, use the export method to create a version without references.
+        #
+        def import_object_from_document(object)
+            obj_doc = object.document
+
+            # Remove the previous instance if the object is indirect to avoid duplicates.
+            if obj_doc.equal?(@document)
+                @document.delete_object(object.reference) if object.indirect?
+
+            # Otherwise, create a exported version of the object.
+            else
+                object = object.export
+            end
+
+            object
+        end
 
         def store_object(object) #:nodoc:
             object.set_indirect(true)       # all stored objects are indirect.
@@ -686,6 +701,8 @@ module Origami
         end
 
         def load! #:nodoc:
+            return unless @objects.nil?
+
             decode!
 
             @objects = {}
