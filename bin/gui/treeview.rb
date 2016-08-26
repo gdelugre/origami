@@ -385,7 +385,7 @@ module PDFWalker
             @@appearance[:Body] = {Color: "purple", Weight: Pango::WEIGHT_BOLD, Style: Pango::STYLE_NORMAL}
             @@appearance[:XRefSection] = {Color: "purple", Weight: Pango::WEIGHT_BOLD, Style: Pango::STYLE_NORMAL}
             @@appearance[:XRefSubSection] = {Color: "brown", Weight: Pango::WEIGHT_BOLD, Style: Pango::STYLE_NORMAL}
-            @@appearance[:XRef] = {Color: "gray20", Weight: Pango::WEIGHT_BOLD, Style: Pango::STYLE_NORMAL}
+            @@appearance[:XRef] = {Weight: Pango::WEIGHT_BOLD, Style: Pango::STYLE_NORMAL}
             @@appearance[:Trailer] = {Color: "purple", Weight: Pango::WEIGHT_BOLD, Style: Pango::STYLE_NORMAL}
             @@appearance[:StartXref] = {Weight: Pango::WEIGHT_BOLD, Style: Pango::STYLE_NORMAL}
             @@appearance[:String] = {Color: "red", Weight: Pango::WEIGHT_NORMAL, Style: Pango::STYLE_ITALIC}
