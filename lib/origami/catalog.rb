@@ -39,22 +39,16 @@ module Origami
         #
         def Catalog
             cat = trailer_key(:Root)
+            raise InvalidPDFError, "Broken catalog" unless cat.is_a?(Catalog)
 
-            case cat
-            when Catalog then
-                cat
-            when Dictionary then
-                cat.cast_to(Catalog)
-            else
-                raise InvalidPDFError, "Broken catalog"
-            end
+            cat
         end
 
         #
         # Sets the current Catalog Dictionary.
         #
         def Catalog=(cat)
-            cat = cat.cast_to(Catalog) unless cat.is_a? Catalog
+            raise TypeError, "Must be a Catalog object" unless cat.is_a?(Catalog)
 
             delete_object(@revisions.last.trailer[:Root]) if @revisions.last.trailer[:Root]
 
