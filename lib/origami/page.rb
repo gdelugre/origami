@@ -154,11 +154,12 @@ module Origami
         # If _name_ is not specified, a new name will be automatically generated.
         #
         def add_resource(type, rsrc, name = nil)
-            if name.nil? and existing = self.resources(type).key(rsrc)
-                return existing
+            if name.nil?
+                rsrc_name = self.resources(type).key(rsrc)
+                return rsrc_name if rsrc_name
             end
 
-            name = new_id(type) unless name
+            name ||= new_id(type)
             target = self.is_a?(Resources) ? self : (self.Resources ||= Resources.new)
 
             rsrc_dict = (target[type] and target[type].solve) || (target[type] = Dictionary.new)
@@ -237,14 +238,6 @@ module Origami
 
             Name.new(prefix + n)
         end
-
-        def new_extgstate_id; new_id(Resources::EXTGSTATE) end
-        def new_colorspace_id; new_id(Resources::COLORSPACE) end
-        def new_pattern_id; new_id(Resources::PATTERN) end
-        def new_shading_id; new_id(Resources::SHADING) end
-        def new_xobject_id; new_id(Resources::XOBJECT) end
-        def new_font_id; new_name(Resources::FONT) end
-        def new_properties_id; new_name(Resources::PROPERTIES) end
     end
 
     #
