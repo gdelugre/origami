@@ -40,6 +40,7 @@ module Origami
         autoload :LZW,          "origami/filters/lzw"
         autoload :RunLength,    "origami/filters/runlength"
         autoload :RL,           "origami/filters/runlength"
+        autoload :Predictor,    "origami/filters/predictors"
 
 
         #
