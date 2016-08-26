@@ -72,22 +72,26 @@ module Origami
                 if pdf.encrypted?
                     warn "This document contains encrypted data!"
 
-                    passwd = @options[:password]
-                    begin
-                        pdf.decrypt(passwd)
-                    rescue EncryptionInvalidPasswordError
-                        if passwd.empty?
-                            passwd = @options[:prompt_password].call
-                            retry unless passwd.empty?
-                        end
-
-                        raise
-                    end
+                    decrypt_document(pdf)
                 end
 
                 warn "This document has been signed!" if pdf.signed?
 
                 pdf
+            end
+
+            def decrypt_document(pdf)
+                passwd = @options[:password]
+                begin
+                    pdf.decrypt(passwd)
+                rescue EncryptionInvalidPasswordError
+                    if passwd.empty?
+                        passwd = @options[:prompt_password].call
+                        retry unless passwd.empty?
+                    end
+
+                    raise
+                end
             end
         end
     end
