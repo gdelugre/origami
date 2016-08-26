@@ -513,7 +513,7 @@ module Origami
                 #
                 # We found a matching XRef.
                 #
-                if xref.is_a?(XRefToCompressedObj)
+                if xref.is_a?(XRefToCompressedObject)
                     objstm = get_object(xref.objstmno, 0, use_xrefstm: use_xrefstm)
 
                     object = objstm.extract_by_index(xref.index)
@@ -913,7 +913,7 @@ module Origami
                         if options[:use_xrefstm] and obj.parent != obj and obj.parent.is_a?(ObjectStream)
                             index = obj.parent.index(obj.no)
 
-                            xrefs_stm << XRefToCompressedObj.new(obj.parent.no, index)
+                            xrefs_stm << XRefToCompressedObject.new(obj.parent.no, index)
 
                             lastno_stm = obj.no
                         else

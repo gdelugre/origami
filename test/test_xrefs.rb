@@ -47,13 +47,13 @@ class TestXrefs < MiniTest::Test
         xrefstm = pdf.revisions.last.xrefstm
 
         assert_instance_of XRefStream, xrefstm
-        assert xrefstm.entries.all?{ |xref| xref.is_a?(XRef) or xref.is_a?(XRefToCompressedObj) }
+        assert xrefstm.entries.all?{ |xref| xref.is_a?(XRef) or xref.is_a?(XRefToCompressedObject) }
 
         pdf.each_object(compressed: true) do |object|
             xref = xrefstm.find(object.no)
 
             if object.parent.is_a?(ObjectStream)
-                assert_instance_of XRefToCompressedObj, xref
+                assert_instance_of XRefToCompressedObject, xref
                 assert_equal xref.objstmno, object.parent.no
                 assert_equal xref.index, object.parent.index(object.no)
             else

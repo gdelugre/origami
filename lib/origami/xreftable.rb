@@ -326,7 +326,7 @@ module Origami
     #
     # An xref poiting to an Object embedded in an ObjectStream.
     #
-    class XRefToCompressedObj
+    class XRefToCompressedObject
         attr_accessor :objstmno, :index
 
         def initialize(objstmno, index)
@@ -345,6 +345,9 @@ module Origami
 
             [ type , objstmno, index ].pack("B#{type_w}B#{field1_w}B#{field2_w}")
         end
+
+        def used?; true end
+        def free?; false end
     end
 
     class InvalidXRefStreamObjectError < InvalidStreamObjectError ; end
@@ -503,7 +506,7 @@ module Origami
                     when XREF_USED
                         @xrefs << XRef.new(field1, field2, XRef::USED)
                     when XREF_COMPRESSED
-                        @xrefs << XRefToCompressedObj.new(field1, field2)
+                        @xrefs << XRefToCompressedObject.new(field1, field2)
                     end
                 end
             else

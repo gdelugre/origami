@@ -257,7 +257,7 @@ module PDFWalker
             case struct
             when ::Array
                 'Body'
-            when Origami::XRef, Origami::XRefToCompressedObj
+            when Origami::XRef, Origami::XRefToCompressedObject
                 'XRef'
             else
                 struct.class.name.split('::').last
