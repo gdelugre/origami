@@ -706,49 +706,6 @@ module Origami
         end
 
         #
-        # Cleans the document from its references.
-        # Indirects objects are made direct whenever possible.
-        # TODO: Circuit-checking to avoid infinite induction
-        #
-        def logicalize #:nodoc:
-            raise NotImplementedError
-
-            processed = []
-
-            convert = -> (root) do
-                replaced = []
-                if root.is_a?(Dictionary) or root.is_a?(Array)
-                    root.each do |obj|
-                        convert[obj]
-                    end
-
-                    root.map! do |obj|
-                        if obj.is_a?(Reference)
-                            target = obj.solve
-                            # Streams can't be direct objects
-                            if target.is_a?(Stream)
-                                obj
-                            else
-                                replaced << obj
-                                target
-                            end
-                        else
-                            obj
-                        end
-                    end
-                end
-
-                replaced
-            end
-
-            @revisions.each do |revision|
-                revision.objects.each do |obj|
-                    processed.concat(convert[obj])
-                end
-            end
-        end
-
-        #
         # Converts a logical PDF view into a physical view ready for writing.
         #
         def physicalize
@@ -795,11 +752,11 @@ module Origami
                 obj.post_build
             end
 
-          indirect_objects_by_rev.each do |obj, revision|
-              build.call(obj, revision)
-          end
+            indirect_objects_by_rev.each do |obj, revision|
+                build.call(obj, revision)
+            end
 
-          self
+            self
         end
 
         #
