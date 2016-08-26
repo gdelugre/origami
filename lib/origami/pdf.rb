@@ -565,18 +565,13 @@ module Origami
         # Returns a new number/generation for future object.
         #
         def allocate_new_object_number
-            no = 1
 
-            # Deprecated number allocation policy (first available)
-            #no = no + 1 while get_object(no)
-
-            objset = self.indirect_objects
-            self.indirect_objects.find_all{|obj| obj.is_a?(ObjectStream)}.each do |objstm|
-                objstm.each{|obj| objset << obj}
+            last_object = self.each_object(compressed: true).max_by {|object| object.no }
+            if last_object.nil?
+                no = 1
+            else
+                no = last_object.no + 1
             end
-
-            allocated = objset.collect{|obj| obj.no}.compact
-            no = allocated.max + 1 unless allocated.empty?
 
             [ no, 0 ]
         end
