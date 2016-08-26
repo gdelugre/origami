@@ -829,9 +829,7 @@ module Origami
             end
 
             # Get trailer dictionary
-            trailer_info = get_trailer_info
-            raise InvalidPDFError, "No trailer information found" if trailer_info.nil?
-            trailer_dict = trailer_info.dictionary
+            trailer_dict = self.trailer.dictionary
 
             prev_xref_offset = nil
             xrefstm_offset = nil

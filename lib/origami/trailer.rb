@@ -22,6 +22,29 @@ module Origami
 
     class PDF
 
+        #
+        # Returns the current trailer.
+        # This might be either a Trailer or XRefStream.
+        #
+        def trailer
+            #
+            # First look for a standard trailer dictionary
+            #
+            if @revisions.last.trailer.has_dictionary?
+                trl = @revisions.last.trailer
+
+            #
+            # Otherwise look for a xref stream.
+            #
+            else
+                trl = @revisions.last.xrefstm
+            end
+
+            raise InvalidPDFError, "No trailer found" if trl.nil?
+
+            trl
+        end
+
         private
 
         def trailer_key?(attr) #:nodoc:
@@ -44,29 +67,9 @@ module Origami
             nil
         end
 
-        def get_trailer_info #:nodoc:
-            #
-            # First look for a standard trailer dictionary
-            #
-            if @revisions.last.trailer.has_dictionary?
-                @revisions.last.trailer
-
-            #
-            # Otherwise look for a xref stream.
-            #
-            else
-                @revisions.last.xrefstm
-            end
-        end
-
         def generate_id
-            info = get_trailer_info
-            if info.nil?
-                raise InvalidPDFError, "Cannot access trailer information"
-            end
-
             id = HexaString.new Random.new.bytes 16
-            info.ID = [ id, id ]
+            self.trailer.ID = [ id, id ]
         end
     end
 

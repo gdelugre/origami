@@ -51,8 +51,8 @@ module Origami
             raise EncryptionError, "PDF is not encrypted" unless self.encrypted?
 
             # Turn the encryption dictionary into a standard encryption dictionary.
-            encrypt_dict = trailer_key(:Encrypt)
-            handler = self.cast_object(encrypt_dict.reference, Encryption::Standard::Dictionary)
+            handler = trailer_key(:Encrypt)
+            handler = self.cast_object(handler.reference, Encryption::Standard::Dictionary)
 
             unless handler.Filter == :Standard
                 raise EncryptionNotSupportedError, "Unknown security handler : '#{handler.Filter}'"
@@ -253,8 +253,7 @@ module Origami
             encryption_key = handler.compute_user_encryption_key(user_passwd, doc_id)
 
             # Install the encryption dictionary to the document.
-            file_info = get_trailer_info
-            file_info[:Encrypt] = self << handler
+            self.trailer.Encrypt = self << handler
 
             [ handler, encryption_key ]
         end
@@ -448,8 +447,8 @@ module Origami
 
                 # remove encrypt dictionary if requested
                 if options[:decrypt]
-                    delete_object(get_trailer_info[:Encrypt])
-                    get_trailer_info[:Encrypt] = nil
+                    delete_object(self.trailer[:Encrypt])
+                    self.trailer[:Encrypt] = nil
                 end
 
                 self
