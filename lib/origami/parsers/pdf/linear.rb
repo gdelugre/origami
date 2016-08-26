@@ -54,16 +54,7 @@ module Origami
                         trailer = parse_trailer
                         pdf.revisions.last.trailer = trailer
 
-                        if trailer.startxref != 0
-                            xrefstm = pdf.get_object_by_offset(trailer.startxref)
-                        elsif trailer[:XRefStm].is_a?(Integer)
-                            xrefstm = pdf.get_object_by_offset(trailer[:XRefStm])
-                        end
-
-                        if xrefstm.is_a?(XRefStream)
-                            warn "Found a XRefStream for this revision at #{xrefstm.reference}"
-                            pdf.revisions.last.xrefstm = xrefstm
-                        end
+                        locate_xref_stream(pdf, pdf.revisions.last)
 
                     rescue
                         error "Cannot read : " + (@data.peek(10) + "...").inspect
@@ -76,6 +67,24 @@ module Origami
                 pdf.loaded!
 
                 parse_finalize(pdf)
+            end
+
+            private
+
+            def locate_xref_stream(pdf, revision)
+                trailer = revision.trailer
+
+                # Try to match the location of the last startxref / XRefStm with an XRefStream.
+                if trailer.startxref != 0
+                    xrefstm = pdf.get_object_by_offset(trailer.startxref)
+                else
+                    xrefstm = pdf.get_object_by_offset(trailer[:XRefStm])
+                end
+
+                if xrefstm.is_a?(XRefStream)
+                    warn "Found a XRefStream for this revision at #{xrefstm.reference}"
+                    revision.xrefstm = xrefstm
+                end
             end
         end
     end
