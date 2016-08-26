@@ -170,7 +170,7 @@ module Origami
         def cast_to(type, parser = nil)
             super(type)
 
-            cast = type.new(self, parser)
+            cast = type.new(self.copy, parser)
             cast.parent = self.parent
             cast.no, cast.generation = self.no, self.generation
             if self.indirect?

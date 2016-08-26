@@ -243,7 +243,7 @@ module Origami
         def cast_to(type, _parser = nil)
             super(type)
 
-            cast = type.new("", self.dictionary.to_h)
+            cast = type.new("", self.dictionary.copy)
             cast.encoded_data = self.encoded_data.dup
             cast.no, cast.generation = self.no, self.generation
             cast.set_indirect(true)
