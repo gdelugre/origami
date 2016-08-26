@@ -598,19 +598,7 @@ module Origami
                 return nil if object.nil?
 
                 if self.is_a?(Encryption::EncryptedDocument)
-                    case object
-                    when String
-                        object.extend(Encryption::EncryptedString)
-                        object.decrypted = false
-                    when Stream
-                        object.extend(Encryption::EncryptedStream)
-                        object.decrypted = false
-                    when Dictionary, Array
-                        object.strings_cache.each do |string|
-                            string.extend(Encryption::EncryptedString)
-                            string.decrypted = false
-                        end
-                    end
+                    make_encrypted_object(object)
                 end
 
                 add_to_revision(object, revision)
@@ -619,6 +607,22 @@ module Origami
             end
 
             object
+        end
+
+        #
+        # Method called on encrypted objects loaded into the document.
+        #
+        def make_encrypted_object(object)
+            case object
+            when String
+                object.extend(Encryption::EncryptedString)
+            when Stream
+                object.extend(Encryption::EncryptedStream)
+            when Dictionary, Array
+                object.strings_cache.each do |string|
+                    string.extend(Encryption::EncryptedString)
+                end
+            end
         end
 
         #
