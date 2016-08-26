@@ -29,9 +29,7 @@ module Origami
         # Pass the Page object if a block is present.
         #
         def append_page(page = Page.new)
-            unless self.Catalog and self.Catalog.Pages and self.Catalog.Pages.is_a?(PageTreeNode)
-                raise InvalidPDFError, "Invalid page tree"
-            end
+            init_page_tree
 
             treeroot = self.Catalog.Pages
 
@@ -55,9 +53,7 @@ module Origami
         # Pass the Page object if a block is present.
         #
         def insert_page(index, page = Page.new)
-            unless self.Catalog and self.Catalog.Pages and self.Catalog.Pages.is_a?(PageTreeNode)
-                raise InvalidPageTreeError, "Invalid page tree"
-            end
+            init_page_tree
 
             # Page from another document must be exported.
             page = page.export if page.document and page.document != self
@@ -73,9 +69,7 @@ module Origami
         # Returns an Enumerator of Page
         #
         def pages
-            unless self.Catalog and self.Catalog.Pages and self.Catalog.Pages.is_a?(PageTreeNode)
-                raise InvalidPageTreeError, "Invalid page tree"
-            end
+            init_page_tree
 
             self.Catalog.Pages.pages
         end
@@ -84,9 +78,7 @@ module Origami
         # Iterate through each page, returns self.
         #
         def each_page(&b)
-            unless self.Catalog and self.Catalog.Pages and self.Catalog.Pages.is_a?(PageTreeNode)
-                raise InvalidPageTreeError, "Invalid page tree"
-            end
+            init_page_tree
 
             self.Catalog.Pages.each_page(&b)
         end
@@ -95,9 +87,7 @@ module Origami
         # Get the n-th Page object.
         #
         def get_page(n)
-            unless self.Catalog and self.Catalog.Pages and self.Catalog.Pages.is_a?(PageTreeNode)
-                raise InvalidPageTreeError, "Invalid page tree"
-            end
+            init_page_tree
 
             self.Catalog.Pages.get_page(n)
         end
@@ -114,6 +104,19 @@ module Origami
         #
         def each_named_page(&b)
             each_name(Names::PAGES, &b)
+        end
+
+        private
+
+        def init_page_tree #:nodoc:
+            unless self.Catalog.key?(:Pages)
+                self.Catalog.Pages = PageTreeNode.new
+                return
+            end
+
+            unless self.Catalog.Pages.is_a?(PageTreeNode)
+                raise InvalidPageTreeError, "Root page node is not a PageTreeNode"
+            end
         end
     end
 
@@ -290,10 +293,10 @@ module Origami
         field   :Count,         :Type => Integer, :Default => 0, :Required => true
 
         def initialize(hash = {}, parser = nil)
+            super
+
             self.Count = 0
             self.Kids = []
-
-            super(hash, parser)
 
             set_indirect(true)
         end

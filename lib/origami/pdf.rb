@@ -993,7 +993,6 @@ module Origami
         #
         def init
             catalog = (self.Catalog = (trailer_key(:Root) || Catalog.new))
-            catalog.Pages = PageTreeNode.new.set_indirect(true)
             @revisions.last.trailer.Root = catalog.reference
 
             @loaded = true
