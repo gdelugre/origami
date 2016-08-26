@@ -26,7 +26,7 @@ module Origami
         # Returns true if the document contains an acrobat form.
         #
         def form?
-            (not self.Catalog.nil?) and self.Catalog.has_key? :AcroForm
+            self.Catalog.key? :AcroForm
         end
 
         #
