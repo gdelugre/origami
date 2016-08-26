@@ -639,8 +639,8 @@ module Origami
                     next
                 end
 
-                xrefs.each_with_number do |_, no|
-                    self.get_object(no)
+                xrefs.each_with_number do |xref, no|
+                    self.get_object(no) unless xref.free?
                 end
             end
 
