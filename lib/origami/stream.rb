@@ -223,11 +223,10 @@ module Origami
         def set_predictor(predictor, colors: 1, bitspercomponent: 8, columns: 1)
             filters = self.filters
 
-            unless filters.include?(:FlateDecode) or filters.include?(:LZWDecode)
+            layer = filters.index(:FlateDecode) or filters.index(:LZWDecode)
+            if layer.nil?
                 raise InvalidStreamObjectError, 'Predictor functions can only be used with Flate or LZW filters'
             end
-
-            layer = filters.index(:FlateDecode) or filters.index(:LZWDecode)
 
             params = Filter::LZW::DecodeParms.new
             params[:Predictor] = predictor
