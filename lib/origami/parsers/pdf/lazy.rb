@@ -35,20 +35,9 @@ module Origami
                 pdf = parse_initialize
                 revisions = []
 
-                # Set the scanner position at the end.
-                @data.terminate
+                # Locate the last xref offset at the end of the file.
+                xref_offset = locate_last_xref_offset
 
-                # Locate the startxref token.
-                until @data.match?(/#{Trailer::XREF_TOKEN}/)
-                    raise ParsingError, "No xref token found" if @data.pos == 0
-                    @data.pos -= 1
-                end
-
-                # Extract the offset of the last xref section.
-                trailer = Trailer.parse(@data, self)
-                raise ParsingError, "Cannot locate xref section" if trailer.startxref.zero?
-
-                xref_offset = trailer.startxref
                 while xref_offset and xref_offset != 0
 
                     # Create a new revision based on the xref section offset.
@@ -78,6 +67,29 @@ module Origami
 
             private
 
+            #
+            # The document is scanned starting from the end, by locating the last startxref token.
+            #
+            def locate_last_xref_offset
+                # Set the scanner position at the end.
+                @data.terminate
+
+                # Locate the startxref token.
+                until @data.match?(/#{Trailer::XREF_TOKEN}/)
+                    raise ParsingError, "No xref token found" if @data.pos == 0
+                    @data.pos -= 1
+                end
+
+                # Extract the offset of the last xref section.
+                trailer = Trailer.parse(@data, self)
+                raise ParsingError, "Cannot locate xref section" if trailer.startxref.zero?
+
+                trailer.startxref
+            end
+
+            # 
+            # In the LazyParser, the revisions are parsed by jumping through the cross-references (table or streams).
+            #
             def parse_revision(pdf, offset)
                 raise ParsingError, "Invalid xref offset" if offset < 0 or offset >= @data.string.size
 
@@ -88,48 +100,73 @@ module Origami
 
                 # Regular xref section.
                 if @data.match?(/#{XRef::Section::TOKEN}/)
-                    xreftable = parse_xreftable
-                    raise ParsingError, "Cannot parse xref section" if xreftable.nil?
-
-                    revision.xreftable = xreftable
-                    revision.trailer = parse_trailer
-
-                    # Handle hybrid cross-references.
-                    if revision.trailer[:XRefStm].is_a?(Integer)
-                        begin
-                            offset = revision.trailer[:XRefStm].to_i
-                            xrefstm = parse_object(offset)
-
-                            if xrefstm.is_a?(XRefStream)
-                                revision.xrefstm = xrefstm
-                            else
-                                warn "Invalid xref stream at offset #{offset}"
-                            end
-
-                        rescue
-                            warn "Cannot parse xref stream at offset #{offset}"
-                        end
-                    end
+                    parse_revision_from_xreftable(revision)
 
                 # The xrefs are stored in a stream.
                 else
-                    xrefstm = parse_object
-                    raise ParsingError, "Invalid xref stream" unless xrefstm.is_a?(XRefStream)
-
-                    revision.xrefstm = xrefstm
-
-                    # Search for the trailer.
-                    if @data.skip_until Regexp.union(Trailer::XREF_TOKEN, *Trailer::TOKENS)
-                        @data.pos -= @data.matched_size
-
-                        revision.trailer = parse_trailer
-                    else
-                        warn "No trailer found."
-                        revision.trailer = Trailer.new
-                    end
+                    parse_revision_from_xrefstm(revision)
                 end
 
                 revision
+            end
+
+            #
+            # Assume the current pointer is at the xreftable of the revision.
+            # We are expecting:
+            #   - a regular xref table, starting with xref
+            #   - a revision trailer
+            #
+            # The trailer may hold a XRefStm entry in case of hybrid references.
+            #
+            def parse_revision_from_xreftable(revision)
+                xreftable = parse_xreftable
+                raise ParsingError, "Cannot parse xref section" if xreftable.nil?
+
+                revision.xreftable = xreftable
+                revision.trailer = parse_trailer
+
+                # Handle hybrid cross-references.
+                if revision.trailer[:XRefStm].is_a?(Integer)
+                    begin
+                        offset = revision.trailer[:XRefStm].to_i
+                        xrefstm = parse_object(offset)
+
+                        if xrefstm.is_a?(XRefStream)
+                            revision.xrefstm = xrefstm
+                        else
+                            warn "Invalid xref stream at offset #{offset}"
+                        end
+
+                    rescue
+                        warn "Cannot parse xref stream at offset #{offset}"
+                    end
+                end
+            end
+
+            #
+            # Assume the current pointer is at the xref stream of the revision.
+            #
+            # The XRefStream should normally be at the end of the revision.
+            # We scan after the object for a trailer token.
+            # 
+            # The revision is allowed not to have a trailer, and the stream
+            # dictionary will be used as the trailer dictionary in that case.
+            #
+            def parse_revision_from_xrefstm(revision)
+                xrefstm = parse_object
+                raise ParsingError, "Invalid xref stream" unless xrefstm.is_a?(XRefStream)
+
+                revision.xrefstm = xrefstm
+
+                # Search for the trailer.
+                if @data.skip_until Regexp.union(Trailer::XREF_TOKEN, *Trailer::TOKENS)
+                    @data.pos -= @data.matched_size
+
+                    revision.trailer = parse_trailer
+                else
+                    warn "No trailer found."
+                    revision.trailer = Trailer.new
+                end
             end
         end
     end
