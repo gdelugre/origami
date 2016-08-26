@@ -62,6 +62,8 @@ module Origami
             end
 
             def parse_finalize(pdf) #:nodoc:
+                cast_trailer_objects(pdf)
+
                 warn "This file has been linearized." if pdf.linearized?
 
                 propagate_types(pdf) if Origami::OPTIONS[:enable_type_propagation]
@@ -80,7 +82,23 @@ module Origami
                 pdf
             end
 
-            def decrypt_document(pdf)
+            def cast_trailer_objects(pdf) #:nodoc:
+                trailer = pdf.trailer
+
+                if trailer[:Root].is_a?(Reference)
+                    pdf.cast_object(trailer[:Root], Catalog)
+                end
+
+                if trailer[:Info].is_a?(Reference)
+                    pdf.cast_object(trailer[:Info], Metadata)
+                end
+
+                if trailer[:Encrypt].is_a?(Reference)
+                    pdf.cast_object(trailer[:Encrypt], Encryption::Standard::Dictionary)
+                end
+            end
+
+            def decrypt_document(pdf) #:nodoc:
                 passwd = @options[:password]
                 begin
                     pdf.decrypt(passwd)
