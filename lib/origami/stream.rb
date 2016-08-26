@@ -592,11 +592,7 @@ module Origami
             load! if @objects.nil?
 
             object.no, object.generation = @document.allocate_new_object_number if object.no == 0
-
-            object.set_indirect(true) # object is indirect
-            object.parent = self      # set this stream as the parent
-            object.set_document(@document)      # indirect objects need pdf information
-            @objects[object.no] = object
+            store_object(object)
 
             Reference.new(object.no, 0)
         end
@@ -681,6 +677,14 @@ module Origami
 
         private
 
+        def store_object(object) #:nodoc:
+            object.set_indirect(true)       # all stored objects are indirect.
+            object.parent = self            # set this stream as the parent.
+            object.set_document(@document)  # inherit document information.
+
+            @objects[object.no] = object
+        end
+
         def load! #:nodoc:
             decode!
 
@@ -698,7 +702,7 @@ module Origami
             end
 
             self.length.times do |i|
-                unless (0...@data.size).cover? (first_object_offset + offsets[i]) and offsets[i] >= 0
+                unless (0...@data.size).cover?(first_object_offset + offsets[i]) and offsets[i] >= 0
                     raise InvalidObjectStreamObjectError, "Invalid offset '#{offsets[i]} for object #{nums[i]}"
                 end
 
@@ -708,12 +712,10 @@ module Origami
                         "Bad embedded object format in object stream" if type.nil?
 
                 embeddedobj = type.parse(data)
-                embeddedobj.set_indirect(true) # object is indirect
-                embeddedobj.no = nums[i]       # object number
-                embeddedobj.parent = self      # set this stream as the parent
-                embeddedobj.set_document(@document) # indirect objects need pdf information
+                embeddedobj.no = nums[i] # object number
                 embeddedobj.objstm_offset = offsets[i]
-                @objects[nums[i]] = embeddedobj
+
+                store_object(embeddedobj)
             end
         end
 
