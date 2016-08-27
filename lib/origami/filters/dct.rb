@@ -52,4 +52,3 @@ module Origami
 
     end
 end
-

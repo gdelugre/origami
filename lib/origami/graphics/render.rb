@@ -59,4 +59,3 @@ module Origami
 
     end
 end
-
