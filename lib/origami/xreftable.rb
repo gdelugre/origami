@@ -124,6 +124,8 @@ module Origami
         # A subsection contains a continute set of XRef.
         #
         class Subsection
+            include Enumerable
+
             @@regexp = Regexp.new("(?<start>\\d+) (?<size>\\d+)" + WHITESPACES + "(\\r?\\n|\\r\\n?)")
 
             attr_reader :range
@@ -217,6 +219,8 @@ module Origami
         # A section contains a set of XRefSubsection.
         #
         class Section
+            include Enumerable
+
             TOKEN = "xref"
 
             @@regexp_open = Regexp.new(WHITESPACES + TOKEN + WHITESPACES + "(\\r?\\n|\\r\\n?)")
