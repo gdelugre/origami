@@ -305,23 +305,26 @@ module Origami
                                         recursive: recursive
                            ) unless block_given?
 
-            walk_object = -> (object) do
+            walk_object = -> (object, exclude) do
+                next if exclude.include?(object)
+                exclude.push(object)
+
                 case object
                 when Dictionary
                     object.each_value do |value|
                         yield(value)
-                        walk_object.call(value)
+                        walk_object.call(value, exclude)
                     end
 
                 when Array
                     object.each do |child|
                         yield(child)
-                        walk_object.call(child)
+                        walk_object.call(child, exclude)
                     end
 
                 when Stream
                     yield(object.dictionary)
-                    walk_object.call(object.dictionary)
+                    walk_object.call(object.dictionary, exclude)
                 end
             end
 
@@ -329,13 +332,14 @@ module Origami
                 revision.each_object do |object|
                     yield(object)
 
-                    walk_object.call(object) if recursive
+                    exclude = []
+                    walk_object.call(object, exclude) if recursive
 
                     if object.is_a?(ObjectStream) and compressed
                         object.each do |child_obj|
                             yield(child_obj)
 
-                            walk_object.call(child_obj) if recursive
+                            walk_object.call(child_obj, exclude) if recursive
                         end
                     end
                 end
