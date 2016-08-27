@@ -261,11 +261,6 @@ module Origami
             get_object(@revisions.first.trailer.Root)
         end
 
-        def indirect_objects
-            @revisions.inject([]) do |set, rev| set.concat(rev.objects) end
-        end
-        alias root_objects indirect_objects
-
         def save(path)
             bin = "".b
             bin << @header.to_s
