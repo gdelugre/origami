@@ -23,16 +23,6 @@ module Origami
     begin
         require 'v8'
 
-        class V8::Object
-            #def inspect
-            #   case self
-            #   when V8::Array,V8::Function then super
-            #   else
-            #       "{#{self.to_a.map{|k,v| "#{k}:#{v.inspect}"}.join(', ')}}"
-            #   end
-            #end
-        end
-
         class PDF
 
             module JavaScript
@@ -105,37 +95,43 @@ module Origami
 
                     def self.check_method_args(args, def_args)
                         if args.first.is_a?(V8::Object)
-                            args = args.first
-                            members = args.entries.map {|k, _| k}
-                            argv = []
-                            def_args.each do |def_arg|
-                                raise MissingArgError if def_arg.required and not members.include?(def_arg.name)
-
-                                if members.include?(def_arg.name)
-                                    arg = args[def_arg.name]
-                                    raise TypeError if def_arg.type and not arg.is_a?(def_arg.type)
-                                else
-                                    arg = def_arg.default
-                                end
-
-                                argv.push(arg)
-                            end
-
-                            args = argv
+                            check_method_named_args(args.first, def_args)
                         else
-                            i = 0
-                            def_args.each do |def_arg|
-                                raise MissingArgError if def_arg.required and i >= args.length
-                                raise TypeError if def_arg.type and not args[i].is_a?(def_arg.type)
+                            check_method_ordered_args(args, def_args)
+                        end
+                    end
 
-                                args.push(def_arg.default) if i >= args.length
+                    def self.check_method_named_args(object, def_args)
+                        members = object.entries.map {|k, _| k}
+                        argv = []
+                        def_args.each do |def_arg|
+                            raise MissingArgError if def_arg.required and not members.include?(def_arg.name)
 
-                                i = i + 1
+                            if members.include?(def_arg.name)
+                                arg = object[def_arg.name]
+                                raise TypeError if def_arg.type and not arg.is_a?(def_arg.type)
+                            else
+                                arg = def_arg.default
                             end
+
+                            argv.push(arg)
+                        end
+
+                        argv
+                    end
+                    private_class_method :check_method_named_args
+
+                    def self.check_method_ordered_args(args, def_args)
+                        def_args.each_with_index do |def_arg, index|
+                            raise MissingArgError if def_arg.required and index >= args.length
+                            raise TypeError if def_arg.type and not args[index].is_a?(def_arg.type)
+
+                            args.push(def_arg.default) if index >= args.length
                         end
 
                         args
                     end
+                    private_class_method :check_method_ordered_args
 
                     def self.acro_method(name, *def_args, &b)
                         define_method(name) do |*args|
@@ -507,30 +503,41 @@ module Origami
                         type_name =
                         case @field.FT.value
                         when PDF::Field::Type::BUTTON
-                            if @field.key?(:Ff)
-                                flags = @field.Ff.value
+                            button_type
 
-                                if (flags & Origami::Annotation::Widget::Button::Flags::PUSHBUTTON) != 0
-                                    'button'
-                                elsif (flags & Origami::Annotation::Widget::Button::Flags::RADIO) != 0
-                                    'radiobox'
-                                else
-                                    'checkbox'
-                                end
-                            end
                         when PDF::Field::Type::TEXT then 'text'
                         when PDF::Field::Type::SIGNATURE then 'signature'
                         when PDF::Field::Type::CHOICE
-                            if @field.key?(:Ff)
-                                if (@field.Ff.value & Origami::Annotation::Widget::Choice::Flags::COMBO).zero?
-                                    'listbox'
-                                else
-                                    'combobox'
-                                end
-                            end
+                            choice_type
                         end
 
                         type_name.to_s
+                    end
+
+                    private
+
+                    def button_type
+                        return if @field.key?(:Ff) and not @field.Ff.is_a?(Integer)
+
+                        flags = @field.Ff.to_i
+                        
+                       if (flags & Annotation::Widget::Button::Flags::PUSHBUTTON) != 0
+                           'button'
+                       elsif (flags & Annotation::Widget::Button::Flags::RADIO) != 0
+                           'radiobox'
+                       else
+                           'checkbox'
+                       end
+                    end
+
+                    def choice_type
+                        return if @field.key?(:Ff) and not @field.Ff.is_a?(Integer)
+
+                        if (@field.Ff.to_i & Annotation::Widget::Choice::Flags::COMBO) != 0
+                            'combobox'
+                        else
+                            'listbox'
+                        end
                     end
                 end
 
