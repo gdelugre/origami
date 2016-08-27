@@ -695,11 +695,7 @@ module Origami
             # Allocates object numbers and creates references.
             # Invokes object finalization methods.
             #
-            if self.is_a?(Encryption::EncryptedDocument)
-                physicalize(options)
-            else
-                physicalize
-            end
+            physicalize(options)
 
             #
             # Sets the PDF version header.
@@ -716,55 +712,56 @@ module Origami
         #
         # Converts a logical PDF view into a physical view ready for writing.
         #
-        def physicalize
-
-            #
-            # Indirect objects are added to the revision and assigned numbers.
-            #
-            build = -> (obj, revision) do
-                #
-                # Finalize any subobjects before building the stream.
-                #
-                if obj.is_a?(ObjectStream)
-                    obj.each do |subobj|
-                        build.call(subobj, revision)
-                    end
-                end
-
-                obj.pre_build
-
-                if obj.is_a?(Dictionary) or obj.is_a?(Array)
-
-                    obj.map! do |subobj|
-                        if subobj.indirect?
-                            if get_object(subobj.reference)
-                                subobj.reference
-                            else
-                                ref = add_to_revision(subobj, revision)
-                                build.call(subobj, revision)
-                                ref
-                            end
-                        else
-                            subobj
-                        end
-                    end
-
-                    obj.each do |subobj|
-                        build.call(subobj, revision)
-                    end
-
-                elsif obj.is_a?(Stream)
-                    build.call(obj.dictionary, revision)
-                end
-
-                obj.post_build
-            end
+        def physicalize(options = {})
 
             indirect_objects_by_rev.each do |obj, revision|
-                build.call(obj, revision)
+                build_object(obj, revision, options)
             end
 
             self
+        end
+
+        def build_object(object, revision, options)
+            # Build any compressed object before building the object stream.
+            if object.is_a?(ObjectStream)
+                object.each do |compressed_obj|
+                    build_object(compressed_obj, revision, options)
+                end
+            end
+
+            object.pre_build
+
+            case object
+            when Stream
+                build_object(object.dictionary, revision, options)
+            when Dictionary, Array
+                build_compound_object(object, revision, options)
+            end
+
+            object.post_build
+        end
+
+        def build_compound_object(object, revision, options)
+            return unless object.is_a?(Dictionary) or object.is_a?(Array)
+
+            # Flatten the object by adding indirect objects to the revision and
+            # replacing them with their reference.
+            object.map! do |child|
+                next(child) unless child.indirect?
+
+                if get_object(child.reference)
+                    child.reference
+                else
+                    reference = add_to_revision(child, revision)
+                    build_object(child, revision, options)
+                    reference
+                end
+            end
+
+            # Finalize all the children objects.
+            object.each do |child|
+                build_object(child, revision, options)
+            end
         end
 
         #
