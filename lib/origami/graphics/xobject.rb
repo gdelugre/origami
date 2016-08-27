@@ -645,7 +645,6 @@ module Origami
                 else
                     data = File.binread(File.expand_path(path))
                     format ||= File.extname(path)
-                    format.slice!(0) if format and format[0,1] == '.'
                 end
 
                 image = ImageXObject.new
@@ -656,22 +655,18 @@ module Origami
                     image.setFilter :DCTDecode
                     image.encoded_data = data
 
-                    image
-
                 when 'jp2','jpx','j2k','jpf','jpm','mj2'
                     image.setFilter :JPXDecode
                     image.encoded_data = data
 
-                    image
-
                 when 'jb2', 'jbig', 'jbig2'
                     image.setFilter :JBIG2Decode
                     image.encoded_data = data
-
-                    image
                 else
                     raise NotImplementedError, "Unknown file format: '#{format}'"
                 end
+
+                image
             end
 
             #
