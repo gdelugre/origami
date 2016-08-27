@@ -126,7 +126,7 @@ module Origami
             self.encryption_key = encryption_key
             self.stm_filter, self.str_filter = stream_filter, string_filter
 
-            decrypt_objects(handler)
+            decrypt_objects
 
             self
         end
@@ -172,43 +172,6 @@ module Origami
         end
 
         private
-
-        #
-        # For each object subject to encryption, convert it into an EncryptedObject and decrypt it if necessary.
-        #
-        def decrypt_objects(handler)
-            each_encryptable_object(handler) do |object|
-                case object
-                when String
-                    object.extend(Encryption::EncryptedString) unless object.is_a?(Encryption::EncryptedString)
-                    object.decrypt!
-
-                when Stream
-                    object.extend(Encryption::EncryptedStream) unless object.is_a?(Encryption::EncryptedStream)
-                end
-            end
-        end
-
-        #
-        # Iterates over each encryptable objects in the document.
-        #
-        def each_encryptable_object(handler, &b)
-
-            # Metadata may not be encrypted depending on the security handler configuration.
-            encrypt_metadata = (handler.EncryptMetadata != false)
-            metadata = self.Catalog.Metadata
-
-            self.each_object
-                .lazy
-                .flat_map { |object|
-                    case object
-                    when String, Stream then object unless object.is_a?(XRefStream) or (not encrypt_metadata and object.equal?(metadata))
-                    when Dictionary, Array then object.strings_cache unless object.equal?(handler)
-                    end
-                }
-                .select { |object| not object.nil? }
-                .each(&b)
-        end
 
         #
         # Installs the standard security dictionary, marking the document as being encrypted.
@@ -299,7 +262,7 @@ module Origami
                 version = 1
                 revision = 2
             end
-            
+
             [ version, revision ]
         end
 
@@ -369,81 +332,69 @@ module Origami
 
             private
 
-            def physicalize(options = {})
-
-                build = -> (obj, revision) do
-                    if obj.is_a?(EncryptedObject)
-                        if options[:decrypt] == true
-                            obj.pre_build
-                            obj.decrypt!
-                            obj.decrypted = false # makes it believe no encryption pass is required
-                            obj.post_build
-
-                            return
-                        end
-                    end
-
-                    if obj.is_a?(ObjectStream)
-                        obj.each do |subobj|
-                            build.call(subobj, revision)
-                        end
-                    end
-
-                    obj.pre_build
-
-                    case obj
+            #
+            # For each object subject to encryption, convert it to an EncryptedObject and decrypt it if necessary.
+            #
+            def decrypt_objects
+                each_encryptable_object do |object|
+                    case object
                     when String
-                        if not obj.equal?(@encryption_handler[:U]) and
-                           not obj.equal?(@encryption_handler[:O]) and
-                           not obj.equal?(@encryption_handler[:UE]) and
-                           not obj.equal?(@encryption_handler[:OE]) and
-                           not obj.equal?(@encryption_handler[:Perms]) and
-                           not (obj.parent.is_a?(Signature::DigitalSignature) and
-                               obj.equal?(obj.parent[:Contents])) and
-                           not obj.indirect_parent.parent.is_a?(ObjectStream)
+                        object.extend(EncryptedString) unless object.is_a?(EncryptedString)
+                        object.decrypt!
 
-                            unless obj.is_a?(EncryptedString)
-                                obj.extend(EncryptedString)
-                                obj.decrypted = true
-                            end
+                    when Stream
+                        object.extend(EncryptedStream) unless object.is_a?(EncryptedStream)
+                    end
+                end
+            end
+
+            #
+            # For each object subject to encryption, convert it to an EncryptedObject and mark it as not encrypted yet.
+            #
+            def encrypt_objects
+                each_encryptable_object do |object|
+                    case object
+                    when String
+                        unless object.is_a?(EncryptedString)
+                            object.extend(EncryptedString)
+                            object.decrypted = true
                         end
 
                     when Stream
-                        return if obj.is_a?(XRefStream)
-                        return if obj.equal?(self.Catalog.Metadata) and not @encryption_handler.EncryptMetadata
-
-                        unless obj.is_a?(EncryptedStream)
-                            obj.extend(EncryptedStream)
-                            obj.decrypted = true
-                        end
-
-                    when Dictionary, Array
-                        obj.map! do |subobj|
-                            if subobj.indirect?
-                                if get_object(subobj.reference)
-                                    subobj.reference
-                                else
-                                    ref = add_to_revision(subobj, revision)
-                                    build.call(subobj, revision)
-                                    ref
-                                end
-                            else
-                                subobj
-                            end
-                        end
-
-                        obj.each do |subobj|
-                            build.call(subobj, revision)
+                        unless object.is_a?(EncryptedStream)
+                            object.extend(EncryptedStream)
+                            object.decrypted = true
                         end
                     end
-
-                    obj.post_build
                 end
+            end
 
-                # stack up every root objects
-                indirect_objects_by_rev.each do |obj, revision|
-                    build.call(obj, revision)
-                end
+            #
+            # Iterates over each encryptable objects in the document.
+            #
+            def each_encryptable_object(&b)
+
+                # Metadata may not be encrypted depending on the security handler configuration.
+                encrypt_metadata = (@encryption_handler.EncryptMetadata != false)
+                metadata = self.Catalog.Metadata
+
+                self.each_object(recursive: true)
+                    .lazy
+                    .select { |object|
+                        case object
+                        when Stream
+                            not object.is_a?(XRefStream) or (encrypt_metadata and object.equal?(metadata))
+                        when String
+                            not object.parent.equal?(@encryption_handler)
+                        end
+                    }
+                    .each(&b)
+            end
+
+            def physicalize(options = {})
+                encrypt_objects
+
+                super
 
                 # remove encrypt dictionary if requested
                 if options[:decrypt]
@@ -452,6 +403,19 @@ module Origami
                 end
 
                 self
+            end
+
+            def build_object(object, revision, options)
+                if object.is_a?(EncryptedObject) and options[:decrypt]
+                    object.pre_build
+                    object.decrypt!
+                    object.decrypted = false # makes it believe no encryption pass is required
+                    object.post_build
+
+                    return
+                end
+
+                super
             end
         end
 
@@ -926,7 +890,7 @@ module Origami
                 end
 
                 #
-                # Set up document passwords. 
+                # Set up document passwords.
                 # Only for Revision 4 and less.
                 #
                 def set_legacy_passwords(owner_password, user_password, salt)
