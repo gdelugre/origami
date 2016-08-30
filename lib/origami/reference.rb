@@ -109,8 +109,6 @@ module Origami
         def value
             self
         end
-
-        def self.native_type ; Reference end
     end
 
 end

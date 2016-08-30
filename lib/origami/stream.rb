@@ -407,8 +407,6 @@ module Origami
         end
         alias has_key? key?
 
-        def self.native_type ; Stream end
-
         private
 
         def decoded? #:nodoc:

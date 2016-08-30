@@ -86,16 +86,6 @@ module Origami
         def to_s
             super(value.to_s)
         end
-
-        module ClassMethods #:nodoc:all
-            def native_type; Number end
-        end
-
-        def self.included(receiver) #:nodoc:
-            receiver.extend(ClassMethods)
-        end
-
-        def self.native_type; Number end #:nodoc:
     end
 
     #

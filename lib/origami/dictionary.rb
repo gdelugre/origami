@@ -213,8 +213,6 @@ module Origami
             copy
         end
 
-        def self.native_type; Dictionary end
-
         def self.add_type_info(klass, key, value) #:nodoc:
             raise TypeError, "Invalid class #{klass}" unless klass.is_a?(Class) and klass < Dictionary
 

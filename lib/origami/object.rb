@@ -319,6 +319,36 @@ module Origami
         attr_accessor :parent
 
         #
+        # Modules or classes including this module are considered native types.
+        #
+        def self.included(base)
+            base.class_variable_set(:@@native_type, base)
+            base.extend(ClassMethods)
+        end
+
+        module ClassMethods
+            # Returns the native type of the derived class or module.
+            def native_type
+                self.class_variable_get(:@@native_type)
+            end
+
+            private
+
+            # Propagate native type to submodules.
+            def included(klass)
+                klass.class_variable_set(:@@native_type, self)
+                klass.extend(ClassMethods)
+            end
+        end
+
+        #
+        # Returns the native type of the Object.
+        #
+        def native_type
+            self.class.native_type
+        end
+
+        #
         # Creates a new PDF Object.
         #
         def initialize(*cons)
@@ -636,15 +666,6 @@ module Origami
             name = (self.class.name or self.class.superclass.name or self.native_type.name)
 
             name.split("::").last.to_sym
-        end
-
-        def self.native_type; Origami::Object end #:nodoc:
-
-        #
-        # Returns the native PDF type of this Object.
-        #
-        def native_type
-            self.class.native_type
         end
 
         def cast_to(type, _parser = nil) #:nodoc:

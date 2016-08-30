@@ -127,8 +127,6 @@ module Origami
                 "#" + c.ord.to_s(16).rjust(2,"0")
             end
         end
-
-        def self.native_type ; Name end
     end
 
 end

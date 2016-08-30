@@ -105,16 +105,6 @@ module Origami
             end
         end
 
-        module ClassMethods #:nodoc:all
-            def native_type; Origami::String end
-        end
-
-        def self.included(receiver) #:nodoc:
-            receiver.extend(ClassMethods)
-        end
-
-        def self.native_type; Origami::String end #:nodoc:
-
         include Origami::Object
 
         attr_accessor :encoding

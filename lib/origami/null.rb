@@ -59,8 +59,6 @@ module Origami
         def to_s #:nodoc:
             super(TOKENS.first)
         end
-
-        def self.native_type ; Null end
     end
 
 end

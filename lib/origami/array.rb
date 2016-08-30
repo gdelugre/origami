@@ -182,8 +182,6 @@ module Origami
             cast
         end
 
-        def self.native_type ; Origami::Array end
-
         #
         # Parameterized Array class with additional typing information.
         # Example: Array.of(Integer)
