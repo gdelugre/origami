@@ -93,6 +93,26 @@ module Origami
     end
 
     #
+    # Provides an easier syntax for field access.
+    # The object must have the defined the methods #[] and #[]=.
+    #
+    # Once included, object.Field will automatically resolve to object[:Field].
+    # References are automatically followed.
+    #
+    module FieldAccessor
+        def method_missing(field, *args)
+            raise NoMethodError, "No method `#{field}' for #{self.class}" unless field =~ /^[[:upper:]]/
+
+            if field[-1] == '='
+                self[field[0..-2].to_sym] = args.first
+            else
+                object = self[field]
+                object.is_a?(Reference) ? object.solve : object
+            end
+        end
+    end
+
+    #
     # Mixin' module for objects which can store their options into an inner Dictionary.
     #
     module StandardObject #:nodoc:

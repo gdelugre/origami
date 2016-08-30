@@ -29,6 +29,7 @@ module Origami
     #
     class Dictionary < Hash
         include Origami::Object
+        include FieldAccessor
         using TypeConversion
 
         TOKENS = %w{ << >> } #:nodoc:
@@ -197,17 +198,6 @@ module Origami
             Hash[self.to_a.map!{|k, v| [ k.value, v.value ]}]
         end
         alias value to_h
-
-        def method_missing(field, *args) #:nodoc:
-            raise NoMethodError, "No method `#{field}' for #{self.class}" unless field.to_s[0,1] =~ /[A-Z]/
-
-            if field.to_s[-1,1] == '='
-                self[field.to_s[0..-2].to_sym] = args.first
-            else
-                obj = self[field];
-                obj.is_a?(Reference) ? obj.solve : obj
-            end
-        end
 
         def copy
             copy = self.class.new

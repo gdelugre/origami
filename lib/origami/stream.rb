@@ -35,6 +35,7 @@ module Origami
     class Stream
         include Origami::Object
         include StandardObject
+        include FieldAccessor
         using TypeConversion
 
         TOKENS = [ "stream" + WHITECHARS_NORET  + "\\r?\\n", "endstream" ] #:nodoc:
@@ -409,15 +410,6 @@ module Origami
         def self.native_type ; Stream end
 
         private
-
-        def method_missing(field, *args) #:nodoc:
-            if field.to_s[-1,1] == '='
-                self[field.to_s[0..-2].to_sym] = args.first
-            else
-                obj = self[field];
-                obj.is_a?(Reference) ? obj.solve : obj
-            end
-        end
 
         def decoded? #:nodoc:
             not @data.nil?
