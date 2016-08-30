@@ -134,6 +134,9 @@ module Origami
                 @fields
             end
 
+            #
+            # Define a new field with given attributes.
+            #
             def field(name, attributes)
                 if attributes[:Required] == true and attributes.has_key?(:Default) and attributes[:Type] == Name
                     self.add_type_info(self, name, attributes[:Default])
@@ -148,7 +151,30 @@ module Origami
                 define_field_methods(name)
             end
 
-            def define_field_methods(field)
+            #
+            # Returns an array of required fields for the current Object.
+            #
+            def required_fields
+                fields = []
+                @fields.each_pair do |name, attributes|
+                    fields << name if attributes[:Required] == true
+                end
+
+                fields
+            end
+
+            #
+            # Returns the expected type for a field name.
+            #
+            def hint_type(name)
+                if @fields.has_key?(name)
+                    @fields[name][:Type]
+                end
+            end
+
+            private
+
+            def define_field_methods(field) #:nodoc:
 
                 #
                 # Getter method.
@@ -175,24 +201,6 @@ module Origami
                 define_method(setter_self) do |value|
                     self[field] = value
                     self
-                end
-            end
-
-            #
-            # Returns an array of required fields for the current Object.
-            #
-            def required_fields
-                fields = []
-                @fields.each_pair do |name, attributes|
-                    fields << name if attributes[:Required] == true
-                end
-
-                fields
-            end
-
-            def hint_type(name)
-                if @fields.has_key?(name)
-                    @fields[name][:Type]
                 end
             end
         end
@@ -229,6 +237,8 @@ module Origami
 
             max
         end
+
+        private
 
         def set_default_value(field) #:nodoc:
             if self.class.fields[field][:Default]
@@ -634,7 +644,7 @@ module Origami
         # Returns the native PDF type of this Object.
         #
         def native_type
-          self.class.native_type
+            self.class.native_type
         end
 
         def cast_to(type, _parser = nil) #:nodoc:
