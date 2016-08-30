@@ -193,7 +193,7 @@ def analyze_annotation(annot, _level = 0)
                     u3dstream = dd[:"3DD"]
                 end
 
-                if u3dstream and u3dstream.has_field?(:OnInstantiate)
+                if u3dstream and u3dstream.key?(:OnInstantiate)
                     check_rights(:allowJS)
 
                     if annot.has_key?(:"3DA") # is 3d view instantiated automatically?

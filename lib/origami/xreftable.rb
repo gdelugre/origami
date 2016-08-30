@@ -402,7 +402,7 @@ module Origami
         def pre_build #:nodoc:
             load! if @xrefs.nil?
 
-            self.W = [ 1, 2, 2 ] unless has_field?(:W)
+            self.W = [ 1, 2, 2 ] unless self.key?(:W)
             self.Size = @xrefs.length + 1
 
             save!
@@ -492,7 +492,7 @@ module Origami
         end
 
         def load! #:nodoc:
-            if @xrefs.nil? and has_field?(:W)
+            if @xrefs.nil? and self.key?(:W)
                 decode!
 
                 type_w, field1_w, field2_w = field_widths

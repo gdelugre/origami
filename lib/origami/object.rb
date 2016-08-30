@@ -185,14 +185,6 @@ module Origami
         end
 
         #
-        # Check if an attribute is set in the current Object.
-        # _attr_:: The attribute name.
-        #
-        def has_field? (field)
-            not self[field].nil?
-        end
-
-        #
         # Returns the version and level required by the current Object.
         #
         def version_required #:nodoc:
@@ -227,7 +219,7 @@ module Origami
 
         def set_default_values #:nodoc:
             self.class.required_fields.each do |field|
-                set_default_value(field) unless has_field?(field)
+                set_default_value(field) unless self.key?(field)
             end
         end
 

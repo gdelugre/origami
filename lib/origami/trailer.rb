@@ -58,7 +58,7 @@ module Origami
                     return rev.trailer[attr].solve
                 elsif rev.has_xrefstm?
                     xrefstm = rev.xrefstm
-                    if xrefstm.is_a?(XRefStream) and xrefstm.has_field?(attr)
+                    if xrefstm.is_a?(XRefStream) and xrefstm.key?(attr)
                         return xrefstm[attr].solve
                     end
                 end

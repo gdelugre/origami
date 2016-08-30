@@ -607,7 +607,7 @@ module Origami
             field   :PtData,        :Type => Dictionary, :Version => "1.7", :ExtensionLevel => 3
 
             def pre_build
-                self.Resources = Resources.new.pre_build unless has_field?(:Resources)
+                self.Resources = Resources.new.pre_build unless self.key?(:Resources)
 
                 super
             end
