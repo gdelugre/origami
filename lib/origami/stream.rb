@@ -260,7 +260,7 @@ module Origami
         # Returns the uncompressed stream content.
         #
         def data
-            self.decode! unless self.decoded?
+            self.decode! unless decoded?
 
             @data
         end
@@ -280,7 +280,7 @@ module Origami
         # Returns the raw compressed stream content.
         #
         def encoded_data
-            self.encode! unless self.encoded?
+            self.encode! unless encoded?
 
             @encoded_data
         end
