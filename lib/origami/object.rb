@@ -110,6 +110,10 @@ module Origami
                 object.is_a?(Reference) ? object.solve : object
             end
         end
+
+        def respond_to_missing?(field, *)
+            not (field =~ /^[[:upper:]]/).nil? or super
+        end
     end
 
     #
