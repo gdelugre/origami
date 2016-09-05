@@ -96,12 +96,12 @@ module Origami
         def draw_polygon(coords = [], attr = {})
             load! if @instructions.nil?
 
-            stroke_color  = attr[:stroke_color] || DEFAULT_STROKE_COLOR
-            fill_color    = attr[:fill_color] || DEFAULT_FILL_COLOR
-            line_cap      = attr[:line_cap] || DEFAULT_LINECAP
-            line_join     = attr[:line_join] || DEFAULT_LINEJOIN
-            line_width    = attr[:line_width] || DEFAULT_LINEWIDTH
-            dash_pattern  = attr[:dash] || DEFAULT_DASHPATTERN
+            stroke_color  = attr.fetch(:stroke_color, DEFAULT_STROKE_COLOR)
+            fill_color    = attr.fetch(:fill_color, DEFAULT_FILL_COLOR)
+            line_cap      = attr.fetch(:line_cap, DEFAULT_LINECAP)
+            line_join     = attr.fetch(:line_join, DEFAULT_LINEJOIN)
+            line_width    = attr.fetch(:line_width, DEFAULT_LINEWIDTH)
+            dash_pattern  = attr.fetch(:dash, DEFAULT_DASHPATTERN)
 
             stroke        = attr[:stroke].nil? ? true : attr[:stroke]
             fill          = attr[:fill].nil? ? false : attr[:fill]
@@ -149,12 +149,12 @@ module Origami
         def draw_rectangle(x, y, width, height, attr = {})
             load! if @instructions.nil?
 
-            stroke_color  = attr[:stroke_color] || DEFAULT_STROKE_COLOR
-            fill_color    = attr[:fill_color] || DEFAULT_FILL_COLOR
-            line_cap      = attr[:line_cap] || DEFAULT_LINECAP
-            line_join     = attr[:line_join] || DEFAULT_LINEJOIN
-            line_width    = attr[:line_width] || DEFAULT_LINEWIDTH
-            dash_pattern  = attr[:dash] || DEFAULT_DASHPATTERN
+            stroke_color  = attr.fetch(:stroke_color, DEFAULT_STROKE_COLOR)
+            fill_color    = attr.fetch(:fill_color, DEFAULT_FILL_COLOR)
+            line_cap      = attr.fetch(:line_cap, DEFAULT_LINECAP)
+            line_join     = attr.fetch(:line_join, DEFAULT_LINEJOIN)
+            line_width    = attr.fetch(:line_width, DEFAULT_LINEWIDTH)
+            dash_pattern  = attr.fetch(:dash, DEFAULT_DASHPATTERN)
 
             stroke        = attr[:stroke].nil? ? true : attr[:stroke]
             fill          = attr[:fill].nil? ? false : attr[:fill]
@@ -198,12 +198,12 @@ module Origami
             load! if @instructions.nil?
 
             x,y       = attr[:x], attr[:y]
-            font      = attr[:font] || DEFAULT_FONT
-            size      = attr[:size] || DEFAULT_SIZE
-            leading   = attr[:leading] || DEFAULT_LEADING
-            color     = attr[:color] || attr[:fill_color] || DEFAULT_STROKE_COLOR
-            stroke_color = attr[:stroke_color] || DEFAULT_STROKE_COLOR
-            line_width    = attr[:line_width] || DEFAULT_LINEWIDTH
+            font      = attr.fetch(:font, DEFAULT_FONT)
+            size      = attr.fetch(:size, DEFAULT_SIZE)
+            leading   = attr.fetch(:leading, DEFAULT_LEADING)
+            color     = attr.fetch(:color, attr.fetch(:fill_color, DEFAULT_STROKE_COLOR))
+            stroke_color = attr.fetch(:stroke_color, DEFAULT_STROKE_COLOR)
+            line_width    = attr.fetch(:line_width, DEFAULT_LINEWIDTH)
             word_spacing  = attr[:word_spacing]
             char_spacing  = attr[:char_spacing]
             scale     = attr[:scale]
