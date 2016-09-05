@@ -197,18 +197,18 @@ module Origami
         def write(text, attr = {})
             load!
 
-            x,y       = attr[:x], attr[:y]
+            x, y      = attr[:x], attr[:y]
             font      = attr.fetch(:font, DEFAULT_FONT)
             size      = attr.fetch(:size, DEFAULT_SIZE)
             leading   = attr.fetch(:leading, DEFAULT_LEADING)
             color     = attr.fetch(:color, attr.fetch(:fill_color, DEFAULT_STROKE_COLOR))
             stroke_color = attr.fetch(:stroke_color, DEFAULT_STROKE_COLOR)
             line_width    = attr.fetch(:line_width, DEFAULT_LINEWIDTH)
-            word_spacing  = attr[:word_spacing]
-            char_spacing  = attr[:char_spacing]
-            scale     = attr[:scale]
-            rise      = attr[:rise]
-            rendering = attr[:rendering]
+            word_spacing  = attr.fetch(:word_spacing, @canvas.gs.text_state.word_spacing)
+            char_spacing  = attr.fetch(:char_spacing, @canvas.gs.text_state.char_spacing)
+            scale     = attr.fetch(:scale, @canvas.gs.text_state.scaling)
+            rise      = attr.fetch(:rise, @canvas.gs.text_state.text_rise)
+            rendering = attr.fetch(:rendering, @canvas.gs.text_state.rendering_mode)
 
             @instructions << PDF::Instruction.new('ET').render(@canvas) if (x or y) and @canvas.gs.text_state.is_in_text_object?
 
@@ -218,12 +218,12 @@ module Origami
 
             set_text_font(font, size)
             set_text_pos(x, y) if x or y
-            set_text_leading(leading) if leading
-            set_text_rendering(rendering) if rendering
-            set_text_rise(rise) if rise
-            set_text_scale(scale) if scale
-            set_text_word_spacing(word_spacing) if word_spacing
-            set_text_char_spacing(char_spacing) if char_spacing
+            set_text_leading(leading)
+            set_text_rendering(rendering)
+            set_text_rise(rise)
+            set_text_scale(scale)
+            set_text_word_spacing(word_spacing)
+            set_text_char_spacing(char_spacing)
             set_fill_color(color)
             set_stroke_color(stroke_color)
             set_line_width(line_width)
