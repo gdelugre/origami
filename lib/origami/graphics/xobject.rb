@@ -45,7 +45,7 @@ module Origami
         end
 
         def render(engine)
-            load! if @instructions.nil?
+            load!
 
             @instructions.each do |instruction|
                 instruction.render(engine)
@@ -67,13 +67,13 @@ module Origami
         end
 
         def instructions
-            load! if @instructions.nil?
+            load!
 
             @instructions
         end
 
         def draw_image(name, attr = {})
-            load! if @instructions.nil?
+            load!
 
             x, y = attr[:x], attr[:y]
 
@@ -94,7 +94,7 @@ module Origami
         # Draw a polygon from a array of coordinates.
         #
         def draw_polygon(coords = [], attr = {})
-            load! if @instructions.nil?
+            load!
 
             stroke_color  = attr.fetch(:stroke_color, DEFAULT_STROKE_COLOR)
             fill_color    = attr.fetch(:fill_color, DEFAULT_FILL_COLOR)
@@ -147,7 +147,7 @@ module Origami
         # Draw a rectangle at position (_x_,_y_) with defined _width_ and _height_.
         #
         def draw_rectangle(x, y, width, height, attr = {})
-            load! if @instructions.nil?
+            load!
 
             stroke_color  = attr.fetch(:stroke_color, DEFAULT_STROKE_COLOR)
             fill_color    = attr.fetch(:fill_color, DEFAULT_FILL_COLOR)
@@ -195,7 +195,7 @@ module Origami
         # _attr_:: Formatting attributes.
         #
         def write(text, attr = {})
-            load! if @instructions.nil?
+            load!
 
             x,y       = attr[:x], attr[:y]
             font      = attr.fetch(:font, DEFAULT_FONT)
@@ -234,14 +234,16 @@ module Origami
         end
 
         def paint_shading(shade)
-            load! if @instructions.nil?
+            load!
+
             @instructions << PDF::Instruction.new('sh', shade).render(@canvas)
 
             self
         end
 
         def set_text_font(fontname, size)
-            load! if @instructions.nil?
+            load!
+
             if fontname != @canvas.gs.text_state.font or size != @canvas.gs.text_state.font_size
                 @instructions << PDF::Instruction.new('Tf', fontname, size).render(@canvas)
             end
@@ -250,14 +252,16 @@ module Origami
         end
 
         def set_text_pos(tx,ty)
-            load! if @instructions.nil?
+            load!
+
             @instructions << PDF::Instruction.new('Td', tx, ty).render(@canvas)
 
             self
         end
 
         def set_text_leading(leading)
-            load! if @instructions.nil?
+            load!
+
             if leading != @canvas.gs.text_state.leading
                 @instructions << PDF::Instruction.new('TL', leading).render(@canvas)
             end
@@ -266,7 +270,8 @@ module Origami
         end
 
         def set_text_rendering(rendering)
-            load! if @instructions.nil?
+            load!
+
             if rendering != @canvas.gs.text_state.rendering_mode
                 @instructions << PDF::Instruction.new('Tr', rendering).render(@canvas)
             end
@@ -275,7 +280,8 @@ module Origami
         end
 
         def set_text_rise(rise)
-            load! if @instructions.nil?
+            load!
+
             if rise != @canvas.gs.text_state.text_rise
                 @instructions << PDF::Instruction.new('Ts', rise).render(@canvas)
             end
@@ -284,7 +290,8 @@ module Origami
         end
 
         def set_text_scale(scaling)
-            load! if @instructions.nil?
+            load!
+
             if scale != @canvas.gs.text_state.scaling
                 @instructions << PDF::Instruction.new('Tz', scaling).render(@canvas)
             end
@@ -293,7 +300,8 @@ module Origami
         end
 
         def set_text_word_spacing(word_spacing)
-            load! if @instructions.nil?
+            load!
+
             if word_spacing != @canvas.gs.text_state.word_spacing
                 @instructions << PDF::Instruction.new('Tw', word_spacing).render(@canvas)
             end
@@ -302,7 +310,8 @@ module Origami
         end
 
         def set_text_char_spacing(char_spacing)
-            load! if @instructions.nil?
+            load!
+
             if char_spacing != @canvas.gs.text_state.char_spacing
                 @instructions << PDF::Instruction.new('Tc', char_spacing).render(@canvas)
             end
@@ -311,7 +320,7 @@ module Origami
         end
 
         def set_fill_color(color)
-            load! if @instructions.nil?
+            load!
 
             @instructions << ( i =
                 if (color.respond_to? :r and color.respond_to? :g and color.respond_to? :b) or (color.is_a?(::Array) and color.size == 3)
@@ -341,7 +350,7 @@ module Origami
         end
 
         def set_stroke_color(color)
-            load! if @instructions.nil?
+            load!
 
             @instructions << ( i =
                 if (color.respond_to? :r and color.respond_to? :g and color.respond_to? :b) or (color.is_a?(::Array) and color.size == 3)
@@ -371,7 +380,8 @@ module Origami
         end
 
         def set_dash_pattern(pattern)
-            load! if @instructions.nil?
+            load!
+
             unless @canvas.gs.dash_pattern.eql? pattern
                 @instructions << PDF::Instruction.new('d', pattern.array, pattern.phase).render(@canvas)
             end
@@ -380,7 +390,8 @@ module Origami
         end
 
         def set_line_width(width)
-            load! if @instructions.nil?
+            load!
+
             if @canvas.gs.line_width != width
                 @instructions << PDF::Instruction.new('w', width).render(@canvas)
             end
@@ -389,7 +400,8 @@ module Origami
         end
 
         def set_line_cap(cap)
-            load! if @instructions.nil?
+            load!
+
             if @canvas.gs.line_cap != cap
                 @instructions << PDF::Instruction.new('J', cap).render(@canvas)
             end
@@ -398,7 +410,8 @@ module Origami
         end
 
         def set_line_join(join)
-            load! if @instructions.nil?
+            load!
+
             if @canvas.gs.line_join != join
                 @instructions << PDF::Instruction.new('j', join).render(@canvas)
             end
@@ -409,6 +422,8 @@ module Origami
         private
 
         def load!
+            return unless @instructions.nil?
+
             decode!
 
             code = StringScanner.new self.data
