@@ -143,7 +143,7 @@ module Origami
             #
             def field(name, attributes)
                 if attributes[:Required] == true and attributes.has_key?(:Default) and attributes[:Type] == Name
-                    self.add_type_info(self, name, attributes[:Default])
+                    self.add_type_signature(name, attributes[:Default])
                 end
 
                 if @fields.has_key?(name)

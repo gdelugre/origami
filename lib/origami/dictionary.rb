@@ -36,8 +36,8 @@ module Origami
         @@regexp_open = Regexp.new(WHITESPACES + TOKENS.first + WHITESPACES)
         @@regexp_close = Regexp.new(WHITESPACES + TOKENS.last + WHITESPACES)
 
-        @@cast_fingerprints = {}
-        @@cast_keys = []
+        @@type_signatures = {}
+        @@type_keys = []
 
         attr_reader :strings_cache, :names_cache, :xref_cache
 
@@ -99,7 +99,7 @@ module Origami
                 hash[key] = value
             end
 
-            if Origami::OPTIONS[:enable_type_guessing] and not (@@cast_keys & hash.keys).empty?
+            if Origami::OPTIONS[:enable_type_guessing] and not (@@type_keys & hash.keys).empty?
                 dict_type = self.guess_type(hash)
             else
                 dict_type = self
@@ -213,26 +213,24 @@ module Origami
             copy
         end
 
-        def self.add_type_info(klass, key, value) #:nodoc:
-            raise TypeError, "Invalid class #{klass}" unless klass.is_a?(Class) and klass < Dictionary
-
+        def self.add_type_signature(key, value) #:nodoc:
             key, value = key.to_o, value.to_o
 
             # Inherit the superclass type information.
-            if not @@cast_fingerprints.key?(klass) and @@cast_fingerprints.key?(klass.superclass)
-                @@cast_fingerprints[klass] = @@cast_fingerprints[klass.superclass].dup
+            if not @@type_signatures.key?(self) and @@type_signatures.key?(self.superclass)
+                @@type_signatures[self] = @@type_signatures[self.superclass].dup
             end
 
-            @@cast_fingerprints[klass] ||= {}
-            @@cast_fingerprints[klass][key] = value
+            @@type_signatures[self] ||= {}
+            @@type_signatures[self][key] = value
 
-            @@cast_keys.push(key) unless @@cast_keys.include?(key)
+            @@type_keys.push(key) unless @@type_keys.include?(key)
         end
 
         def self.guess_type(hash) #:nodoc:
             best_type = self
 
-            @@cast_fingerprints.each_pair do |klass, keys|
+            @@type_signatures.each_pair do |klass, keys|
                 next unless klass < best_type
 
                 best_type = klass if keys.all? { |k,v| hash[k] == v }

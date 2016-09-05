@@ -134,7 +134,7 @@ module Origami
             include StandardObject
             include Descriptor
 
-            add_type_info self, :ABEType, Descriptor::CERTIFICATE
+            add_type_signature :ABEType, Descriptor::CERTIFICATE
 
             module Flags
                 CAN_CERTIFY             = 1 << 1
@@ -160,7 +160,7 @@ module Origami
             include StandardObject
             include Descriptor
 
-            add_type_info self, :ABEType, Descriptor::USER
+            add_type_signature :ABEType, Descriptor::USER
 
             field   :ABEType,       :Type => Integer, :Default => Descriptor::USER, :Required => true
             field   :Name,          :Type => String, :Required => true
