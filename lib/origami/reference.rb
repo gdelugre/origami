@@ -104,10 +104,10 @@ module Origami
         end
 
         #
-        # Returns self.
+        # Returns the referenced object value.
         #
         def value
-            self
+            self.solve.value
         end
     end
 
