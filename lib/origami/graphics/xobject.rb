@@ -695,35 +695,35 @@ module Origami
 
                 case cs = self.ColorSpace.value
                 when Color::Space::DEVICE_GRAY
-                    colortype = 0
+                    color_type = 0
                     components = 1
                 when Color::Space::DEVICE_RGB
-                    colortype = 2
+                    color_type = 2
                     components = 3
                 when ::Array
-                    cstype = cs[0].is_a?(Reference) ? cs[0].solve : cs[0]
-                    case cstype.value
+                    cs_type = cs[0]
+                    case cs_type
                     when :Indexed
-                        colortype = 3
+                        color_type = 3
                         components = 3
-                        csbase = cs[1].is_a?(Reference) ? cs[1].solve : cs[1]
-                        lookup = cs[3].is_a?(Reference) ? cs[3].solve : cs[3]
+                        cs_base = cs[1]
+                        lookup = cs[3]
 
                     when :ICCBased
-                        iccprofile = cs[1].is_a?(Reference) ? cs[1].solve : cs[1]
+                        icc_profile = cs[1]
                         raise InvalidColorError,
-                                "Invalid ICC Profile parameter" unless iccprofile.is_a?(Stream)
+                                "Invalid ICC Profile parameter" unless icc_profile.is_a?(Stream)
 
-                        case iccprofile.N
+                        case icc_profile.N
                         when 1
-                            colortype = 0
+                            color_type = 0
                             components = 1
                         when 3
-                            colortype = 2
+                            color_type = 2
                             components = 3
                         else
                             raise InvalidColorError,
-                                    "Invalid number of components in ICC profile: #{iccprofile.N}"
+                                    "Invalid number of components in ICC profile: #{icc_profile.N}"
                         end
                     else
                         raise InvalidColorError, "Unsupported color space: #{self.ColorSpace}"
@@ -733,7 +733,7 @@ module Origami
                 end
 
                 bpc = self.BitsPerComponent || 8
-                w,h = self.Width, self.Height
+                w, h = self.Width, self.Height
                 pixels = self.data
 
                 hdr = [137, 80, 78, 71, 13, 10, 26, 10].pack('C*')
@@ -744,7 +744,7 @@ module Origami
                     'IHDR',
                     [
                         w, h,
-                        bpc, colortype, 0, 0, 0
+                        bpc, color_type, 0, 0, 0
                     ].pack("N2C5")
                 ]
 
@@ -783,7 +783,7 @@ module Origami
                     ]
                 end
 
-                if colortype == 3
+                if color_type == 3
                     lookup =
                         case lookup
                         when Stream then lookup.data
@@ -792,10 +792,10 @@ module Origami
                             raise InvalidColorError, "Invalid indexed palette table"
                         end
 
-                    raise InvalidColorError, "Invalid base color space" unless csbase
+                    raise InvalidColorError, "Invalid base color space" unless cs_base
                     palette = ""
 
-                    case csbase.value
+                    case cs_base
                     when Color::Space::DEVICE_GRAY
                         lookup.each_byte do |g|
                             palette << Color.gray_to_rgb(g).pack("C3")
@@ -810,13 +810,13 @@ module Origami
                         end
                     when ::Array
 
-                        case csbase[0].solve.value
+                        case cs_base[0]
                         when :ICCBased
-                            iccprofile = csbase[1].solve
+                            icc_profile = cs_base[1]
                             raise InvalidColorError,
-                                    "Invalid ICC Profile parameter" unless iccprofile.is_a?(Stream)
+                                    "Invalid ICC Profile parameter" unless icc_profile.is_a?(Stream)
 
-                            case iccprofile.N
+                            case icc_profile.N
                             when 1
                                 lookup.each_byte do |g|
                                     palette << Color.gray_to_rgb(g).pack("C3")
@@ -825,20 +825,20 @@ module Origami
                                 palette << lookup[0, (lookup.size / 3) * 3]
                             else
                                 raise InvalidColorError,
-                                        "Invalid number of components in ICC profile: #{iccprofile.N}"
+                                        "Invalid number of components in ICC profile: #{icc_profile.N}"
                             end
                         else
-                            raise InvalidColorError, "Unsupported color space: #{csbase}"
+                            raise InvalidColorError, "Unsupported color space: #{cs_base}"
                         end
                     else
-                        raise InvalidColorError, "Unsupported color space: #{csbase}"
+                        raise InvalidColorError, "Unsupported color space: #{cs_base}"
                     end
 
-                    if iccprofile
+                    if icc_profile
                         chunks <<
                         [
                             'iCCP',
-                            'ICC Profile' + "\x00\x00" + Zlib::Deflate.deflate(iccprofile.data, Zlib::BEST_COMPRESSION)
+                            'ICC Profile' + "\x00\x00" + Zlib::Deflate.deflate(icc_profile.data, Zlib::BEST_COMPRESSION)
                         ]
                     end
 
@@ -850,12 +850,12 @@ module Origami
 
                     bpr = w
 
-                else # colortype != 3
-                    if iccprofile
+                else # color_type != 3
+                    if icc_profile
                         chunks <<
                         [
                             'iCCP',
-                            'ICC Profile' + "\x00\x00" + Zlib::Deflate.deflate(iccprofile.data, Zlib::BEST_COMPRESSION)
+                            'ICC Profile' + "\x00\x00" + Zlib::Deflate.deflate(icc_profile.data, Zlib::BEST_COMPRESSION)
                         ]
                     end
 
