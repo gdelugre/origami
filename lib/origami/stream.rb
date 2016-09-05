@@ -141,9 +141,9 @@ module Origami
 
             stm =
                 if Origami::OPTIONS[:enable_type_guessing]
-                    self.guess_type(dictionary).new('', dictionary.to_h)
+                    self.guess_type(dictionary).new('', dictionary)
                 else
-                    Stream.new('', dictionary.to_h)
+                    Stream.new('', dictionary)
                 end
 
             raw_data.chomp!(TOKENS.last)
