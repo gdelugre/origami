@@ -260,7 +260,7 @@ module Origami
                         next # Skip object if a decoding error occured.
                     end
 
-                    next if object.is_a?(ObjectStream) and not object_streams
+                    next unless object.is_a?(ObjectStream) and object_streams
 
                     object.each do |subobject|
                         search_object.call(subobject)
