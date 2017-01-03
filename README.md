@@ -45,6 +45,7 @@ Then import Origami with:
 
 ```ruby
 require 'origami'
+include Origami
 ```
 
 To process a PDF document, you can use the ``PDF.read`` method:
