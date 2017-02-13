@@ -248,35 +248,9 @@ module Origami
 
             result = []
 
-            search_object = -> (object) do
-                case object
-                when Stream
-                    result.concat object.dictionary.strings_cache.select{|str| pattern === str}
-                    result.concat object.dictionary.names_cache.select{|name| pattern === name.value}
-
-                    begin
-                        result.push object if streams and object.data.match(pattern)
-                    rescue Filter::Error
-                        next # Skip object if a decoding error occured.
-                    end
-
-                    next unless object.is_a?(ObjectStream) and object_streams
-
-                    object.each do |subobject|
-                        search_object.call(subobject)
-                    end
-
-                when Name, String
-                    result.push object if object.value.match(pattern)
-
-                when Dictionary, Array then
-                    result.concat object.strings_cache.select{|str| pattern === str}
-                    result.concat object.names_cache.select{|name| pattern === name.value}
-                end
-            end
-
             self.indirect_objects.each do |object|
-                search_object.call(object)
+                result.concat search_object(object, pattern,
+                                            streams: streams, object_streams: object_streams)
             end
 
             result
@@ -591,6 +565,42 @@ module Origami
                 yield(object.dictionary)
                 walk_object(object.dictionary, excludes: excludes)
             end
+        end
+
+        #
+        # Searches through an object, possibly going into object streams.
+        # Returns an array of matching strings, names and streams.
+        #
+        def search_object(object, pattern, streams: true, object_streams: true)
+            result = []
+
+            case object
+            when Stream
+                result.concat object.dictionary.strings_cache.select{|str| pattern === str}
+                result.concat object.dictionary.names_cache.select{|name| pattern === name.value}
+
+                begin
+                    result.push object if streams and object.data.match(pattern)
+                rescue Filter::Error
+                    return result # Skip object if a decoding error occured.
+                end
+
+                return result unless object.is_a?(ObjectStream) and object_streams
+
+                object.each do |child|
+                    result.concat search_object(child, pattern,
+                                                streams: streams, object_streams: object_streams)
+                end
+
+            when Name, String
+                result.push object if object.value.match(pattern)
+
+            when Dictionary, Array
+                result.concat object.strings_cache.select{|str| pattern === str}
+                result.concat object.names_cache.select{|name| pattern === name.value}
+            end
+
+            result
         end
 
         #
