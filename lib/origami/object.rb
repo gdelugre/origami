@@ -293,7 +293,7 @@ module Origami
         end
     end
 
-    WHITESPACES = "([ \\f\\t\\r\\n\\0]|%[^\\n]*\\n)*" #:nodoc:
+    WHITESPACES = "([ \\f\\t\\r\\n\\0]|%[^\\n\\r]*(\\r\\n|\\r|\\n))*" #:nodoc:
     WHITECHARS_NORET = "[ \\f\\t\\0]*" #:nodoc:
     EOL = "\r\n" #:nodoc:
     WHITECHARS = "[ \\f\\t\\r\\n\\0]*" #:nodoc:

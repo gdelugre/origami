@@ -38,7 +38,7 @@ module Origami
         include FieldAccessor
         using TypeConversion
 
-        TOKENS = [ "stream" + WHITECHARS_NORET  + "\\r?\\n", "endstream" ] #:nodoc:
+        TOKENS = [ "stream" + WHITECHARS_NORET + "(\\r\\n|\\r|\\n)" , "endstream" ] #:nodoc:
 
         @@regexp_open = Regexp.new(WHITESPACES + TOKENS.first)
         @@regexp_close = Regexp.new(TOKENS.last)
