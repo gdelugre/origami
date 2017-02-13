@@ -27,13 +27,14 @@ module Origami
             def initialize(params = {})
                 options =
                 {
-                  password: '',                 # Default password being tried when opening a protected document.
-                  prompt_password: lambda do    # Callback procedure to prompt password when document is encrypted.
-                      require 'io/console'
-                      STDERR.print "Password: "
-                      STDIN.noecho(&:gets).chomp
-                  end,
-                  force: false              # Force PDF header detection
+                    decrypt: true,                # Attempt to decrypt to document if encrypted (recommended).
+                    password: '',                 # Default password being tried when opening a protected document.
+                    prompt_password: lambda do    # Callback procedure to prompt password when document is encrypted.
+                        require 'io/console'
+                        STDERR.print "Password: "
+                        STDIN.noecho(&:gets).chomp
+                    end,
+                    force: false                  # Force PDF header detection
                 }.update(params)
 
                 super(options)
@@ -74,7 +75,7 @@ module Origami
                 if pdf.encrypted?
                     warn "This document contains encrypted data!"
 
-                    decrypt_document(pdf)
+                    decrypt_document(pdf) if @options[:decrypt]
                 end
 
                 warn "This document has been signed!" if pdf.signed?
