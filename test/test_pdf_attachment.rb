@@ -17,7 +17,7 @@ class TestAttachment < Minitest::Test
         pdf = PDF.read(@output, ignore_errors: false, verbosity: Parser::VERBOSE_QUIET)
 
         assert_equal pdf.each_named_embedded_file.count, 1
-        assert_equal pdf.get_embedded_file_by_name("foo.baz"), nil
+        assert_nil pdf.get_embedded_file_by_name("foo.baz")
 
         file = pdf.get_embedded_file_by_name('foo.bar')
         refute_equal file, nil
