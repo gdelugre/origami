@@ -300,46 +300,22 @@ module Origami
         # _compressed_: iterates over the objects inside object streams.
         # _recursive_: iterates recursively inside objects like arrays and dictionaries.
         #
-        def each_object(compressed: false, recursive: false)
+        def each_object(compressed: false, recursive: false, &block)
             return enum_for(__method__, compressed: compressed,
                                         recursive: recursive
                            ) unless block_given?
 
-            walk_object = -> (object, exclude) do
-                next if exclude.include?(object)
-                exclude.push(object)
-
-                case object
-                when Dictionary
-                    object.each_value do |value|
-                        yield(value)
-                        walk_object.call(value, exclude)
-                    end
-
-                when Array
-                    object.each do |child|
-                        yield(child)
-                        walk_object.call(child, exclude)
-                    end
-
-                when Stream
-                    yield(object.dictionary)
-                    walk_object.call(object.dictionary, exclude)
-                end
-            end
-
             @revisions.each do |revision|
                 revision.each_object do |object|
-                    yield(object)
+                    block.call(object)
 
-                    exclude = []
-                    walk_object.call(object, exclude) if recursive
+                    walk_object(object, &block) if recursive
 
                     if object.is_a?(ObjectStream) and compressed
                         object.each do |child_obj|
-                            yield(child_obj)
+                            block.call(child_obj)
 
-                            walk_object.call(child_obj, exclude) if recursive
+                            walk_object(child_obj) if recursive
                         end
                     end
                 end
@@ -588,6 +564,34 @@ module Origami
         ##########################
         private
         ##########################
+
+        #
+        # Iterates over the children of an object, avoiding cycles.
+        #
+        def walk_object(object, excludes: [])
+            return enum_for(__method__, object, excludes: excludes) unless block_given?
+
+            return if excludes.include?(object)
+            excludes.push(object)
+
+            case object
+            when Dictionary
+                object.each_value do |value|
+                    yield(value)
+                    walk_object(value, excludes: excludes)
+                end
+
+            when Array
+                object.each do |child|
+                    yield(child)
+                    walk_object(child, excludes: excludes)
+                end
+
+            when Stream
+                yield(object.dictionary)
+                walk_object(object.dictionary, excludes: excludes)
+            end
+        end
 
         #
         # Load an object from its given file offset.
