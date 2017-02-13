@@ -67,8 +67,6 @@ module Origami
             @options.update(options)
             @logger = @options[:logger]
             @data = nil
-
-            ::String.disable_colorization(false) if @options[:colorize_log]
         end
 
         def pos
