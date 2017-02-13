@@ -672,7 +672,7 @@ module Origami
                     data << (padlen.chr * padlen)
                 end
 
-                aes = OpenSSL::Cipher::Cipher.new("aes-#{@key.length << 3}-cbc").encrypt
+                aes = OpenSSL::Cipher.new("aes-#{@key.length << 3}-cbc").encrypt
                 aes.iv = @iv
                 aes.key = @key
                 aes.padding = 0
@@ -687,7 +687,7 @@ module Origami
 
                 @iv = data.slice!(0, BLOCKSIZE)
 
-                aes = OpenSSL::Cipher::Cipher.new("aes-#{@key.length << 3}-cbc").decrypt
+                aes = OpenSSL::Cipher.new("aes-#{@key.length << 3}-cbc").decrypt
                 aes.iv = @iv
                 aes.key = @key
                 aes.padding = 0
@@ -1016,7 +1016,7 @@ module Origami
 
                         block = input[0, block_size]
 
-                        aes = OpenSSL::Cipher::Cipher.new("aes-128-cbc").encrypt
+                        aes = OpenSSL::Cipher.new("aes-128-cbc").encrypt
                         aes.iv = iv
                         aes.key = key
                         aes.padding = 0
