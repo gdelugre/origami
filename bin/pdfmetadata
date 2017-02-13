@@ -47,15 +47,15 @@ USAGE
         OptionParser.new do |opts|
             opts.banner = BANNER
 
-            opts.on("-i", "Extracts document info metadata") do
+            opts.on("-i", "--info", "Extracts document info metadata") do
                 options[:doc_info] = true
             end
 
-            opts.on("-x", "Extracts XMP document metadata stream") do
+            opts.on("-x", "--xmp", "Extracts XMP document metadata stream") do
                 options[:doc_stream] = true
             end
 
-            opts.on("-n", "Turn off colorized output.") do
+            opts.on("-n", "--no-color", "Turn off colorized output.") do
                 options[:disable_colors] = true
             end
 
