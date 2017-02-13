@@ -417,7 +417,7 @@ module Origami
             raise IndexError, "Page not found"
         end
 
-        def << (pageset)
+        def <<(pageset)
             pageset = [pageset] unless pageset.is_a?(::Array)
             unless pageset.all? {|item| item.is_a?(Page) or item.is_a?(PageTreeNode) }
                 raise TypeError, "Cannot add anything but Page and PageTreeNode to this node"
