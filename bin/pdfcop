@@ -57,7 +57,7 @@ Options:
 USAGE
 
     def self.parse(args)
-        options = {colors: true}
+        options = {colors: true, password: ''}
 
         opts = OptionParser.new do |opts|
             opts.banner = BANNER
@@ -70,8 +70,12 @@ USAGE
                 options[:config_file] = cf
             end
 
-            opts.on("-p", "--policy POLICY_NAME", "Specify applied policy. Predefined policies: 'none', 'standard', 'strong', 'paranoid'") do |p|
-                options[:policy] = p
+            opts.on("-p", "--policy POLICY_NAME", "Specify applied policy. Predefined policies: 'none', 'standard', 'strong', 'paranoid'") do |policy|
+                options[:policy] = policy
+            end
+
+            opts.on("-P", "--password PASSWORD", "Password to use if the document is encrypted") do |passwd|
+                options[:password] = passwd
             end
 
             opts.on("-n", "--no-color", "Turn off colorized output") do
@@ -262,11 +266,11 @@ def analyze_action(action, triggered_at_opening, level = 0)
             check_rights(:allowGoToAction)
             dest = action[:D].is_a?(Origami::Reference) ? action[:D].solve : action[:D]
             if dest.is_a?(Origami::Array) and dest.length > 0 and dest.first.is_a?(Origami::Reference)
-              dest_page = dest.first.solve
-              if dest_page.is_a?(Origami::Page)
-                log(text_prefix + " Destination page found.")
-                analyze_page(dest_page, level + 1)
-              end
+                dest_page = dest.first.solve
+                if dest_page.is_a?(Origami::Page)
+                    log(text_prefix + " Destination page found.")
+                    analyze_page(dest_page, level + 1)
+                end
             end
 
         when :GoToE
@@ -329,7 +333,10 @@ begin
 
     @pdf = Origami::PDF.read(TARGET,
         verbosity: Origami::Parser::VERBOSE_QUIET,
-        ignore_errors: SECURITY_POLICIES["POLICY_#{@options[:policy].upcase}"]['allowParserErrors']
+        ignore_errors: SECURITY_POLICIES["POLICY_#{@options[:policy].upcase}"]['allowParserErrors'],
+        decrypt: SECURITY_POLICIES["POLICY_#{@options[:policy].upcase}"]['allowEncryption'],
+        prompt_password: lambda { '' },
+        password: @options[:password]
     )
 
     log("> Inspecting document structure...", :yellow)
