@@ -25,13 +25,7 @@ module Origami
 
     module TypeConversion
 
-        refine ::Bignum do
-            def to_o
-                Origami::Integer.new(self)
-            end
-        end
-
-        refine ::Fixnum do
+        refine ::Integer do
             def to_o
                 Origami::Integer.new(self)
             end

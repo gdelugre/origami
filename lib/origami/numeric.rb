@@ -91,7 +91,7 @@ module Origami
     #
     # Class representing an Integer Object.
     #
-    class Integer < DelegateClass(Bignum)
+    class Integer < DelegateClass(::Integer)
         include Number
 
         TOKENS = [ "(\\+|-)?[\\d]+[^.]?" ] #:nodoc:
