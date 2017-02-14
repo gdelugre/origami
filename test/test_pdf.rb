@@ -5,6 +5,7 @@ require 'origami'
 include Origami
 
 require_relative 'test_pdf_parse'
+require_relative 'test_pdf_parse_lazy'
 require_relative 'test_pdf_create'
 require_relative 'test_streams'
 require_relative 'test_pdf_encrypt'

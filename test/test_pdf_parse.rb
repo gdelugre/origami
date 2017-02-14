@@ -2,7 +2,7 @@ require 'minitest/autorun'
 
 class TestPDFParser < Minitest::Test
     def setup
-        @data =
+        @files =
             %w{
               dataset/empty.pdf
               dataset/calc.pdf
@@ -22,7 +22,7 @@ class TestPDFParser < Minitest::Test
     end
 
     def test_parse_pdf
-        @data.each do |file|
+        @files.each do |file|
             pdf = PDF.read(File.join(__dir__, file), ignore_errors: false, verbosity: Parser::VERBOSE_QUIET)
 
             assert_instance_of PDF, pdf
