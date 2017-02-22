@@ -424,7 +424,7 @@ module Origami
         field   :SpiderInfo,          :Type => WebCapture::SpiderInfo, :Version => "1.3"
         field   :OutputIntents,       :Type => Array.of(OutputIntent), :Version => "1.4"
         field   :PieceInfo,           :Type => Dictionary, :Version => "1.4"
-        field   :OCProperties,        :Type => Dictionary, :Version => "1.5"
+        field   :OCProperties,        :Type => OptionalContent::Properties, :Version => "1.5"
         field   :Perms,               :Type => Dictionary, :Version => "1.5"
         field   :Legal,               :Type => Dictionary, :Version => "1.5"
         field   :Requirements,        :Type => Array.of(Requirement), :Version => "1.7"
