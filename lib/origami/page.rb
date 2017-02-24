@@ -174,7 +174,7 @@ module Origami
         def each_resource(type)
             target = self.is_a?(Resources) ? self : (self.Resources ||= Resources.new)
 
-            rsrc = target[type] and target[type].solve
+            rsrc = (target[type] and target[type].solve)
 
             return enum_for(__method__, type) { rsrc.is_a?(Dictionary) ? rsrc.length : 0 } unless block_given?
             return unless rsrc.is_a?(Dictionary)
