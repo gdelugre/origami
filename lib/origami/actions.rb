@@ -300,6 +300,19 @@ module Origami
         def self.RichMediaExecute(annotation, command, *params)
             Action::RichMediaExecute[annotation, command, *params]
         end
+
+        class SetOCGState < Action
+
+            module State
+                ON      = :ON
+                OFF     = :OFF
+                TOGGLE  = :Toggle
+            end
+
+            field   :S,             :Type => Name, :Default => :SetOCGState, :Required => true
+            field   :State,         :Type => Array.of([Name, OptionalContent::Group]), :Required => true
+            field   :PreserveRB,    :Type => Boolean, :Default => true
+        end
     end
 
 end
