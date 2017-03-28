@@ -292,7 +292,7 @@ module Origami
         def set_text_scale(scaling)
             load!
 
-            if scale != @canvas.gs.text_state.scaling
+            if scaling != @canvas.gs.text_state.scaling
                 @instructions << PDF::Instruction.new('Tz', scaling).render(@canvas)
             end
 
