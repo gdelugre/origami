@@ -28,4 +28,11 @@ class TestPages < Minitest::Test
 
         assert_equal @target.Catalog.Pages.Count, 3
     end
+
+    def test_example_write_page
+        @target.append_page
+        @target.pages.first.write 'Hello, world!', size: 30
+        @target.save(@output)
+        assert_equal @target.Catalog.Pages.Count, 1
+    end
 end
