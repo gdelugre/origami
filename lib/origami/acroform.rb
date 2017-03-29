@@ -67,15 +67,15 @@ module Origami
         #
         def each_field
             return enum_for(__method__) do
-                if self.form? and self.Catalog.AcroForm[:Fields].is_a?(Array)
-                    self.Catalog.AcroForm[:Fields].length
+                if self.form? and self.Catalog.AcroForm.Fields.is_a?(Array)
+                    self.Catalog.AcroForm.Fields.length
                 else
                     0
                 end
             end unless block_given?
 
-            if self.form? and self.Catalog.AcroForm[:Fields].is_a?(Array)
-                self.Catalog.AcroForm[:Fields].each do |field|
+            if self.form? and self.Catalog.AcroForm.Fields.is_a?(Array)
+                self.Catalog.AcroForm.Fields.each do |field|
                     yield(field.solve)
                 end
             end
