@@ -88,6 +88,8 @@ module Origami
             self.each_field do |field|
                 return field if field[:T].solve == name
             end
+
+            nil
         end
     end
 
