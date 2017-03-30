@@ -28,10 +28,10 @@ module Origami
 
                 set_indirect(true)
 
+                self.set_name(id)
                 self.H = Annotation::Widget::Highlight::INVERT
                 self.Rect = [ x, y, x + width, y + height ]
                 self.F = Annotation::Flags::PRINT
-                self.T = id
 
                 appstm = Annotation::AppearanceStream.new.setFilter(:FlateDecode)
                 appstm.BBox = [ 0, 0, width, height ]
@@ -64,9 +64,9 @@ module Origami
 
                 set_indirect(true)
 
+                self.set_name(id)
                 self.Rect = [ x, y, x+width, y+height ]
                 self.F = Annotation::Flags::PRINT
-                self.T = id
                 self.DA = '/F1 12 Tf 0 g'
 
                 appstm = Annotation::AppearanceStream.new.setFilter(:FlateDecode)

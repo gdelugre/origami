@@ -172,9 +172,33 @@ module Origami
         end
 
         def pre_build #:nodoc:
-            self.T ||= "undef#{::Array.new(5) {('0'.ord + rand(10)).chr}.join}"
+            unless self.key?(:T)
+                self.set_name "field#{self.object_id}"
+            end
 
             super
+        end
+
+        #
+        # Sets the (partial) name of the field.
+        #
+        def set_name(field_name)
+            self.T = field_name
+            self
+        end
+
+        #
+        # Sets the (partial) name of the field.
+        #
+        def name=(field_name)
+            self.T = field_name
+        end
+
+        #
+        # Returns the (partial) name of the field.
+        #
+        def name
+            self.T
         end
 
         def onKeyStroke(action)
