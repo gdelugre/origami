@@ -140,6 +140,7 @@ module Origami
         end
 
         def []=(key,val)
+            self.dictionary = Dictionary.new unless self.has_dictionary?
             @dictionary[key] = val
         end
 
