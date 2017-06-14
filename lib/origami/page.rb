@@ -163,7 +163,7 @@ module Origami
             target = self.is_a?(Resources) ? self : (self.Resources ||= Resources.new)
 
             rsrc_dict = (target[type] and target[type].solve) || (target[type] = Dictionary.new)
-            rsrc_dict[name] = rsrc
+            rsrc_dict[name.to_sym] = rsrc
 
             name
         end
