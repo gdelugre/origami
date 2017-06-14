@@ -203,11 +203,11 @@ module Origami
         insn 'sc', '*' do |canvas, *c| canvas.gs.set_nonstroking_color(c) end
 
         insn 'G', Real do |canvas, c|
-            canvas.gs.set_stroking_color([c], Graphics::Color::SPACE::DEVICE_GRAY)
+            canvas.gs.set_stroking_color([c], Graphics::Color::Space::DEVICE_GRAY)
         end
 
         insn 'g', Real do |canvas, c|
-            canvas.gs.set_nonstroking_color([c], Graphics::Color::SPACE::DEVICE_GRAY)
+            canvas.gs.set_nonstroking_color([c], Graphics::Color::Space::DEVICE_GRAY)
         end
 
         insn 'RG', Real, Real, Real do |canvas, r, g, b|
