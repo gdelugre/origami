@@ -63,7 +63,7 @@ module Origami
             last_trailer = (@revisions.last.trailer ||= Trailer.new)
             last_trailer.dictionary ||= Dictionary.new
 
-            if prev_trailer.has_dictionary?
+            if prev_trailer.dictionary?
                 last_trailer.dictionary =
                     last_trailer.dictionary.merge(prev_trailer.dictionary)
             else

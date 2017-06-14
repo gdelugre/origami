@@ -232,7 +232,7 @@ module Origami
     class Trailer
         def to_obfuscated_str
             content = ""
-            if self.has_dictionary?
+            if self.dictionary?
                 content << TOKENS.first << EOL << @dictionary.to_obfuscated_str << EOL
             end
 

@@ -30,7 +30,7 @@ module Origami
             #
             # First look for a standard trailer dictionary
             #
-            if @revisions.last.trailer.has_dictionary?
+            if @revisions.last.trailer.dictionary?
                 trl = @revisions.last.trailer
 
             #
@@ -54,7 +54,7 @@ module Origami
         def trailer_key(attr) #:nodoc:
 
             @revisions.reverse_each do |rev|
-                if rev.trailer.has_dictionary? and not rev.trailer[attr].nil?
+                if rev.trailer.dictionary? and not rev.trailer[attr].nil?
                     return rev.trailer[attr].solve
                 elsif rev.has_xrefstm?
                     xrefstm = rev.xrefstm
@@ -136,11 +136,11 @@ module Origami
         end
 
         def [](key)
-            @dictionary[key] if has_dictionary?
+            @dictionary[key] if dictionary?
         end
 
         def []=(key,val)
-            self.dictionary = Dictionary.new unless self.has_dictionary?
+            self.dictionary = Dictionary.new unless dictionary?
             @dictionary[key] = val
         end
 
@@ -149,7 +149,7 @@ module Origami
             @dictionary = dict
         end
 
-        def has_dictionary?
+        def dictionary?
             not @dictionary.nil?
         end
 
@@ -158,7 +158,7 @@ module Origami
         #
         def to_s
             content = ""
-            if self.has_dictionary?
+            if self.dictionary?
                 content << TOKENS.first << EOL << @dictionary.to_s << EOL
             end
 
