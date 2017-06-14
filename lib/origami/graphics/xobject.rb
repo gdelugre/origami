@@ -659,22 +659,22 @@ module Origami
                     data = fd.read
                 else
                     data = File.binread(File.expand_path(path))
-                    format ||= File.extname(path)
+                    format ||= File.extname(path)[1..-1]
                 end
 
                 image = ImageXObject.new
 
                 raise ArgumentError, "Missing file format" if format.nil?
                 case format.downcase
-                when '.jpg', 'jpeg', '.jpe', '.jif', '.jfif', '.jfi'
+                when 'jpg', 'jpeg', 'jpe', 'jif', 'jfif', 'jfi'
                     image.setFilter :DCTDecode
                     image.encoded_data = data
 
-                when '.jp2','.jpx','.j2k','.jpf','.jpm','.mj2'
+                when 'jp2','jpx','j2k','jpf','jpm','mj2'
                     image.setFilter :JPXDecode
                     image.encoded_data = data
 
-                when '.jb2', '.jbig', '.jbig2'
+                when '.b2', 'jbig', 'jbig2'
                     image.setFilter :JBIG2Decode
                     image.encoded_data = data
                 else
