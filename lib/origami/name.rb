@@ -53,6 +53,7 @@ module Origami
         def value
             @value.to_sym
         end
+        alias to_sym value
 
         def <=>(name)
             return unless name.is_a?(Name)
