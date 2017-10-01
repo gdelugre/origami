@@ -543,7 +543,7 @@ module Origami
         #
         # Iterates over the children of an object, avoiding cycles.
         #
-        def walk_object(object, excludes: [])
+        def walk_object(object, excludes: [], &block)
             return enum_for(__method__, object, excludes: excludes) unless block_given?
 
             return if excludes.include?(object)
@@ -553,18 +553,18 @@ module Origami
             when Dictionary
                 object.each_value do |value|
                     yield(value)
-                    walk_object(value, excludes: excludes)
+                    walk_object(value, excludes: excludes, &block)
                 end
 
             when Array
                 object.each do |child|
                     yield(child)
-                    walk_object(child, excludes: excludes)
+                    walk_object(child, excludes: excludes, &block)
                 end
 
             when Stream
                 yield(object.dictionary)
-                walk_object(object.dictionary, excludes: excludes)
+                walk_object(object.dictionary, excludes: excludes, &block)
             end
         end
 
