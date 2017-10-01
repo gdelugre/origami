@@ -123,13 +123,13 @@ module Origami
             end
 
             if not stream.scan(@@regexp_xref)
-                #raise InvalidTrailerError, "Cannot get startxref value"
+                raise InvalidTrailerError, "Cannot get startxref value"
             end
 
             startxref = stream['startxref'].to_i
 
             if not stream.scan(@@regexp_close)
-                #raise InvalidTrailerError, "No %%EOF token found"
+                parser.warn("No %%EOF token found") if parser
             end
 
             Trailer.new(startxref, dictionary)

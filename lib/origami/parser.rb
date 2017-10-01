@@ -188,26 +188,6 @@ module Origami
             @data.string.dup if @data
         end
 
-        private
-
-        #
-        # Attempt to promote an object using the deferred casts.
-        #
-        def try_object_promotion(obj)
-            return obj unless Origami::OPTIONS[:enable_type_propagation] and @deferred_casts.key?(obj.reference)
-
-            types = @deferred_casts[obj.reference]
-            types = [ types ] unless types.is_a?(::Array)
-
-            # Promote object if a compatible type is found.
-            cast_type = types.find {|type| type < obj.class }
-            if cast_type
-                obj = obj.cast_to(cast_type, self)
-            else
-                obj
-            end
-        end
-
         def error(msg = "") #:nodoc:
             log(VERBOSE_QUIET, 'error', :red, msg.red)
         end
@@ -226,6 +206,26 @@ module Origami
 
         def trace(msg = "") #:nodoc:
             log(VERBOSE_TRACE, 'trace', :cyan, msg)
+        end
+
+        private
+
+        #
+        # Attempt to promote an object using the deferred casts.
+        #
+        def try_object_promotion(obj)
+            return obj unless Origami::OPTIONS[:enable_type_propagation] and @deferred_casts.key?(obj.reference)
+
+            types = @deferred_casts[obj.reference]
+            types = [ types ] unless types.is_a?(::Array)
+
+            # Promote object if a compatible type is found.
+            cast_type = types.find {|type| type < obj.class }
+            if cast_type
+                obj = obj.cast_to(cast_type, self)
+            else
+                obj
+            end
         end
 
         def log(level, prefix, color, message) #:nodoc:
