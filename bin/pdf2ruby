@@ -96,10 +96,8 @@ def objectToRuby(obj, inclevel = 0, internalname = nil, do_convert = false)
         case obj
         when Origami::Null
             "Null.new"
-        when Origami::Boolean, Origami::Number
-            obj.value.to_s
-        when Origami::String
-            obj.inspect
+        when Origami::Boolean, Origami::Number, Origami::Name, Origami::String
+            literalToRuby(obj)
         when Origami::Dictionary
             customclass = nil
             if obj.class != Origami::Dictionary
@@ -111,8 +109,6 @@ def objectToRuby(obj, inclevel = 0, internalname = nil, do_convert = false)
             arrayToRuby(obj, inclevel, internalname)
         when Origami::Stream
             streamToRuby(obj, internalname) unless obj.is_a?(ObjectStream) or obj.is_a?(XRefStream)
-        when Origami::Name
-            nameToRuby(obj)
         when Origami::Reference
             referenceToRuby(obj, internalname)
         else
@@ -144,15 +140,8 @@ def referenceToRuby(ref, internalname)
     end
 end
 
-def nameToRuby(name)
-    code = ':'
-    valid = (name.value.to_s =~ /[+.:-]/).nil?
-
-    code << '"' unless valid
-    code << name.value.to_s
-    code << '"' unless valid
-
-    code
+def literalToRuby(obj)
+    obj.value.inspect
 end
 
 def arrayToRuby(arr, inclevel, internalname)
@@ -180,7 +169,7 @@ def dictionaryToRuby(dict, inclevel, internalname, customtype = nil)
     else
         code << "{\n"
         dict.each_pair do |key, val|
-            rubyname = nameToRuby(key)
+            rubyname = literalToRuby(key)
             subintname = "#{internalname}[#{rubyname}]"
 
             if val.is_a?(Origami::Reference) and @var_hash[val] and @var_hash[val][0,3] == "obj"
@@ -212,7 +201,7 @@ def dictionaryToHashMap(dict, inclevel, internalname)
     i = 0
     code = "\n"
     dict.each_pair do |key, val|
-        rubyname = nameToRuby(key)
+        rubyname = literalToRuby(key)
         subintname = "#{internalname}[#{rubyname}]"
 
         if val.is_a?(Origami::Reference) and @var_hash[val] and @var_hash[val][0,3] == "obj"
