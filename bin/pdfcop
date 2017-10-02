@@ -36,7 +36,7 @@ end
 require 'optparse'
 require 'yaml'
 require 'rexml/document'
-require 'digest/md5'
+require 'digest/sha2'
 require 'colorize'
 
 DEFAULT_CONFIG_FILE = "#{File.dirname(__FILE__)}/config/pdfcop.conf.yml"
@@ -329,7 +329,7 @@ end
 begin
     log("PDFcop is running on target `#{TARGET}', policy = `#{@options[:policy]}'", :green)
     log("  File size: #{File.size(TARGET)} bytes", :magenta)
-    log("  MD5: #{Digest::MD5.hexdigest(File.read(TARGET))}", :magenta)
+    log("  SHA256: #{Digest::SHA256.file(TARGET)}", :magenta)
 
     @pdf = Origami::PDF.read(TARGET,
         verbosity: Origami::Parser::VERBOSE_QUIET,
