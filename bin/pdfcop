@@ -37,6 +37,7 @@ require 'optparse'
 require 'yaml'
 require 'rexml/document'
 require 'digest/sha2'
+require 'fileutils'
 require 'colorize'
 
 DEFAULT_CONFIG_FILE = "#{File.dirname(__FILE__)}/config/pdfcop.conf.yml"
@@ -74,6 +75,10 @@ USAGE
                 options[:policy] = policy
             end
 
+            opts.on("-m", "--move PATH", "Move rejected documents to the specified directory.") do |dir|
+                options[:move_dir] = dir
+            end
+
             opts.on("-P", "--password PASSWORD", "Password to use if the document is encrypted") do |passwd|
                 options[:password] = passwd
             end
@@ -95,20 +100,24 @@ USAGE
 end
 
 @options = OptParser.parse(ARGV)
-if @options.has_key?(:output_log)
+if @options.key?(:output_log)
     LOGGER = File.open(@options[:output_log], "a+")
 else
     LOGGER = STDOUT
 end
 
-if not @options.has_key?(:policy)
+if not @options.key?(:policy)
     @options[:policy] = DEFAULT_POLICY
+end
+
+if @options.key?(:move_dir) and not File.directory?(@options[:move_dir])
+    abort "Error: #{@options[:move_dir]} is not a valid directory."
 end
 
 String.disable_colorization @options[:disable_colors]
 
 load_config_file(@options[:config_file] || DEFAULT_CONFIG_FILE)
-unless SECURITY_POLICIES.has_key?("POLICY_#{@options[:policy].upcase}")
+unless SECURITY_POLICIES.key?("POLICY_#{@options[:policy].upcase}")
     abort "Undeclared policy `#{@options[:policy]}'"
 end
 
@@ -124,7 +133,21 @@ end
 
 def reject(cause)
     log("Document rejected by policy `#{@options[:policy]}', caused by #{cause.inspect}.", :red)
+
+    if @options.key?(:move_dir)
+        quarantine(TARGET, @options[:move_dir])
+    end
+
     abort
+end
+
+def quarantine(file, quarantine_folder)
+    digest = Digest::SHA256.file(TARGET)
+    ext = File.extname(TARGET)
+    dest_name = "#{File.basename(TARGET, ext)}_#{digest}#{ext}"
+    dest_path = File.join(@options[:move_dir], dest_name)
+
+    FileUtils.move(TARGET, dest_path)
 end
 
 def check_rights(*required_rights)
@@ -165,7 +188,7 @@ end
 def analyze_annotation(annot, _level = 0)
     check_rights(:allowAnnotations)
 
-    if annot.is_a?(Origami::Dictionary) and annot.has_key?(:Subtype)
+    if annot.is_a?(Origami::Dictionary) and annot.key?(:Subtype)
         case annot[:Subtype].solve.value
         when :FileAttachment
             check_rights(:allowAttachments, :allowFileAttachmentAnnotation)
@@ -186,7 +209,7 @@ def analyze_annotation(annot, _level = 0)
             check_rights(:allow3DAnnotation)
 
             # 3D annotation might pull in JavaScript for real-time driven behavior.
-            if annot.has_key?(:"3DD")
+            if annot.key?(:"3DD")
                 dd = annot[:"3DD"].solve
                 u3dstream = nil
 
@@ -200,7 +223,7 @@ def analyze_annotation(annot, _level = 0)
                 if u3dstream and u3dstream.key?(:OnInstantiate)
                     check_rights(:allowJS)
 
-                    if annot.has_key?(:"3DA") # is 3d view instantiated automatically?
+                    if annot.key?(:"3DA") # is 3d view instantiated automatically?
                         u3dactiv = annot[:"3DA"].solve
 
                         check_rights(:allowJSAtOpening) if u3dactiv.is_a?(Origami::Dictionary) and (u3dactiv[:A] == :PO or u3dactiv[:A] == :PV)
@@ -223,13 +246,13 @@ def analyze_page(page, level = 0)
         #
         # Checking page additional actions.
         #
-        if page.has_key?(:AA)
+        if page.key?(:AA)
             if page.AA.is_a?(Origami::Dictionary)
                 log(text_prefix + " Page has an action dictionary.")
 
                 aa = Origami::Page::AdditionalActions.new(page.AA); aa.parent = page.AA.parent
-                analyze_action(aa.O, true, level + 1) if aa.has_key?(:O)
-                analyze_action(aa.C, false, level + 1) if aa.has_key?(:C)
+                analyze_action(aa.O, true, level + 1) if aa.key?(:O)
+                analyze_action(aa.C, false, level + 1) if aa.key?(:C)
             end
         end
 
@@ -280,7 +303,7 @@ def analyze_action(action, triggered_at_opening, level = 0)
             check_rights(:allowGoToRAction)
 
         when :Thread
-            check_rights(:allowGoToRAction) if action.has_key?(:F)
+            check_rights(:allowGoToRAction) if action.key?(:F)
 
         when :URI
             check_rights(:allowURIAction)
@@ -307,7 +330,7 @@ def analyze_action(action, triggered_at_opening, level = 0)
             check_rights(:allow3DAnnotation,:allowGoTo3DAction)
         end
 
-        if action.has_key?(:Next)
+        if action.key?(:Next)
             log(text_prefix + "This action is chained to another action!")
             check_rights(:allowChainedActions)
             analyze_action(action.Next)
@@ -349,31 +372,31 @@ begin
     catalog = @pdf.Catalog
     reject("Invalid document catalog") unless catalog.is_a?(Origami::Catalog)
 
-    if catalog.has_key?(:OpenAction)
+    if catalog.key?(:OpenAction)
         log("  . OpenAction entry = YES")
         check_rights(:allowOpenAction)
         action = catalog.OpenAction
         analyze_action(action, true, 1)
     end
 
-    if catalog.has_key?(:AA)
+    if catalog.key?(:AA)
         if catalog.AA.is_a?(Origami::Dictionary)
             aa = Origami::CatalogAdditionalActions.new(catalog.AA); aa.parent = catalog;
             log("  . Additional actions dictionary = YES")
-            analyze_action(aa.WC, false, 1) if aa.has_key?(:WC)
-            analyze_action(aa.WS, false, 1) if aa.has_key?(:WS)
-            analyze_action(aa.DS, false, 1) if aa.has_key?(:DS)
-            analyze_action(aa.WP, false, 1) if aa.has_key?(:WP)
-            analyze_action(aa.DP, false, 1) if aa.has_key?(:DP)
+            analyze_action(aa.WC, false, 1) if aa.key?(:WC)
+            analyze_action(aa.WS, false, 1) if aa.key?(:WS)
+            analyze_action(aa.DS, false, 1) if aa.key?(:DS)
+            analyze_action(aa.WP, false, 1) if aa.key?(:WP)
+            analyze_action(aa.DP, false, 1) if aa.key?(:DP)
         end
     end
 
-    if catalog.has_key?(:AcroForm)
+    if catalog.key?(:AcroForm)
         acroform = catalog.AcroForm
         if acroform.is_a?(Origami::Dictionary)
             log("  . AcroForm = YES")
             check_rights(:allowAcroForms)
-            if acroform.has_key?(:XFA)
+            if acroform.key?(:XFA)
                 log("  . XFA = YES")
                 check_rights(:allowXFAForms)
 
@@ -400,7 +423,7 @@ begin
 
     log("> Inspecting document streams...", :yellow)
     @pdf.indirect_objects.find_all{|obj| obj.is_a?(Origami::Stream)}.each do |stream|
-        if stream.dictionary.has_key?(:Filter)
+        if stream.dictionary.key?(:Filter)
             filters = stream.Filter
             filters = [ filters ] if filters.is_a?(Origami::Name)
 
