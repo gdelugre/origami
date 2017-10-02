@@ -4,7 +4,7 @@ Gem::Specification.new do |s|
     s.name          = "origami"
     s.version       = Origami::VERSION
     s.author        = "Guillaume Delugré"
-    s.email         = "gdelugre@security-labs.org"
+    s.email         = "origami@subvert.technology"
     s.homepage      = "http://github.com/gdelugre/origami"
     s.platform      = Gem::Platform::RUBY
 
