@@ -486,8 +486,8 @@ module Origami
         end
 
         # TODO :nodoc:
-        def paint_shading(_shade)
-            raise NotImplementedError
+        def paint_shading(shade)
+            last_content_stream.paint_shading(shade)
         end
 
         # TODO :nodoc:

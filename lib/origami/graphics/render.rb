@@ -36,6 +36,7 @@ module Origami
             def write_text(s); end
             def stroke_path; end
             def fill_path; end
+            def paint_shading(sh); end
         end
 
         class DummyCanvas

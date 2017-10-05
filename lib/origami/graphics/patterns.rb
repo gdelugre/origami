@@ -166,7 +166,9 @@ module Origami
     end
 
     class PDF::Instruction
-        insn 'sh',  Name
+        insn 'sh',  Name do |canvas, shading|
+            canvas.paint_shading(shading)
+        end
     end
 
 end
