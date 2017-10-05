@@ -7,6 +7,6 @@ rescue LoadError
 end
 
 $:.unshift File.join(__dir__, 'shell')
-ENV["IRBRC"] = File.join(__dir__, "shell", ".irbrc")
+ENV["IRBRC"] = File.join(__dir__, "shell", "irbrc")
 
 IRB.start
