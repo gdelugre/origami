@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
     s.add_development_dependency "minitest", "~> 5.0"
 
     s.bindir        = "bin"
-    s.executables   = %w(pdfsh pdfwalker
+    s.executables   = %w(pdfsh
                          pdf2pdfa pdf2ruby
                          pdfcop pdfmetadata
                          pdfdecompress pdfdecrypt pdfencrypt

@@ -102,12 +102,11 @@ Origami comes with a set of tools to manipulate PDF documents from the command l
 * [pdfmetadata](bin/pdfmetadata): Displays the metadata contained in a document.
 * [pdf2ruby](bin/pdf2ruby): Converts a PDF into an Origami script rebuilding an equivalent document (experimental).
 * [pdfsh](bin/pdfsh): An IRB shell running inside the Origami namespace.
-* [pdfwalker](bin/pdfwalker): A graphical interface to dig into the contents of a PDF document.
 
 
 License
 -------
 
-Origami is distributed under the [LGPL](COPYING.LESSER) license, except for the graphical interface which is distributed under the [GPL](bin/gui/COPYING) license.
+Origami is distributed under the [LGPL](COPYING.LESSER) license.
 
-Copyright © 2016 Guillaume Delugré.
+Copyright © 2017 Guillaume Delugré.

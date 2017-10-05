@@ -1,6 +1,0 @@
-#!/usr/bin/env ruby
-
-$:.unshift(__dir__)
-require 'gui/walker'
-
-PDFWalker::Walker.start(ARGV[0])
