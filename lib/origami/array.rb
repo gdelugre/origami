@@ -145,13 +145,24 @@ module Origami
         end
         alias push <<
 
-        def []=(key,val)
+        def []=(key, val)
             key, val = key.to_o, val.to_o
             super(key.to_o, val.to_o)
 
-            val.parent = self unless val.indirect? or val.parent.equal?(self)
+            val.parent = self unless val.indirect?
 
             val
+        end
+
+        def concat(*arys)
+            arys.each do |ary|
+                ary.each do |e|
+                    val = e.to_o
+                    val.parent = self unless val.indirect?
+
+                    self.push(val)
+                end
+            end
         end
 
         def copy
