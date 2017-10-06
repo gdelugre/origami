@@ -69,7 +69,7 @@ module Origami
                     end
                 end
 
-                result.write(table[s], codesize)
+                result.write(table[s], codesize) unless s.empty?
                 result.write(EOD, codesize)
 
                 result.final.to_s
