@@ -49,14 +49,11 @@ module Origami
             signature = digsig[:Contents]
             subfilter = digsig.SubFilter.value
 
-            case subfilter
-            when Signature::DigitalSignature::PKCS7_DETACHED
+            case subfilter.to_s
+            when Signature::PKCS7_DETACHED
                 Signature.verify_pkcs7_detached_signature(data, signature, store, flags)
-
-
-            when Signature::DigitalSignature::PKCS7_SHA1
+            when Signature::PKCS7_SHA1
                 Signature.verify_pkcs7_sha1_signature(data, signature, store, flags)
-
             else
                 raise NotImplementedError, "Unsupported method #{digsig.SubFilter}"
             end
@@ -75,7 +72,7 @@ module Origami
         # _reason_:: Signing reason.
         #
         def sign(certificate, key,
-                 method: "adbe.pkcs7.detached",
+                 method: Signature::PKCS7_DETACHED,
                  ca: [],
                  annotation: nil,
                  issuer: nil,
@@ -100,7 +97,7 @@ module Origami
             end
 
             case method
-            when 'adbe.pkcs7.detached'
+            when Signature::PKCS7_DETACHED
                 signfield_size = -> (crt, pkey, certs) do
                     OpenSSL::PKCS7.sign(
                         crt,
@@ -111,7 +108,7 @@ module Origami
                     ).to_der.size
                 end
 
-            when 'adbe.pkcs7.sha1'
+            when Signature::PKCS7_SHA1
                 signfield_size = -> (crt, pkey, certs) do
                     OpenSSL::PKCS7.sign(
                         crt,
@@ -122,14 +119,11 @@ module Origami
                     ).to_der.size
                 end
 
-            when 'adbe.x509.rsa_sha1'
+            when Signature::PKCS1_RSA_SHA1
                 signfield_size = -> (_crt, pkey, _certs) do
-                    pkey.private_encrypt(
-                      Digest::SHA1.digest('')
-                    ).size
+                    pkey.sign(OpenSSL::Digest::SHA1.new, '').size
                 end
-                raise NotImplementedError, "Unsupported method #{method.inspect}"
-
+ 
             else
                 raise NotImplementedError, "Unsupported method #{method.inspect}"
             end
@@ -146,18 +140,19 @@ module Origami
             self.Catalog.AcroForm.SigFlags =
                 InteractiveForm::SigFlags::SIGNATURES_EXIST | InteractiveForm::SigFlags::APPEND_ONLY
 
-            digsig.Type = :Sig #:nodoc:
-            digsig.Contents = HexaString.new("\x00" * signfield_size[certificate, key, ca]) #:nodoc:
-            digsig.Filter = :"Adobe.PPKLite" #:nodoc:
-            digsig.SubFilter = Name.new(method) #:nodoc:
-            digsig.ByteRange = [0, 0, 0, 0] #:nodoc:
+            digsig.Type = :Sig
+            digsig.Contents = HexaString.new("\x00" * signfield_size[certificate, key, ca])
+            digsig.Filter = :"Adobe.PPKLite"
+            digsig.SubFilter = Name.new(method)
+            digsig.ByteRange = [0, 0, 0, 0]
             digsig.Name = issuer
 
             digsig.Location = HexaString.new(location) if location
             digsig.ContactInfo = HexaString.new(contact) if contact
             digsig.Reason = HexaString.new(reason) if reason
 
-            if method == 'adbe.x509.rsa_sha1'
+            # PKCS1 signatures require a Cert entry.
+            if method == Signature::PKCS1_RSA_SHA1
                 digsig.Cert =
                     if ca.empty?
                         HexaString.new(certificate.to_der)
@@ -199,7 +194,7 @@ module Origami
 
             signature =
                 case method
-                when 'adbe.pkcs7.detached'
+                when Signature::PKCS7_DETACHED
                     OpenSSL::PKCS7.sign(
                         certificate,
                         key,
@@ -208,7 +203,7 @@ module Origami
                         OpenSSL::PKCS7::DETACHED | OpenSSL::PKCS7::BINARY
                     ).to_der
 
-                when 'adbe.pkcs7.sha1'
+                when Signature::PKCS7_SHA1
                     OpenSSL::PKCS7.sign(
                         certificate,
                         key,
@@ -217,8 +212,8 @@ module Origami
                         OpenSSL::PKCS7::BINARY
                     ).to_der
 
-                when 'adbe.x509.rsa_sha1'
-                    key.private_encrypt(Digest::SHA1.digest(signable_data))
+                when Signature::PKCS1_RSA_SHA1
+                    key.sign(OpenSSL::Digest::SHA1.new, signable_data)
                 end
 
             digsig.Contents[0, signature.size] = signature
@@ -272,21 +267,21 @@ module Origami
             self.Catalog.AcroForm ||= InteractiveForm.new
             #self.Catalog.AcroForm.SigFlags = InteractiveForm::SigFlags::APPEND_ONLY
 
-            digsig.Type = :Sig #:nodoc:
-            digsig.Contents = HexaString.new("\x00" * signfield_size[certificate, key, []]) #:nodoc:
-            digsig.Filter = :"Adobe.PPKLite" #:nodoc:
-            digsig.Name = "ARE Acrobat Product v8.0 P23 0002337" #:nodoc:
-            digsig.SubFilter = :"adbe.pkcs7.detached" #:nodoc:
-            digsig.ByteRange = [0, 0, 0, 0] #:nodoc:
+            digsig.Type = :Sig
+            digsig.Contents = HexaString.new("\x00" * signfield_size[certificate, key, []])
+            digsig.Filter = :"Adobe.PPKLite"
+            digsig.Name = "ARE Acrobat Product v8.0 P23 0002337"
+            digsig.SubFilter = Name.new(Signature::PKCS7_DETACHED)
+            digsig.ByteRange = [0, 0, 0, 0]
 
-            sigref = Signature::Reference.new #:nodoc:
-            sigref.Type = :SigRef #:nodoc:
-            sigref.TransformMethod = :UR3 #:nodoc:
+            sigref = Signature::Reference.new
+            sigref.Type = :SigRef
+            sigref.TransformMethod = :UR3
             sigref.Data = self.Catalog
 
             sigref.TransformParams = UsageRights::TransformParams.new
-            sigref.TransformParams.P = true #:nodoc:
-            sigref.TransformParams.Type = :TransformParams #:nodoc:
+            sigref.TransformParams.P = true
+            sigref.TransformParams.Type = :TransformParams
             sigref.TransformParams.V = UsageRights::TransformParams::VERSION
 
             rights.each do |right|
@@ -399,6 +394,10 @@ module Origami
 
     module Signature
 
+        PKCS1_RSA_SHA1  = "adbe.x509.rsa_sha1"
+        PKCS7_SHA1      = "adbe.pkcs7.sha1"
+        PKCS7_DETACHED  = "adbe.pkcs7.detached"
+
         # Verifies a PKCS7 detached signature.
         def self.verify_pkcs7_detached_signature(data, signature, store, flags)
             pkcs7 = OpenSSL::PKCS7.new(signature)
@@ -505,10 +504,6 @@ module Origami
         #
         class DigitalSignature < Dictionary
             include StandardObject
-
-            PKCS1_RSA_SHA1  = :"adbe.x509.rsa_sha1"
-            PKCS7_SHA1      = :"adbe.pkcs7.sha1"
-            PKCS7_DETACHED  = :"adbe.pkcs7.detached"
 
             field   :Type,            :Type => Name, :Default => :Sig
             field   :Filter,          :Type => Name, :Default => :"Adobe.PPKLite", :Required => true
