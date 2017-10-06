@@ -52,15 +52,12 @@ module Origami
                 input.each_byte do |byte|
                     char = byte.chr
 
-                    case table.size
-                    when 512 then codesize = 10
-                    when 1024 then codesize = 11
-                    when 2048 then codesize = 12
-                    when 4096
+                    if table.size == 4096
                         result.write(CLEARTABLE, codesize)
-                        table, codesize = reset_state
-                        redo
+                        table, _ = reset_state
                     end
+
+                    codesize = table.size.bit_length
 
                     it = s + char
                     if table.has_key?(it)
@@ -85,14 +82,16 @@ module Origami
             def decode(string)
                 result = "".b
                 bstring = Utils::BitReader.new(string)
-                table, codesize, prevbyte = reset_state
+                table, codesize = reset_state
+                prevbyte = nil
 
                 until bstring.eod? do
                     byte = bstring.read(codesize)
                     break if byte == EOD
 
                     if byte == CLEARTABLE
-                        table, codesize, prevbyte = reset_state
+                        table, codesize = reset_state
+                        prevbyte = nil
                         redo
                     end
 
@@ -120,7 +119,7 @@ module Origami
                 when 510...1022 then 10
                 when 1022...2046 then 11
                 when 2046...4095 then 12
-                when 4095
+                else
                     raise InvalidLZWDataError, "LZW table is full and no clear flag was set"
                 end
             end
@@ -162,8 +161,8 @@ module Origami
                 table[CLEARTABLE] = CLEARTABLE
                 table[EOD] = EOD
 
-                # Codeword table, codeword size, previous_byte
-                [table, 9, nil]
+                # Codeword table, codeword size
+                [table, 9]
             end
         end
 
