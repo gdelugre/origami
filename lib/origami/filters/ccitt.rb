@@ -63,44 +63,50 @@ module Origami
             # Encodes data using CCITT-facsimile compression method.
             #
             def encode(stream)
-                mode = @params.has_key?(:K) ? @params.K.value : 0
+                mode = @params.key?(:K) ? @params.K.value : 0
+                colors = (@params.BlackIs1 == true) ? [0,1] : [1,0]
+                use_eob = (@params.EndOfBlock.nil? or @params.EndOfBlock == true)
+                use_eol = (@params.EndOfLine == true)
+                white, _black = colors
+
+                bitr = Utils::BitReader.new(stream)
+                bitw = Utils::BitWriter.new
 
                 unless mode.is_a?(::Integer) and mode <= 0
                     raise NotImplementedError.new("CCITT encoding scheme not supported", input_data: stream)
                 end
 
-                columns = @params.has_key?(:Columns) ? @params.Columns.value : (stream.size << 3)
-                unless columns.is_a?(::Integer) and columns > 0 #and columns % 8 == 0
+                # Use a single row if no width has been set.
+                @params[:Columns] ||= stream.size * 8
+                columns = @params.Columns.value
+
+                unless columns.is_a?(::Integer) and columns >= 0
                     raise CCITTFaxFilterError.new("Invalid value for parameter `Columns'", input_data: stream)
                 end
 
-                if stream.size % (columns >> 3) != 0
-                    raise CCITTFaxFilterError.new("Data size is not a multiple of image width", input_data: stream)
-                end
+                if columns > 0
+                    # Group 4 requires an imaginary white line
+                    if mode < 0
+                        prev_line = Utils::BitWriter.new
+                        write_bit_range(prev_line, white, columns)
+                        prev_line = Utils::BitReader.new(prev_line.final.to_s)
+                    end
 
-                colors = (@params.BlackIs1 == true) ? [0,1] : [1,0]
-                white, _black = colors
-                bitr = Utils::BitReader.new(stream)
-                bitw = Utils::BitWriter.new
+                    until bitr.eod?
+                        # Emit line synchronization code.
+                        bitw.write(*EOL) if use_eol
 
-                # Group 4 requires an imaginary white line
-                if mode < 0
-                    prev_line = Utils::BitWriter.new
-                    write_bit_range(prev_line, white, columns)
-                    prev_line = Utils::BitReader.new(prev_line.final.to_s)
-                end
-
-                until bitr.eod?
-                    case
-                    when mode == 0
-                        encode_one_dimensional_line(bitr, bitw, columns, colors)
-                    when mode < 0
-                        encode_two_dimensional_line(bitr, bitw, columns, colors, prev_line)
+                        case
+                        when mode == 0
+                            encode_one_dimensional_line(bitr, bitw, columns, colors)
+                        when mode < 0
+                            encode_two_dimensional_line(bitr, bitw, columns, colors, prev_line)
+                        end
                     end
                 end
 
-                # Emit return-to-control code
-                bitw.write(*RTC)
+                # Emit return-to-control code.
+                bitw.write(*RTC) if use_eob
 
                 bitw.final.to_s
             end
@@ -109,14 +115,14 @@ module Origami
             # Decodes data using CCITT-facsimile compression method.
             #
             def decode(stream)
-                mode = @params.has_key?(:K) ? @params.K.value : 0
+                mode = @params.key?(:K) ? @params.K.value : 0
 
                 unless mode.is_a?(::Integer) and mode <= 0
                     raise NotImplementedError.new("CCITT encoding scheme not supported", input_data: stream)
                 end
 
                 columns = @params.has_key?(:Columns) ? @params.Columns.value : 1728
-                unless columns.is_a?(::Integer) and columns > 0 #and columns % 8 == 0
+                unless columns.is_a?(::Integer) and columns >= 0
                     raise CCITTFaxFilterError.new("Invalid value for parameter `Columns'", input_data: stream)
                 end
 
@@ -130,18 +136,18 @@ module Origami
                 }
 
                 unless params[:has_eob?]
-                    unless @params.has_key?(:Rows) and @params.Rows.is_a?(::Integer) and @params.Rows.value > 0
+                    rows = @params.key?(:Rows) ? @params.Rows.value : 0
+
+                    unless rows.is_a?(::Integer) and rows >= 0
                         raise CCITTFaxFilterError.new("Invalid value for parameter `Rows'", input_data: stream)
                     end
-
-                    rows = @params.Rows.to_i
                 end
 
                 bitr = Utils::BitReader.new(stream)
                 bitw = Utils::BitWriter.new
 
                 # Group 4 requires an imaginary white line
-                if mode < 0
+                if columns > 0 and mode < 0
                     prev_line = Utils::BitWriter.new
                     write_bit_range(prev_line, white, columns)
                     prev_line = Utils::BitReader.new(prev_line.final.to_s)
@@ -182,7 +188,7 @@ module Origami
                         error.decoded_data = bitw.final.to_s
 
                         raise error
-                    end
+                    end if columns > 0
 
 
                     rows -= 1 unless params[:has_eob?]
@@ -194,10 +200,11 @@ module Origami
             private
 
             def encode_one_dimensional_line(input, output, columns, colors) #:nodoc:
-                output.write(*EOL)
                 scan_len = 0
                 white, _black = colors
                 current_color = white
+
+                return if columns == 0
 
                 # Process each bit in line.
                 begin
