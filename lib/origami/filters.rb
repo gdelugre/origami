@@ -214,8 +214,6 @@ module Origami
                     pbyte = bits >> 3
                     pbit = bits - (pbyte << 3)
                     @ptr_byte, @ptr_bit = pbyte, pbit
-
-                    bits
                 end
 
                 #

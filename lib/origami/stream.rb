@@ -99,8 +99,6 @@ module Origami
         def dictionary=(dict)
             @dictionary = dict
             @dictionary.parent = self
-
-            @dictionary
         end
 
         def pre_build

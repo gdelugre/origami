@@ -159,8 +159,6 @@ module Origami
 
             key.parent = self
             val.parent = self unless val.indirect? or val.parent.equal?(self)
-
-            val
         end
 
         def [](key)

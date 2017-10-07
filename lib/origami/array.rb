@@ -150,8 +150,6 @@ module Origami
             super(key.to_o, val.to_o)
 
             val.parent = self unless val.indirect?
-
-            val
         end
 
         def concat(*arys)
