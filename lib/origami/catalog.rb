@@ -60,14 +60,6 @@ module Origami
         # _action_:: An Action Object.
         #
         def onDocumentOpen(action)
-            unless action.is_a?(Action) or action.is_a?(Destination) or action.is_a?(Reference)
-                raise TypeError, "An Action object must be passed."
-            end
-
-            unless self.Catalog
-                raise InvalidPDFError, "A catalog object must exist to add this action."
-            end
-
             self.Catalog.OpenAction = action
 
             self
@@ -78,14 +70,6 @@ module Origami
         # _action_:: A JavaScript Action Object.
         #
         def onDocumentClose(action)
-            unless action.is_a?(Action::JavaScript) or action.is_a?(Reference)
-                raise TypeError, "An Action::JavaScript object must be passed."
-            end
-
-            unless self.Catalog
-                raise InvalidPDFError, "A catalog object must exist to add this action."
-            end
-
             self.Catalog.AA ||= CatalogAdditionalActions.new
             self.Catalog.AA.WC = action
 
@@ -97,14 +81,6 @@ module Origami
         # _action_:: A JavaScript Action Object.
         #
         def onDocumentPrint(action)
-            unless action.is_a?(Action::JavaScript) or action.is_a?(Reference)
-                raise TypeError, "An Action::JavaScript object must be passed."
-            end
-
-            unless self.Catalog
-                raise InvalidPDFError, "A catalog object must exist to add this action."
-            end
-
             self.Catalog.AA ||= CatalogAdditionalActions.new
             self.Catalog.AA.WP = action
 
