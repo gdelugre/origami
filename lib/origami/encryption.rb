@@ -58,48 +58,6 @@ module Origami
                 raise EncryptionNotSupportedError, "Unknown security handler : '#{handler.Filter}'"
             end
 
-            crypt_filters = {
-                Identity: Encryption::Identity
-            }
-
-            case handler.V.to_i
-            when 1,2
-                crypt_filters = Hash.new(Encryption::RC4)
-                string_filter = stream_filter = nil
-            when 4,5
-                crypt_filters = {
-                    Identity: Encryption::Identity
-                }
-
-                if handler[:CF].is_a?(Dictionary)
-                    handler[:CF].each_pair do |name, cf|
-                        next unless cf.is_a?(Dictionary)
-
-                        crypt_filters[name.value] =
-                            if cf[:CFM] == :V2 then Encryption::RC4
-                            elsif cf[:CFM] == :AESV2 then Encryption::AES
-                            elsif cf[:CFM] == :None then Encryption::Identity
-                            elsif cf[:CFM] == :AESV3 and handler.V.to_i == 5 then Encryption::AES
-                            else
-                                raise EncryptionNotSupportedError, "Unsupported encryption version : #{handler.V}"
-                            end
-                    end
-                end
-
-                string_filter = handler.StrF.is_a?(Name) ? handler.StrF.value : :Identity
-                stream_filter = handler.StmF.is_a?(Name) ? handler.StmF.value : :Identity
-
-                unless crypt_filters.key?(string_filter)
-                    raise EncryptionError, "Invalid StrF value in encryption dictionary"
-                end
-
-                unless crypt_filters.key?(stream_filter)
-                    raise EncryptionError, "Invalid StmF value in encryption dictionary"
-                end
-            else
-                raise EncryptionNotSupportedError, "Unsupported encryption version : #{handler.V}"
-            end
-
             doc_id = trailer_key(:ID)
             unless doc_id.is_a?(Array)
                 raise EncryptionError, "Document ID was not found or is invalid" unless handler.V.to_i == 5
@@ -107,24 +65,11 @@ module Origami
                 doc_id = doc_id.first
             end
 
-            if handler.is_user_password?(passwd, doc_id)
-                encryption_key = handler.compute_user_encryption_key(passwd, doc_id)
-            elsif handler.is_owner_password?(passwd, doc_id)
-                if handler.V.to_i < 5
-                    user_passwd = handler.retrieve_user_password(passwd)
-                    encryption_key = handler.compute_user_encryption_key(user_passwd, doc_id)
-                else
-                    encryption_key = handler.compute_owner_encryption_key(passwd)
-                end
-            else
-                raise EncryptionInvalidPasswordError
-            end
+            encryption_key = handler.derive_encryption_key(passwd, doc_id)
 
             self.extend(Encryption::EncryptedDocument)
             self.encryption_handler = handler
-            self.crypt_filters = crypt_filters
             self.encryption_key = encryption_key
-            self.stm_filter, self.str_filter = stream_filter, string_filter
 
             decrypt_objects
 
@@ -156,7 +101,7 @@ module Origami
             }.update(options)
 
             # Get the cryptographic parameters.
-            version, revision, crypt_filters = crypto_revision_from_options(params)
+            version, revision = crypto_revision_from_options(params)
 
             # Create the security handler.
             handler, encryption_key = create_security_handler(version, revision, params)
@@ -165,8 +110,6 @@ module Origami
             self.extend(Encryption::EncryptedDocument)
             self.encryption_handler = handler
             self.encryption_key = encryption_key
-            self.crypt_filters = crypt_filters
-            self.stm_filter = self.str_filter = :StdCF
 
             self
         end
@@ -228,23 +171,12 @@ module Origami
         def crypto_revision_from_options(params)
             case params[:cipher].upcase
             when 'RC4'
-                algorithm = Encryption::RC4
-                version, revision = crypto_revision_from_rc4_key(params[:key_size])
-                crypt_filters = Hash.new(algorithm)
-
+                crypto_revision_from_rc4_key(params[:key_size])
             when 'AES'
-                algorithm = Encryption::AES
-                version, revision = crypto_revision_from_aes_key(params[:key_size], params[:hardened])
-
-                crypt_filters = {
-                    Identity: Encryption::Identity,
-                    StdCF: algorithm
-                }
+                crypto_revision_from_aes_key(params[:key_size], params[:hardened])
             else
                 raise EncryptionNotSupportedError, "Cipher not supported : #{params[:cipher]}"
             end
-
-            [ version, revision, crypt_filters ]
         end
 
         #
@@ -312,22 +244,20 @@ module Origami
         module EncryptedDocument
             attr_accessor :encryption_key
             attr_accessor :encryption_handler
-            attr_accessor :str_filter, :stm_filter
-            attr_accessor :crypt_filters
 
             # Get the encryption cipher from the crypt filter name.
             def encryption_cipher(name)
-                @crypt_filters[name]
+                @encryption_handler.encryption_cipher(name)
             end
 
             # Get the default string encryption cipher.
             def string_encryption_cipher
-                encryption_cipher @str_filter
+                @encryption_handler.string_encryption_cipher
             end
 
             # Get the default stream encryption cipher.
             def stream_encryption_cipher
-                encryption_cipher @stm_filter
+                @encryption_handler.stream_encryption_cipher
             end
 
             private
@@ -736,6 +666,57 @@ module Origami
             field   :StmF,          :Type => Name, :Default => :Identity, :Version => "1.5"
             field   :StrF,          :Type => Name, :Default => :Identity, :Version => "1.5"
             field   :EFF,           :Type => Name, :Version => "1.6"
+
+            #
+            # Returns the default string encryption cipher.
+            #
+            def string_encryption_cipher
+                encryption_cipher(self.StrF || :Identity)
+            end
+
+            #
+            # Returns the default stream encryption cipher.
+            #
+            def stream_encryption_cipher
+                encryption_cipher(self.StmF || :Identity)
+            end
+
+            #
+            # Returns the encryption cipher corresponding to a crypt filter name.
+            #
+            def encryption_cipher(name)
+                case self.V.to_i
+                when 1, 2
+                    Encryption::RC4
+                when 4, 5
+                    return Encryption::Identity if name == :Identity
+                    raise EncryptionError, "Broken CF entry" unless self.CF.is_a?(Dictionary)
+
+                    self.CF.select { |key, dict| key == name and dict.is_a?(Dictionary) }
+                           .map { |_, dict| cipher_from_crypt_filter_method(dict[:CFM] || :None) }
+                           .first
+                else
+                    raise EncryptionNotSupportedError, "Unsupported encryption version: #{handler.V}"
+                end
+            end
+
+            private
+
+            #
+            # Converts a crypt filter method identifier to its cipher class.
+            #
+            def cipher_from_crypt_filter_method(name)
+                case name.to_sym
+                when :None then Encryption::Identity
+                when :V2 then Encryption::RC4
+                when :AESV2 then Encryption::AES
+                when :AESV3
+                    raise EncryptionNotSupportedError, "AESV3 requires a version 5 handler" if self.V.to_i != 5
+                    Encryption::AES
+                else
+                     raise EncryptionNotSupportedError, "Unsupported crypt filter method: #{name}"
+                end
+            end
         end
 
         #
@@ -782,6 +763,25 @@ module Origami
                         [ 1.7, 8 ]
                     else
                         super
+                    end
+                end
+
+                #
+                # Checks the given password and derives the document encryption key.
+                # Raises EncryptionInvalidPasswordError on invalid password.
+                #
+                def derive_encryption_key(passwd, doc_id)
+                    if is_user_password?(passwd, doc_id)
+                        compute_user_encryption_key(passwd, doc_id)
+                    elsif is_owner_password?(passwd, doc_id)
+                        if self.V.to_i < 5
+                            user_passwd = retrieve_user_password(passwd)
+                            compute_user_encryption_key(user_passwd, doc_id)
+                        else
+                            compute_owner_encryption_key(passwd)
+                        end
+                    else
+                        raise EncryptionInvalidPasswordError
                     end
                 end
 
