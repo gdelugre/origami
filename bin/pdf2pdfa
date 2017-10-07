@@ -83,5 +83,5 @@ begin
     PDF.read(target, params).save(@options[:output], intent: 'PDF/A', noindent: true)
 
 rescue
-    abort"#{$!.class}: #{$!.message}"
+    abort "#{$!.class}: #{$!.message}"
 end
