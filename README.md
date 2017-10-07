@@ -28,10 +28,8 @@ As of version 2, the minimal version required to run Origami is Ruby 2.1.
 
 Some optional features require additional gems:
 
-* [Gtk2][ruby-gtk2] for running the GUI interface
 * [therubyracer][the-ruby-racer] for JavaScript emulation of PDF scripts
 
-[ruby-gtk2]: https://rubygems.org/gems/gtk2
 [the-ruby-racer]: https://rubygems.org/gems/therubyracer
 
 Quick start
@@ -103,6 +101,10 @@ Origami comes with a set of tools to manipulate PDF documents from the command l
 * [pdf2ruby](bin/pdf2ruby): Converts a PDF into an Origami script rebuilding an equivalent document (experimental).
 * [pdfsh](bin/pdfsh): An IRB shell running inside the Origami namespace.
 
+**Note**: Since version 2.1, [pdfwalker][pdfwalker-gem] has been moved to a [separate repository][pdfwalker-repo].
+
+[pdfwalker-gem]: https://rubygems.org/gems/pdfwalker
+[pdfwalker-repo]: https://github.com/gdelugre/pdfwalker
 
 License
 -------
