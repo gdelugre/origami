@@ -49,14 +49,7 @@ module Origami
             signature = digsig[:Contents]
             subfilter = digsig.SubFilter.value
 
-            case subfilter.to_s
-            when Signature::PKCS7_DETACHED
-                Signature.verify_pkcs7_detached_signature(data, signature, store, flags)
-            when Signature::PKCS7_SHA1
-                Signature.verify_pkcs7_sha1_signature(data, signature, store, flags)
-            else
-                raise NotImplementedError, "Unsupported method #{digsig.SubFilter}"
-            end
+            Signature.verify(subfilter.to_s, data, signature, store, flags)
         end
 
         #
@@ -96,38 +89,6 @@ module Origami
                 raise TypeError, "Expected a Annotation::Widget::Signature object."
             end
 
-            case method
-            when Signature::PKCS7_DETACHED
-                signfield_size = -> (crt, pkey, certs) do
-                    OpenSSL::PKCS7.sign(
-                        crt,
-                        pkey,
-                        "",
-                        certs,
-                        OpenSSL::PKCS7::DETACHED | OpenSSL::PKCS7::BINARY
-                    ).to_der.size
-                end
-
-            when Signature::PKCS7_SHA1
-                signfield_size = -> (crt, pkey, certs) do
-                    OpenSSL::PKCS7.sign(
-                        crt,
-                        pkey,
-                        Digest::SHA1.digest(''),
-                        certs,
-                        OpenSSL::PKCS7::BINARY
-                    ).to_der.size
-                end
-
-            when Signature::PKCS1_RSA_SHA1
-                signfield_size = -> (_crt, pkey, _certs) do
-                    pkey.sign(OpenSSL::Digest::SHA1.new, '').size
-                end
- 
-            else
-                raise NotImplementedError, "Unsupported method #{method.inspect}"
-            end
-
             digsig = Signature::DigitalSignature.new.set_indirect(true)
 
             if annotation.nil?
@@ -141,7 +102,7 @@ module Origami
                 InteractiveForm::SigFlags::SIGNATURES_EXIST | InteractiveForm::SigFlags::APPEND_ONLY
 
             digsig.Type = :Sig
-            digsig.Contents = HexaString.new("\x00" * signfield_size[certificate, key, ca])
+            digsig.Contents = HexaString.new("\x00" * Signature::required_size(method, certificate, key, ca))
             digsig.Filter = :"Adobe.PPKLite"
             digsig.SubFilter = Name.new(method)
             digsig.ByteRange = [0, 0, 0, 0]
@@ -192,30 +153,10 @@ module Origami
             signable_data = file_data[digsig.ByteRange[0],digsig.ByteRange[1]] +
                 file_data[digsig.ByteRange[2],digsig.ByteRange[3]]
 
-            signature =
-                case method
-                when Signature::PKCS7_DETACHED
-                    OpenSSL::PKCS7.sign(
-                        certificate,
-                        key,
-                        signable_data,
-                        ca,
-                        OpenSSL::PKCS7::DETACHED | OpenSSL::PKCS7::BINARY
-                    ).to_der
-
-                when Signature::PKCS7_SHA1
-                    OpenSSL::PKCS7.sign(
-                        certificate,
-                        key,
-                        Digest::SHA1.digest(signable_data),
-                        ca,
-                        OpenSSL::PKCS7::BINARY
-                    ).to_der
-
-                when Signature::PKCS1_RSA_SHA1
-                    key.sign(OpenSSL::Digest::SHA1.new, signable_data)
-                end
-
+            #
+            # Computes and inserts the signature.
+            #
+            signature = Signature.compute(method, signable_data, certificate, key, ca)
             digsig.Contents[0, signature.size] = signature
 
             #
@@ -243,15 +184,8 @@ module Origami
         #
         def enable_usage_rights(cert, pkey, *rights)
 
-            signfield_size = -> (crt, key, ca) do
-                OpenSSL::PKCS7.sign(
-                    crt,
-                    key,
-                    '',
-                    ca,
-                    OpenSSL::PKCS7::DETACHED | OpenSSL::PKCS7::BINARY
-                ).to_der.size
-            end
+            # Always uses a detached PKCS7 signature for UR.
+            method = Signature::PKCS7_DETACHED
 
             #
             # Load key pair
@@ -268,10 +202,10 @@ module Origami
             #self.Catalog.AcroForm.SigFlags = InteractiveForm::SigFlags::APPEND_ONLY
 
             digsig.Type = :Sig
-            digsig.Contents = HexaString.new("\x00" * signfield_size[certificate, key, []])
+            digsig.Contents = HexaString.new("\x00" * Signature.required_size(method, certificate, key, []))
             digsig.Filter = :"Adobe.PPKLite"
             digsig.Name = "ARE Acrobat Product v8.0 P23 0002337"
-            digsig.SubFilter = Name.new(Signature::PKCS7_DETACHED)
+            digsig.SubFilter = Name.new(method )
             digsig.ByteRange = [0, 0, 0, 0]
 
             sigref = Signature::Reference.new
@@ -325,13 +259,7 @@ module Origami
             signable_data = file_data[digsig.ByteRange[0],digsig.ByteRange[1]] +
                 file_data[digsig.ByteRange[2],digsig.ByteRange[3]]
 
-            signature = OpenSSL::PKCS7.sign(
-                certificate,
-                key,
-                signable_data,
-                [],
-                OpenSSL::PKCS7::DETACHED | OpenSSL::PKCS7::BINARY
-            ).to_der
+            signature = Signature.compute(method, signable_data, certificate, key, [])
             digsig.Contents[0, signature.size] = signature
 
             #
@@ -398,19 +326,46 @@ module Origami
         PKCS7_SHA1      = "adbe.pkcs7.sha1"
         PKCS7_DETACHED  = "adbe.pkcs7.detached"
 
-        # Verifies a PKCS7 detached signature.
-        def self.verify_pkcs7_detached_signature(data, signature, store, flags)
-            pkcs7 = OpenSSL::PKCS7.new(signature)
-            raise SignatureError, "Not a PKCS7 detached signature" unless pkcs7.detached?
+        def self.verify(method, data, signature, store, flags)
+            case method
+            when PKCS7_DETACHED
+                pkcs7 = OpenSSL::PKCS7.new(signature)
+                raise SignatureError, "Not a PKCS7 detached signature" unless pkcs7.detached?
+                flags |= OpenSSL::PKCS7::DETACHED
+                pkcs7.verify([], store, data, flags)
 
-            flags |= OpenSSL::PKCS7::DETACHED
-            pkcs7.verify([], store, data, flags)
+            when PKCS7_SHA1
+                pkcs7 = OpenSSL::PKCS7.new(signature)
+                pkcs7.verify([], store, nil, flags) and pkcs7.data == Digest::SHA1.digest(data)
+
+            else
+                raise NotImplementedError, "Unsupported signature method #{method.inspect}"
+            end
         end
 
-        # Verifies a PKCS7-SHA1 signature.
-        def self.verify_pkcs7_sha1_signature(data, signature, store, flags)
-            pkcs7 = OpenSSL::PKCS7.new(signature)
-            pkcs7.verify([], store, nil, flags) and pkcs7.data == Digest::SHA1.digest(data)
+        #
+        # Computes the required size in bytes for storing the signature.
+        #
+        def self.required_size(method, certificate, key, ca)
+            self.compute(method, "", certificate, key, ca).size
+        end
+
+        #
+        # Computes the signature using the specified subfilter method.
+        #
+        def self.compute(method, data, certificate, key, ca)
+            case method
+            when PKCS7_DETACHED
+                OpenSSL::PKCS7.sign(certificate, key, data, ca, OpenSSL::PKCS7::DETACHED | OpenSSL::PKCS7::BINARY).to_der
+
+            when PKCS7_SHA1
+                OpenSSL::PKCS7.sign(certificate, key, Digest::SHA1.digest(data), ca, OpenSSL::PKCS7::BINARY).to_der
+
+            when PKCS1_RSA_SHA1
+                key.sign(OpenSSL::Digest::SHA1.new, data)
+            else
+                raise NotImplementedError, "Unsupported signature method #{method.inspect}"
+            end
         end
 
         #
