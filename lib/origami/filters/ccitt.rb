@@ -165,6 +165,8 @@ module Origami
                         break
                     end
 
+                    break if columns == 0
+
                     # checking for the presence of EOL
                     if bitr.peek(EOL[1]) != EOL[0]
                         raise InvalidCCITTFaxDataError.new(
@@ -188,8 +190,7 @@ module Origami
                         error.decoded_data = bitw.final.to_s
 
                         raise error
-                    end if columns > 0
-
+                    end
 
                     rows -= 1 unless params[:has_eob?]
                 end
