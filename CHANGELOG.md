@@ -1,3 +1,7 @@
+2.1.0
+-----
+* Moved pdfwalker to a separate gem
+
 2.0.0
 -----
 * Code reindented to 4 spaces.
