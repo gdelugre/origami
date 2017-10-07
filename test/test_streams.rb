@@ -57,6 +57,8 @@ class TestStreams < Minitest::Test
         stm.encoded_data = raw
 
         assert_equal stm.data, @data
+
+        assert_equal Filter::Flate.decode(Filter::Flate.encode("")), ""
     end
 
     def test_filter_asciihex
@@ -71,7 +73,7 @@ class TestStreams < Minitest::Test
             Filter::ASCIIHex.decode("123456789ABCDEFGHIJKL")
         end
 
-        assert_equal Filter::ASCIIHex.decode(""), ""
+        assert_equal Filter::ASCIIHex.decode(Filter::ASCIIHex.encode("")), ""
     end
 
     def test_filter_ascii85
@@ -86,7 +88,7 @@ class TestStreams < Minitest::Test
             Filter::ASCII85.decode("ABCD\x01")
         end
 
-        assert_equal Filter::ASCII85.decode(""), ""
+        assert_equal Filter::ASCII85.decode(Filter::ASCII85.encode("")), ""
     end
 
     def test_filter_rle
@@ -101,7 +103,7 @@ class TestStreams < Minitest::Test
             Filter::RunLength.decode("\x7f")
         end
 
-        assert_equal Filter::RunLength.decode(""), ""
+        assert_equal Filter::RunLength.decode(Filter::RunLength.encode("")), ""
     end
 
     def test_filter_lzw
@@ -116,7 +118,7 @@ class TestStreams < Minitest::Test
             Filter::LZW.decode("abcd")
         end
 
-        assert_equal Filter::LZW.decode(""), ""
+        assert_equal Filter::LZW.decode(Filter::LZW.encode("")), ""
     end
 
     def test_filter_ccittfax
@@ -132,7 +134,7 @@ class TestStreams < Minitest::Test
             Filter::CCITTFax.decode("abcd")
         end
 
-        assert_equal Filter::CCITTFax.decode(""), ""
+        assert_equal Filter::CCITTFax.decode(Filter::CCITTFax.encode("")), ""
     end
 
     def test_stream
