@@ -142,12 +142,12 @@ def reject(cause)
 end
 
 def quarantine(file, quarantine_folder)
-    digest = Digest::SHA256.file(TARGET)
-    ext = File.extname(TARGET)
-    dest_name = "#{File.basename(TARGET, ext)}_#{digest}#{ext}"
-    dest_path = File.join(@options[:move_dir], dest_name)
+    digest = Digest::SHA256.file(file)
+    ext = File.extname(file)
+    dest_name = "#{File.basename(file, ext)}_#{digest}#{ext}"
+    dest_path = File.join(quarantine_folder, dest_name)
 
-    FileUtils.move(TARGET, dest_path)
+    FileUtils.move(file, dest_path)
 end
 
 def check_rights(*required_rights)
