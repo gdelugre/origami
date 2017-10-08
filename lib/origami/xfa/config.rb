@@ -20,6 +20,13 @@
 
 module Origami
 
+    module XFA
+        class ConfigElement < Element
+            include Lockable
+            include Descriptive
+        end
+    end
+
     module XDP
 
         module Packet
@@ -36,10 +43,7 @@ module Origami
                     add_attribute 'xmlns:xfa', 'http://www.xfa.org/schema/xci/3.0/'
                 end
 
-                class URI < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class URI < XFA::ConfigElement
                     def initialize(uri = "")
                         super('uri')
 
@@ -47,10 +51,7 @@ module Origami
                     end
                 end
 
-                class Debug < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Debug < XFA::ConfigElement
                     xfa_node 'uri', Config::URI, 0..1
 
                     def initialize
@@ -58,10 +59,7 @@ module Origami
                     end
                 end
 
-                class AdjustData < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class AdjustData < XFA::ConfigElement
                     def initialize(coercion = "0")
                         super('adjustData')
 
@@ -69,10 +67,7 @@ module Origami
                     end
                 end
 
-                class Attributes < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Attributes < XFA::ConfigElement
                     PRESERVE = "preserve"
                     DELEGATE = "delegate"
                     IGNORE = "ignore"
@@ -84,10 +79,7 @@ module Origami
                     end
                 end
 
-                class IncrementalLoad < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class IncrementalLoad < XFA::ConfigElement
                     NONE = "none"
                     FORWARDONLY = "forwardOnly"
 
@@ -98,10 +90,7 @@ module Origami
                     end
                 end
 
-                class Locale < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Locale < XFA::ConfigElement
                     def initialize(locale = "")
                         super('locale')
 
@@ -109,10 +98,7 @@ module Origami
                     end
                 end
 
-                class LocaleSet < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class LocaleSet < XFA::ConfigElement
                     def initialize(uri = "")
                         super('localeSet')
 
@@ -120,10 +106,7 @@ module Origami
                     end
                 end
 
-                class OutputXSL < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class OutputXSL < XFA::ConfigElement
                     xfa_node 'uri', Config::URI, 0..1
 
                     def initialize
@@ -131,10 +114,7 @@ module Origami
                     end
                 end
 
-                class Range < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Range < XFA::ConfigElement
                     def initialize(range = "")
                         super('range')
 
@@ -142,10 +122,7 @@ module Origami
                     end
                 end
 
-                class Record < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Record < XFA::ConfigElement
                     def initialize(record = "")
                         super('record')
 
@@ -153,10 +130,7 @@ module Origami
                     end
                 end
 
-                class StartNode < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class StartNode < XFA::ConfigElement
                     def initialize(somexpr = "")
                         super('startNode')
 
@@ -164,10 +138,7 @@ module Origami
                     end
                 end
 
-                class Window < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Window < XFA::ConfigElement
                     def initialize(win = "0")
                         super('window')
 
@@ -175,10 +146,7 @@ module Origami
                     end
                 end
 
-                class XSL < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class XSL < XFA::ConfigElement
                     xfa_node 'debug', Config::Debug, 0..1
                     xfa_node 'uri', Config::URI, 0..1
 
@@ -187,10 +155,7 @@ module Origami
                     end
                 end
 
-                class ExcludeNS < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class ExcludeNS < XFA::ConfigElement
                     def initialize(ns = "")
                         super('excludeNS')
 
@@ -198,10 +163,7 @@ module Origami
                     end
                 end
 
-                class GroupParent < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class GroupParent < XFA::ConfigElement
                     def initialize(parentname = "")
                         super('groupParent')
 
@@ -209,10 +171,7 @@ module Origami
                     end
                 end
 
-                class IfEmpty < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class IfEmpty < XFA::ConfigElement
                     DATAVALUE = "dataValue"
                     DATAGROUP = "dataGroup"
                     IGNORE = "ignore"
@@ -225,10 +184,7 @@ module Origami
                     end
                 end
 
-                class NameAttr < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class NameAttr < XFA::ConfigElement
                     def initialize(name)
                         super('nameAttr')
 
@@ -236,10 +192,7 @@ module Origami
                     end
                 end
 
-                class Picture < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Picture < XFA::ConfigElement
                     def initialize(clause = "")
                         super('picture')
 
@@ -247,10 +200,7 @@ module Origami
                     end
                 end
 
-                class Presence < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Presence < XFA::ConfigElement
                     PRESERVE = "preserve"
                     DISSOLVE = "dissolve"
                     DISSOLVESTRUCTURE = "dissolveStructure"
@@ -264,10 +214,7 @@ module Origami
                     end
                 end
 
-                class Rename < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Rename < XFA::ConfigElement
                     def initialize(nodename = "")
                         super('rename')
 
@@ -275,10 +222,7 @@ module Origami
                     end
                 end
 
-                class Whitespace < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Whitespace < XFA::ConfigElement
                     PRESERVE = "preserve"
                     LTRIM = "ltrim"
                     NORMALIZE = "normalize"
@@ -292,9 +236,7 @@ module Origami
                     end
                 end
 
-                class Transform < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
+                class Transform < XFA::ConfigElement
                     xfa_attribute 'ref'
 
                     xfa_node 'groupParent', Config::GroupParent, 0..1
@@ -306,10 +248,7 @@ module Origami
                     xfa_node 'whitespace', Config::Whitespace, 0..1
                 end
 
-                class Data < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Data < XFA::ConfigElement
                     xfa_node 'adjustData', Config::AdjustData, 0..1
                     xfa_node 'attributes', Config::Attributes, 0..1
                     xfa_node 'incrementalLoad', Config::IncrementalLoad, 0..1
@@ -329,10 +268,7 @@ module Origami
                     end
                 end
 
-                class Severity < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Severity < XFA::ConfigElement
                     IGNORE = "ignore"
                     ERROR = "error"
                     INFORMATION = "information"
@@ -346,10 +282,7 @@ module Origami
                     end
                 end
 
-                class MsgId < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class MsgId < XFA::ConfigElement
                     def initialize(uid = "1")
                         super('msgId')
 
@@ -357,10 +290,7 @@ module Origami
                     end
                 end
 
-                class Message < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Message < XFA::ConfigElement
                     xfa_node 'msgId', Config::MsgId, 0..1
                     xfa_node 'severity', Config::Severity, 0..1
 
@@ -369,10 +299,7 @@ module Origami
                     end
                 end
 
-                class Messaging < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Messaging < XFA::ConfigElement
                     xfa_node 'message', Config::Message
 
                     def initialize
@@ -380,10 +307,7 @@ module Origami
                     end
                 end
 
-                class SuppressBanner < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class SuppressBanner < XFA::ConfigElement
                     ALLOWED = "0"
                     DENIED = "1"
 
@@ -394,10 +318,7 @@ module Origami
                     end
                 end
 
-                class Base < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Base < XFA::ConfigElement
                     def initialize(uri = "")
                         super('base')
 
@@ -405,10 +326,7 @@ module Origami
                     end
                 end
 
-                class Relevant < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Relevant < XFA::ConfigElement
                     def initialize(token = "")
                         super('relevant')
 
@@ -416,10 +334,7 @@ module Origami
                     end
                 end
 
-                class StartPage < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class StartPage < XFA::ConfigElement
                     def initialize(pagenum = "0")
                         super('startPage')
 
@@ -427,10 +342,7 @@ module Origami
                     end
                 end
 
-                class Template < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Template < XFA::ConfigElement
                     xfa_node 'base', Config::Base, 0..1
                     xfa_node 'relevant', Config::Relevant, 0..1
                     xfa_node 'startPage', Config::StartPage, 0..1
@@ -442,10 +354,7 @@ module Origami
                     end
                 end
 
-                class ValidationMessaging < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class ValidationMessaging < XFA::ConfigElement
                     ALL_INDIVIDUALLY = "allMessagesIndividually"
                     ALL_TOGETHER = "allMessagesTogether"
                     FIRST_ONLY = "firstMessageOnly"
@@ -459,7 +368,8 @@ module Origami
                 end
 
                 class VersionControl < XFA::Element
-                    xfa_attribute 'lock'
+                    include Lockable
+
                     xfa_attribute 'outputBelow'
                     xfa_attribute 'sourceAbove'
                     xfa_attribute 'sourceBelow'
@@ -469,10 +379,7 @@ module Origami
                     end
                 end
 
-                class Mode < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Mode < XFA::ConfigElement
                     APPEND = "append"
                     OVERWRITE = "overwrite"
 
@@ -483,10 +390,7 @@ module Origami
                     end
                 end
 
-                class Threshold < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Threshold < XFA::ConfigElement
                     TRACE = "trace"
                     ERROR = "error"
                     INFORMATION = "information"
@@ -499,10 +403,7 @@ module Origami
                     end
                 end
 
-                class To < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class To < XFA::ConfigElement
                     NULL = "null"
                     MEMORY = "memory"
                     STD_ERR = "stderr"
@@ -517,10 +418,7 @@ module Origami
                     end
                 end
 
-                class Log < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Log < XFA::ConfigElement
                     xfa_node 'mode', Config::Mode, 0..1
                     xfa_node 'threshold', Config::Threshold, 0..1
                     xfa_node 'to', Config::To, 0..1
@@ -531,10 +429,7 @@ module Origami
                     end
                 end
 
-                class Common < XFA::Element
-                    xfa_attribute 'desc'
-                    xfa_attribute 'lock'
-
+                class Common < XFA::ConfigElement
                     xfa_node 'data', Config::Data, 0..1
                     xfa_node 'locale', Config::Locale, 0..1
                     xfa_node 'localeSet', Config::LocaleSet, 0..1

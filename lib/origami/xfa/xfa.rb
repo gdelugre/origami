@@ -72,7 +72,38 @@ module Origami
 
         class Element < REXML::Element
             include XFA
+
+            #
+            # A permission flag for allowing or blocking attempted changes to the element.
+            # 0 - Allow changes to properties and content.
+            # 1 - Block changes to properties and content.
+            #
+            module Lockable
+                def lock!
+                    self.attr_lock = 1
+                end
+
+                def unlock!
+                    self.attr_lock = 0
+                end
+
+                def locked?
+                    self.attr_lock == 1
+                end
+
+                def self.included(receiver)
+                    receiver.xfa_attribute 'lock'
+                end
+            end
+
+            #
+            # An attribute to hold human-readable metadata.
+            #
+            module Descriptive
+                def self.included(receiver)
+                    receiver.xfa_attribute 'desc'
+                end
+            end
         end
     end
-
 end
