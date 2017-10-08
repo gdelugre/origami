@@ -92,7 +92,7 @@ module Origami
                 end
 
                 def self.included(receiver)
-                    receiver.xfa_attribute 'lock'
+                    receiver.xfa_attribute "lock"
                 end
             end
 
@@ -101,7 +101,35 @@ module Origami
             #
             module Descriptive
                 def self.included(receiver)
-                    receiver.xfa_attribute 'desc'
+                    receiver.xfa_attribute "desc"
+                end
+            end
+
+            #
+            # A unique identifier that may be used to identify this element as a target.
+            #
+            module Referencable
+                def self.included?(receiver)
+                    receiver.xfa_attribute "id"
+                end
+            end
+
+            #
+            # At template load time, invokes another object in the same document as a prototype for this object.
+            #
+            module Prototypable
+                def self.included?(receiver)
+                    receiver.xfa_attribute "use"
+                    receiver.xfa_attribute "usehref"
+                end
+            end
+
+            #
+            # An identifier that may be used to identify this element in script expressions.
+            #
+            module Namable
+                def self.included?(receiver)
+                    receiver.xfa_attribute "name"
                 end
             end
         end

@@ -20,6 +20,17 @@
 
 module Origami
 
+    module XFA
+        class TemplateElement < Element
+            include Referencable
+            include Prototypable
+        end
+
+        class NamedTemplateElement < TemplateElement
+            include Namable
+        end
+    end
+
     module XDP
 
         module Packet
@@ -30,12 +41,7 @@ module Origami
             class Template < XFA::Element
                 mime_type 'application/x-xfa-template'
 
-                class Boolean < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Boolean < XFA::NamedTemplateElement
                     NO = 0
                     YES = 1
 
@@ -46,12 +52,7 @@ module Origami
                     end
                 end
 
-                class Date < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Date < XFA::NamedTemplateElement
                     def initialize(date = nil)
                         super('date')
 
@@ -59,12 +60,7 @@ module Origami
                     end
                 end
 
-                class DateTime < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class DateTime < XFA::NamedTemplateElement
                     def initialize(datetime = nil)
                         super('dateTime')
 
@@ -72,13 +68,9 @@ module Origami
                     end
                 end
 
-                class Decimal < XFA::Element
+                class Decimal < XFA::NamedTemplateElement
                     xfa_attribute 'fracDigits'
-                    xfa_attribute 'id'
                     xfa_attribute 'leadDigits'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(number = nil)
                         super('decimal')
@@ -87,16 +79,12 @@ module Origami
                     end
                 end
 
-                class ExData < XFA::Element
+                class ExData < XFA::NamedTemplateElement
                     xfa_attribute 'contentType'
                     xfa_attribute 'href'
-                    xfa_attribute 'id'
                     xfa_attribute 'maxLength'
-                    xfa_attribute 'name'
                     xfa_attribute 'rid'
                     xfa_attribute 'transferEncoding'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(data = nil)
                         super('exData')
@@ -105,12 +93,7 @@ module Origami
                     end
                 end
 
-                class Float < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Float < XFA::NamedTemplateElement
                     def initialize(float = nil)
                         super('float')
 
@@ -118,15 +101,11 @@ module Origami
                     end
                 end
 
-                class Image < XFA::Element
+                class Image < XFA::NamedTemplateElement
                     xfa_attribute 'aspect'
                     xfa_attribute 'contentType'
                     xfa_attribute 'href'
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
                     xfa_attribute 'transferEncoding'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(data = nil)
                         super('image')
@@ -135,12 +114,7 @@ module Origami
                     end
                 end
 
-                class Integer < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Integer < XFA::NamedTemplateElement
                     def initialize(int = nil)
                         super('integer')
 
@@ -148,13 +122,9 @@ module Origami
                     end
                 end
 
-                class Text < XFA::Element
-                    xfa_attribute 'id'
+                class Text < XFA::NamedTemplateElement
                     xfa_attribute 'maxChars'
-                    xfa_attribute 'name'
                     xfa_attribute 'rid'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(text = "")
                         super('text')
@@ -163,12 +133,7 @@ module Origami
                     end
                 end
 
-                class Time < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Time < XFA::NamedTemplateElement
                     def initialize(time = nil)
                         super('time')
 
@@ -176,12 +141,7 @@ module Origami
                     end
                 end
 
-                class Extras < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Extras < XFA::NamedTemplateElement
                     xfa_node 'boolean', Template::Boolean
                     xfa_node 'date', Template::Date
                     xfa_node 'dateTime', Template::DateTime
@@ -199,13 +159,10 @@ module Origami
                     end
                 end
 
-                class Speak < XFA::Element
+                class Speak < XFA::TemplateElement
                     xfa_attribute 'disable'
-                    xfa_attribute 'id'
                     xfa_attribute 'priority'
                     xfa_attribute 'rid'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(text = "")
                         super('speak')
@@ -214,11 +171,8 @@ module Origami
                     end
                 end
 
-                class ToolTip < XFA::Element
-                    xfa_attribute 'id'
+                class ToolTip < XFA::TemplateElement
                     xfa_attribute 'rid'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(text = "")
                         super('toolTip')
@@ -227,11 +181,8 @@ module Origami
                     end
                 end
 
-                class Assist < XFA::Element
-                    xfa_attribute 'id'
+                class Assist < XFA::TemplateElement
                     xfa_attribute 'role'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'speak', Template::Speak, 0..1
                     xfa_node 'toolTip', Template::ToolTip, 0..1
@@ -241,11 +192,7 @@ module Origami
                     end
                 end
 
-                class Picture < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Picture < XFA::TemplateElement
                     def initialize(data = nil)
                         super('picture')
 
@@ -264,23 +211,17 @@ module Origami
                     end
                 end
 
-                class Bookend < XFA::Element
-                    xfa_attribute 'id'
+                class Bookend < XFA::TemplateElement
                     xfa_attribute 'leader'
                     xfa_attribute 'trailer'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize
                         super('bookend')
                     end
                 end
 
-                class Color < XFA::Element
+                class Color < XFA::TemplateElement
                     xfa_attribute 'cSpace'
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'value'
 
                     xfa_node 'extras', Template::Extras, 0..1
@@ -292,16 +233,13 @@ module Origami
                     end
                 end
 
-                class Corner < XFA::Element
-                    xfa_attribute 'id'
+                class Corner < XFA::TemplateElement
                     xfa_attribute 'inverted'
                     xfa_attribute 'join'
                     xfa_attribute 'presence'
                     xfa_attribute 'radius'
                     xfa_attribute 'stroke'
                     xfa_attribute 'thickness'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'color', Template::Color, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -311,14 +249,11 @@ module Origami
                     end
                 end
 
-                class Edge < XFA::Element
+                class Edge < XFA::TemplateElement
                     xfa_attribute 'cap'
-                    xfa_attribute 'id'
                     xfa_attribute 'presence'
                     xfa_attribute 'stroke'
                     xfa_attribute 'thickness'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'color', Template::Color, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -328,11 +263,8 @@ module Origami
                     end
                 end
 
-                class Linear < XFA::Element
-                    xfa_attribute 'id'
+                class Linear < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'color', Template::Color, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -342,11 +274,8 @@ module Origami
                     end
                 end
 
-                class Pattern < XFA::Element
-                    xfa_attribute 'id'
+                class Pattern < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'color', Template::Color, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -356,11 +285,8 @@ module Origami
                     end
                 end
 
-                class Radial < XFA::Element
-                    xfa_attribute 'id'
+                class Radial < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'color', Template::Color, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -370,11 +296,7 @@ module Origami
                     end
                 end
 
-                class Solid < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Solid < XFA::TemplateElement
                     xfa_node 'extras', Template::Extras, 0..1
 
                     def initialize
@@ -382,11 +304,8 @@ module Origami
                     end
                 end
 
-                class Stipple < XFA::Element
-                    xfa_attribute 'id'
+                class Stipple < XFA::TemplateElement
                     xfa_attribute 'rate'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'color', Template::Color, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -396,11 +315,8 @@ module Origami
                     end
                 end
 
-                class Fill < XFA::Element
-                    xfa_attribute 'id'
+                class Fill < XFA::TemplateElement
                     xfa_attribute 'presence'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'color', Template::Color, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -415,14 +331,11 @@ module Origami
                     end
                 end
 
-                class Margin < XFA::Element
+                class Margin < XFA::TemplateElement
                     xfa_attribute 'bottomInset'
-                    xfa_attribute 'id'
                     xfa_attribute 'leftInset'
                     xfa_attribute 'rightInset'
                     xfa_attribute 'topInset'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
 
@@ -431,14 +344,11 @@ module Origami
                     end
                 end
 
-                class Border < XFA::Element
+                class Border < XFA::TemplateElement
                     xfa_attribute 'break'
                     xfa_attribute 'hand'
-                    xfa_attribute 'id'
                     xfa_attribute 'presence'
                     xfa_attribute 'relevant'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'corner', Template::Corner, 0..4
                     xfa_node 'edge', Template::Edge, 0..4
@@ -451,20 +361,17 @@ module Origami
                     end
                 end
 
-                class Break < XFA::Element
+                class Break < XFA::TemplateElement
                     xfa_attribute 'after'
                     xfa_attribute 'afterTarget'
                     xfa_attribute 'before'
                     xfa_attribute 'beforeTarget'
                     xfa_attribute 'bookendLeader'
                     xfa_attribute 'bookendTrailer'
-                    xfa_attribute 'id'
                     xfa_attribute 'overflowLeader'
                     xfa_attribute 'overflowTarget'
                     xfa_attribute 'overflowTrailer'
                     xfa_attribute 'startNew'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
 
@@ -473,11 +380,7 @@ module Origami
                     end
                 end
 
-                class Message < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Message < XFA::TemplateElement
                     xfa_node 'text', Template::Text
 
                     def initialize
@@ -485,14 +388,10 @@ module Origami
                     end
                 end
 
-                class Script < XFA::Element
+                class Script < XFA::NamedTemplateElement
                     xfa_attribute 'binding'
                     xfa_attribute 'contentType'
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
                     xfa_attribute 'runAt'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(script = "")
                         super('script')
@@ -517,11 +416,8 @@ module Origami
                     end
                 end
 
-                class Calculate < XFA::Element
-                    xfa_attribute 'id'
+                class Calculate < XFA::TemplateElement
                     xfa_attribute 'override'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
                     xfa_node 'message', Template::Message, 0..1
@@ -532,11 +428,7 @@ module Origami
                     end
                 end
 
-                class Desc < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Desc < XFA::TemplateElement
                     xfa_node 'boolean', Template::Boolean
                     xfa_node 'date', Template::Date
                     xfa_node 'dateTime', Template::DateTime
@@ -553,13 +445,10 @@ module Origami
                     end
                 end
 
-                class Keep < XFA::Element
-                    xfa_attribute 'id'
+                class Keep < XFA::TemplateElement
                     xfa_attribute 'intact'
                     xfa_attribute 'next'
                     xfa_attribute 'previous'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
 
@@ -572,13 +461,10 @@ module Origami
                     end
                 end
 
-                class Occur < XFA::Element
-                    xfa_attribute 'id'
+                class Occur < XFA::TemplateElement
                     xfa_attribute 'initial'
                     xfa_attribute 'max'
                     xfa_attribute 'min'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
 
@@ -587,21 +473,17 @@ module Origami
                     end
                 end
 
-                class Overflow < XFA::Element
-                    xfa_attribute 'id'
+                class Overflow < XFA::TemplateElement
                     xfa_attribute 'leader'
                     xfa_attribute 'target'
                     xfa_attribute 'trailer'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize
                         super('overflow')
                     end
                 end
 
-                class Medium < XFA::Element
-                    xfa_attribute 'id'
+                class Medium < XFA::TemplateElement
                     xfa_attribute 'imagingBBox'
                     xfa_attribute 'long'
                     xfa_attribute 'orientation'
@@ -609,19 +491,16 @@ module Origami
                     xfa_attribute 'stock'
                     xfa_attribute 'trayIn'
                     xfa_attribute 'trayOut'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize
                         super('medium')
                     end
                 end
 
-                class Font < XFA::Element
+                class Font < XFA::TemplateElement
                     xfa_attribute 'baselineShift'
                     xfa_attribute 'fontHorizontalScale'
                     xfa_attribute 'fontVerticalScale'
-                    xfa_attribute 'id'
                     xfa_attribute 'kerningMode'
                     xfa_attribute 'letterSpacing'
                     xfa_attribute 'lineThrough'
@@ -633,8 +512,6 @@ module Origami
                     xfa_attribute 'typeface'
                     xfa_attribute 'underline'
                     xfa_attribute 'underlinePeriod'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'weight'
 
                     xfa_node 'extras', Template::Extras, 0..1
@@ -645,15 +522,12 @@ module Origami
                     end
                 end
 
-                class Hyphenation < XFA::Element
+                class Hyphenation < XFA::TemplateElement
                     xfa_attribute 'excludeAllCaps'
                     xfa_attribute 'excludeInitialCap'
                     xfa_attribute 'hyphenate'
-                    xfa_attribute 'id'
                     xfa_attribute 'pushCharacterCount'
                     xfa_attribute 'remainCharacterCount'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'wordCharacterCount'
 
                     def initialize
@@ -661,9 +535,8 @@ module Origami
                     end
                 end
 
-                class Para < XFA::Element
+                class Para < XFA::TemplateElement
                     xfa_attribute 'hAlign'
-                    xfa_attribute 'id'
                     xfa_attribute 'lineHeight'
                     xfa_attribute 'marginLeft'
                     xfa_attribute 'marginRight'
@@ -675,8 +548,6 @@ module Origami
                     xfa_attribute 'tabDefault'
                     xfa_attribute 'tabStops'
                     xfa_attribute 'textIndent'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'vAlign'
                     xfa_attribute 'widows'
 
@@ -687,14 +558,11 @@ module Origami
                     end
                 end
 
-                class Arc < XFA::Element
+                class Arc < XFA::TemplateElement
                     xfa_attribute 'circular'
                     xfa_attribute 'hand'
-                    xfa_attribute 'id'
                     xfa_attribute 'startAngle'
                     xfa_attribute 'sweepAngle'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'edge', Template::Edge, 0..1
                     xfa_node 'fill', Template::Fill, 0..1
@@ -704,12 +572,9 @@ module Origami
                     end
                 end
 
-                class Line < XFA::Element
+                class Line < XFA::TemplateElement
                     xfa_attribute 'hand'
-                    xfa_attribute 'id'
                     xfa_attribute 'slope'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'edge', Template::Edge, 0..1
 
@@ -718,11 +583,8 @@ module Origami
                     end
                 end
 
-                class Rectangle < XFA::Element
+                class Rectangle < XFA::TemplateElement
                     xfa_attribute 'hand'
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'corner', Template::Corner, 0..4
                     xfa_node 'edge', Template::Edge, 0..4
@@ -733,12 +595,9 @@ module Origami
                     end
                 end
 
-                class Value < XFA::Element
-                    xfa_attribute 'id'
+                class Value < XFA::TemplateElement
                     xfa_attribute 'override'
                     xfa_attribute 'relevant'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'arc', Template::Arc, 0..1
                     xfa_node 'boolean', Template::Boolean, 0..1
@@ -759,13 +618,10 @@ module Origami
                     end
                 end
 
-                class Caption < XFA::Element
-                    xfa_attribute 'id'
+                class Caption < XFA::TemplateElement
                     xfa_attribute 'placement'
                     xfa_attribute 'presence'
                     xfa_attribute 'reserve'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
                     xfa_node 'font', Template::Font, 0..1
@@ -778,12 +634,9 @@ module Origami
                     end
                 end
 
-                class Traverse < XFA::Element
-                    xfa_attribute 'id'
+                class Traverse < XFA::TemplateElement
                     xfa_attribute 'operation'
                     xfa_attribute 'ref'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
                     xfa_node 'script', Template::Script, 0..1
@@ -793,13 +646,8 @@ module Origami
                     end
                 end
 
-                class Traversal < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Traversal < XFA::TemplateElement
                     xfa_node 'extras', Template::Extras, 0..1
-
                     xfa_node 'traverse', Template::Traverse
 
                     def initialize
@@ -807,12 +655,7 @@ module Origami
                     end
                 end
 
-                class Certificate < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Certificate < XFA::NamedTemplateElement
                     def initialize(b64data = nil)
                         super('certificate')
 
@@ -820,11 +663,7 @@ module Origami
                     end
                 end
 
-                class Encrypt < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Encrypt < XFA::TemplateElement
                     xfa_node 'certificate', Template::Certificate, 0..1
 
                     def initialize
@@ -832,7 +671,7 @@ module Origami
                     end
                 end
 
-                class Barcode < XFA::Element
+                class Barcode < XFA::TemplateElement
                     xfa_attribute 'charEncoding'
                     xfa_attribute 'checksum'
                     xfa_attribute 'dataColumnCount'
@@ -841,7 +680,6 @@ module Origami
                     xfa_attribute 'dataRowCount'
                     xfa_attribute 'endChar'
                     xfa_attribute 'errorConnectionLevel'
-                    xfa_attribute 'id'
                     xfa_attribute 'moduleHeight'
                     xfa_attribute 'moduleWidth'
                     xfa_attribute 'printCheckDigit'
@@ -851,8 +689,6 @@ module Origami
                     xfa_attribute 'truncate'
                     xfa_attribute 'type'
                     xfa_attribute 'upsMode'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'wideNarrowRatio'
 
                     xfa_node 'encrypt', Template::Encrypt, 0..1
@@ -863,11 +699,8 @@ module Origami
                     end
                 end
 
-                class Button < XFA::Element
+                class Button < XFA::TemplateElement
                     xfa_attribute 'highlight'
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
 
@@ -876,13 +709,10 @@ module Origami
                     end
                 end
 
-                class CheckButton < XFA::Element
-                    xfa_attribute 'id'
+                class CheckButton < XFA::TemplateElement
                     xfa_attribute 'mark'
                     xfa_attribute 'shape'
                     xfa_attribute 'size'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'border', Template::Border, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -893,13 +723,10 @@ module Origami
                     end
                 end
 
-                class ChoiceList < XFA::Element
+                class ChoiceList < XFA::TemplateElement
                     xfa_attribute 'commitOn'
-                    xfa_attribute 'id'
                     xfa_attribute 'open'
                     xfa_attribute 'textEntry'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'border', Template::Border, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -910,23 +737,17 @@ module Origami
                     end
                 end
 
-                class Comb < XFA::Element
-                    xfa_attribute 'id'
+                class Comb < XFA::TemplateElement
                     xfa_attribute 'numberOfCells'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize
                         super('comb')
                     end
                 end
 
-                class DateTimeEdit < XFA::Element
+                class DateTimeEdit < XFA::TemplateElement
                     xfa_attribute 'hScrollPolicy'
-                    xfa_attribute 'id'
                     xfa_attribute 'picker'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'border', Template::Border, 0..1
                     xfa_node 'comb', Template::Comb, 0..1
@@ -938,11 +759,7 @@ module Origami
                     end
                 end
 
-                class DefaultUI < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class DefaultUI < XFA::TemplateElement
                     xfa_node 'extras', Template::Extras, 0..1
 
                     def initialize
@@ -950,11 +767,8 @@ module Origami
                     end
                 end
 
-                class ImageEdit < XFA::Element
+                class ImageEdit < XFA::TemplateElement
                     xfa_attribute 'data'
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'border', Template::Border, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -965,11 +779,8 @@ module Origami
                     end
                 end
 
-                class NumericEdit < XFA::Element
+                class NumericEdit < XFA::TemplateElement
                     xfa_attribute 'hScrollPolicy'
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'border', Template::Border, 0..1
                     xfa_node 'comb', Template::Comb, 0..1
@@ -981,12 +792,9 @@ module Origami
                     end
                 end
 
-                class PasswordEdit < XFA::Element
+                class PasswordEdit < XFA::TemplateElement
                     xfa_attribute 'hScrollPolicy'
-                    xfa_attribute 'id'
                     xfa_attribute 'passwordChar'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'border', Template::Border, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -997,11 +805,8 @@ module Origami
                     end
                 end
 
-                class AppearanceFilter < XFA::Element
-                    xfa_attribute 'id'
+                class AppearanceFilter < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(name = "")
                         super('appearanceFilter')
@@ -1010,11 +815,8 @@ module Origami
                     end
                 end
 
-                class Issuers < XFA::Element
-                    xfa_attribute 'id'
+                class Issuers < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'certificate', Template::Certificate
 
@@ -1023,32 +825,24 @@ module Origami
                     end
                 end
 
-                class KeyUsage < XFA::Element
+                class KeyUsage < XFA::TemplateElement
                     xfa_attribute 'crlSign'
                     xfa_attribute 'dataEncipherment'
                     xfa_attribute 'decipherOnly'
                     xfa_attribute 'digitalSignature'
                     xfa_attribute 'encipherOnly'
-                    xfa_attribute 'id'
                     xfa_attribute 'keyAgreement'
                     xfa_attribute 'keyCertSign'
                     xfa_attribute 'keyEncipherment'
                     xfa_attribute 'nonRepudiation'
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize
                         super('keyUsage')
                     end
                 end
 
-                class OID < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class OID < XFA::NamedTemplateElement
                     def initialize(oid = "")
                         super('oid')
 
@@ -1056,11 +850,8 @@ module Origami
                     end
                 end
 
-                class OIDs < XFA::Element
-                    xfa_attribute 'id'
+                class OIDs < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'oid', Template::OID
 
@@ -1069,11 +860,8 @@ module Origami
                     end
                 end
 
-                class Signing < XFA::Element
-                    xfa_attribute 'id'
+                class Signing < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'certificate', Template::Certificate
 
@@ -1082,12 +870,8 @@ module Origami
                     end
                 end
 
-                class SubjectDN < XFA::Element
+                class SubjectDN < XFA::NamedTemplateElement
                     xfa_attribute 'delimiter'
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(data = "")
                         super('subjectDN')
@@ -1096,11 +880,8 @@ module Origami
                     end
                 end
 
-                class SubjectDNs < XFA::Element
-                    xfa_attribute 'id'
+                class SubjectDNs < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'subjectDN', Template::SubjectDN, 0..1
 
@@ -1109,13 +890,10 @@ module Origami
                     end
                 end
 
-                class Certificates < XFA::Element
+                class Certificates < XFA::TemplateElement
                     xfa_attribute 'credentialServerPolicy'
-                    xfa_attribute 'id'
                     xfa_attribute 'url'
                     xfa_attribute 'urlPolicy'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'issuers', Template::Issuers, 0..1
                     xfa_node 'keyUsage', Template::KeyUsage, 0..1
@@ -1128,11 +906,7 @@ module Origami
                     end
                 end
 
-                class DigestMethod < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class DigestMethod < XFA::TemplateElement
                     def initialize(method = "")
                         super('digestMethod')
 
@@ -1140,11 +914,8 @@ module Origami
                     end
                 end
 
-                class DigestMethods < XFA::Element
-                    xfa_attribute 'id'
+                class DigestMethods < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'digestMethod', Template::DigestMethod
 
@@ -1153,11 +924,7 @@ module Origami
                     end
                 end
 
-                class Encoding < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Encoding < XFA::TemplateElement
                     def initialize(encoding = "")
                         super('encoding')
 
@@ -1165,11 +932,8 @@ module Origami
                     end
                 end
 
-                class Encodings < XFA::Element
-                    xfa_attribute 'id'
+                class Encodings < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'encoding', Template::Encoding
 
@@ -1178,11 +942,8 @@ module Origami
                     end
                 end
 
-                class Handler < XFA::Element
-                    xfa_attribute 'id'
+                class Handler < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(handler = "")
                         super('handler')
@@ -1191,11 +952,8 @@ module Origami
                     end
                 end
 
-                class LockDocument < XFA::Element
-                    xfa_attribute 'id'
+                class LockDocument < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(lock = "default")
                         super('lockDocument')
@@ -1204,24 +962,16 @@ module Origami
                     end
                 end
 
-                class MDP < XFA::Element
-                    xfa_attribute 'id'
+                class MDP < XFA::TemplateElement
                     xfa_attribute 'permissions'
                     xfa_attribute 'signatureType'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize
                         super('mdp')
                     end
                 end
 
-                class Reason < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Reason < XFA::NamedTemplateElement
                     def initialize(reason = "")
                         super('reason')
 
@@ -1229,11 +979,8 @@ module Origami
                     end
                 end
 
-                class Reasons < XFA::Element
-                    xfa_attribute 'id'
+                class Reasons < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'reason', Template::Reason
 
@@ -1242,24 +989,17 @@ module Origami
                     end
                 end
 
-                class TimeStamp < XFA::Element
-                    xfa_attribute 'id'
+                class TimeStamp < XFA::TemplateElement
                     xfa_attribute 'server'
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize
                         super('timeStamp')
                     end
                 end
 
-                class Filter < XFA::Element
+                class Filter < XFA::NamedTemplateElement
                     xfa_attribute 'addRevocationInfo'
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'version'
 
                     xfa_node 'appearanceFilter', Template::AppearanceFilter, 0..1
@@ -1277,11 +1017,7 @@ module Origami
                     end
                 end
 
-                class Ref < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Ref < XFA::TemplateElement
                     def initialize(somexpr = nil)
                         super('ref')
 
@@ -1289,15 +1025,10 @@ module Origami
                     end
                 end
 
-                class Manifest < XFA::Element
+                class Manifest < XFA::NamedTemplateElement
                     xfa_attribute 'action'
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
-
                     xfa_node 'ref', Template::Ref, 0..1
 
                     def initialize
@@ -1305,11 +1036,8 @@ module Origami
                     end
                 end
 
-                class Signature < XFA::Element
-                    xfa_attribute 'id'
+                class Signature < XFA::TemplateElement
                     xfa_attribute 'type'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'border', Template::Border, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -1322,13 +1050,10 @@ module Origami
                     end
                 end
 
-                class TextEdit < XFA::Element
+                class TextEdit < XFA::TemplateElement
                     xfa_attribute 'allowRichText'
                     xfa_attribute 'hScrollPolicy'
-                    xfa_attribute 'id'
                     xfa_attribute 'multiLine'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'vScrollPolicy'
 
                     xfa_node 'border', Template::Border, 0..1
@@ -1341,11 +1066,7 @@ module Origami
                     end
                 end
 
-                class UI < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class UI < XFA::TemplateElement
                     xfa_node 'extras', Template::Extras, 0..1
                     xfa_node 'picture', Template::Picture, 0..1
                     xfa_node 'barcode', Template::Barcode, 0..1
@@ -1375,22 +1096,18 @@ module Origami
                     end
                 end
 
-                class Draw < XFA::Element
+                class Draw < XFA::NamedTemplateElement
                     xfa_attribute 'anchorType'
                     xfa_attribute 'colSpan'
                     xfa_attribute 'h'
-                    xfa_attribute 'id'
                     xfa_attribute 'locale'
                     xfa_attribute 'maxH'
                     xfa_attribute 'maxW'
                     xfa_attribute 'minH'
                     xfa_attribute 'minW'
-                    xfa_attribute 'name'
                     xfa_attribute 'presence'
                     xfa_attribute 'relevant'
                     xfa_attribute 'rotate'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'w'
                     xfa_attribute 'x'
                     xfa_attribute 'y'
@@ -1415,13 +1132,10 @@ module Origami
                     end
                 end
 
-                class Validate < XFA::Element
+                class Validate < XFA::TemplateElement
                     xfa_attribute 'formatTest'
-                    xfa_attribute 'id'
                     xfa_attribute 'nullTest'
                     xfa_attribute 'scriptTest'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
                     xfa_node 'message', Template::Message, 0..1
@@ -1433,13 +1147,10 @@ module Origami
                     end
                 end
 
-                class Connect < XFA::Element
+                class Connect < XFA::TemplateElement
                     xfa_attribute 'connection'
-                    xfa_attribute 'id'
                     xfa_attribute 'ref'
                     xfa_attribute 'usage'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'picture', Template::Picture, 0..1
 
@@ -1448,26 +1159,20 @@ module Origami
                     end
                 end
 
-                class Execute < XFA::Element
+                class Execute < XFA::TemplateElement
                     xfa_attribute 'connection'
                     xfa_attribute 'executeType'
-                    xfa_attribute 'id'
                     xfa_attribute 'runAt'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize
                         super('execute')
                     end
                 end
 
-                class SignData < XFA::Element
-                    xfa_attribute 'id'
+                class SignData < XFA::TemplateElement
                     xfa_attribute 'operation'
                     xfa_attribute 'ref'
                     xfa_attribute 'target'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'filter', Template::Filter, 0..1
                     xfa_node 'manifest', Template::Manifest, 0..1
@@ -1477,18 +1182,14 @@ module Origami
                     end
                 end
 
-                class Submit < XFA::Element
+                class Submit < XFA::TemplateElement
                     xfa_attribute 'embedPDF'
                     xfa_attribute 'format'
-                    xfa_attribute 'id'
                     xfa_attribute 'target'
                     xfa_attribute 'textEncoding'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'xdpContent'
 
                     xfa_node 'encrypt', Template::Encrypt, 0..1
-
                     xfa_node 'signData', Template::SignData
 
                     def initialize
@@ -1496,14 +1197,10 @@ module Origami
                     end
                 end
 
-                class Event < XFA::Element
+                class Event < XFA::NamedTemplateElement
                     xfa_attribute 'activity'
-                    xfa_attribute 'id'
                     xfa_attribute 'listen'
-                    xfa_attribute 'name'
                     xfa_attribute 'ref'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
                     xfa_node 'execute', Template::Execute, 0..1
@@ -1516,11 +1213,7 @@ module Origami
                     end
                 end
 
-                class Format < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Format < XFA::TemplateElement
                     xfa_node 'extras', Template::Extras, 0..1
                     xfa_node 'picture', Template::Picture, 0..1
 
@@ -1529,14 +1222,10 @@ module Origami
                     end
                 end
 
-                class Items < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
+                class Items < XFA::NamedTemplateElement
                     xfa_attribute 'presence'
                     xfa_attribute 'ref'
                     xfa_attribute 'save'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'boolean', Template::Boolean
                     xfa_node 'date', Template::Date
@@ -1565,24 +1254,20 @@ module Origami
                     end
                 end
 
-                class Field < XFA::Element
+                class Field < XFA::NamedTemplateElement
                     xfa_attribute 'access'
                     xfa_attribute 'accessKey'
                     xfa_attribute 'anchorType'
                     xfa_attribute 'colSpan'
                     xfa_attribute 'h'
-                    xfa_attribute 'id'
                     xfa_attribute 'locale'
                     xfa_attribute 'maxH'
                     xfa_attribute 'maxW'
                     xfa_attribute 'minH'
                     xfa_attribute 'minW'
-                    xfa_attribute 'name'
                     xfa_attribute 'presence'
                     xfa_attribute 'relevant'
                     xfa_attribute 'rotate'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'w'
                     xfa_attribute 'x'
                     xfa_attribute 'y'
@@ -1616,23 +1301,19 @@ module Origami
                 end
 
 
-                class ExclGroup < XFA::Element
+                class ExclGroup < XFA::NamedTemplateElement
                     xfa_attribute 'access'
                     xfa_attribute 'accessKey'
                     xfa_attribute 'anchorType'
                     xfa_attribute 'colSpan'
                     xfa_attribute 'h'
-                    xfa_attribute 'id'
                     xfa_attribute 'layout'
                     xfa_attribute 'maxH'
                     xfa_attribute 'maxW'
                     xfa_attribute 'minH'
                     xfa_attribute 'minW'
-                    xfa_attribute 'name'
                     xfa_attribute 'presence'
                     xfa_attribute 'relevant'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'w'
                     xfa_attribute 'x'
                     xfa_attribute 'y'
@@ -1659,15 +1340,12 @@ module Origami
                     end
                 end
 
-                class BreakAfter < XFA::Element
-                    xfa_attribute 'id'
+                class BreakAfter < XFA::TemplateElement
                     xfa_attribute 'leader'
                     xfa_attribute 'startNew'
                     xfa_attribute 'target'
                     xfa_attribute 'targetType'
                     xfa_attribute 'trailer'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'script', Template::Script, 0..1
 
@@ -1676,15 +1354,12 @@ module Origami
                     end
                 end
 
-                class BreakBefore < XFA::Element
-                    xfa_attribute 'id'
+                class BreakBefore < XFA::TemplateElement
                     xfa_attribute 'leader'
                     xfa_attribute 'startNew'
                     xfa_attribute 'target'
                     xfa_attribute 'targetType'
                     xfa_attribute 'trailer'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'script', Template::Script, 0..1
 
@@ -1693,14 +1368,10 @@ module Origami
                     end
                 end
 
-                class Subform < XFA::Element ; end
-                class SubformSet < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
+                class Subform < XFA::NamedTemplateElement ; end
+                class SubformSet < XFA::NamedTemplateElement
                     xfa_attribute 'relation'
                     xfa_attribute 'relevant'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'bookend', Template::Bookend, 0..1
                     xfa_node 'break', Template::Break, 0..1
@@ -1719,13 +1390,9 @@ module Origami
                     end
                 end
 
-                class Area < XFA::Element
+                class Area < XFA::NamedTemplateElement
                     xfa_attribute 'colSpan'
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
                     xfa_attribute 'relevant'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'x'
                     xfa_attribute 'y'
 
@@ -1744,13 +1411,9 @@ module Origami
                     end
                 end
 
-                class ContentArea < XFA::Element
+                class ContentArea < XFA::NamedTemplateElement
                     xfa_attribute 'h'
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
                     xfa_attribute 'relevant'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'w'
                     xfa_attribute 'x'
                     xfa_attribute 'y'
@@ -1763,17 +1426,13 @@ module Origami
                     end
                 end
 
-                class PageArea < XFA::Element
+                class PageArea < XFA::NamedTemplateElement
                     xfa_attribute 'blankOrNotBlank'
-                    xfa_attribute 'id'
                     xfa_attribute 'initialNumber'
-                    xfa_attribute 'name'
                     xfa_attribute 'numbered'
                     xfa_attribute 'oddOrEven'
                     xfa_attribute 'pagePosition'
                     xfa_attribute 'relevant'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'desc', Template::Desc, 0..1
                     xfa_node 'extras', Template::Extras, 0..1
@@ -1792,13 +1451,9 @@ module Origami
                     end
                 end
 
-                class PageSet < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
+                class PageSet < XFA::NamedTemplateElement
                     xfa_attribute 'relation'
                     xfa_attribute 'relevant'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
                     xfa_node 'occur', Template::Occur, 0..1
@@ -1815,11 +1470,7 @@ module Origami
                     end
                 end
 
-                class Variables < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class Variables < XFA::TemplateElement
                     xfa_node 'boolean', Template::Boolean
                     xfa_node 'date', Template::Date
                     xfa_node 'dateTime', Template::DateTime
@@ -1838,15 +1489,11 @@ module Origami
                     end
                 end
 
-                class ExObject < XFA::Element
+                class ExObject < XFA::NamedTemplateElement
                     xfa_attribute 'archive'
                     xfa_attribute 'classId'
                     xfa_attribute 'codeBase'
                     xfa_attribute 'codeType'
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     xfa_node 'extras', Template::Extras, 0..1
 
@@ -1980,27 +1627,23 @@ module Origami
                     end
                 end
 
-                class Subform < XFA::Element
+                class Subform < XFA::NamedTemplateElement
                     xfa_attribute 'access'
                     xfa_attribute 'allowMacro'
                     xfa_attribute 'anchorType'
                     xfa_attribute 'colSpan'
                     xfa_attribute 'columnWidths'
                     xfa_attribute 'h'
-                    xfa_attribute 'id'
                     xfa_attribute 'layout'
                     xfa_attribute 'locale'
                     xfa_attribute 'maxH'
                     xfa_attribute 'maxW'
                     xfa_attribute 'minH'
                     xfa_attribute 'minW'
-                    xfa_attribute 'name'
                     xfa_attribute 'presence'
                     xfa_attribute 'relevant'
                     xfa_attribute 'restoreState'
                     xfa_attribute 'scope'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
                     xfa_attribute 'w'
                     xfa_attribute 'x'
                     xfa_attribute 'y'
