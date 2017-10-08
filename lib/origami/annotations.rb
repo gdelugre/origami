@@ -106,91 +106,51 @@ module Origami
         module Triggerable
           
             def onMouseOver(action)        
-                unless action.is_a?(Action) or action.is_a?(Reference)
-                    raise TypeError, "An Action object must be passed."
-                end
-                
                 self.AA ||= AdditionalActions.new
                 self.AA.E = action
             end
           
             def onMouseOut(action)        
-                unless action.is_a?(Action) or action.is_a?(Reference)
-                    raise TypeError, "An Action object must be passed."
-                end
-                
                 self.AA ||= AdditionalActions.new
                 self.AA.X = action
             end
           
             def onMouseDown(action)        
-                unless action.is_a?(Action) or action.is_a?(Reference)
-                    raise TypeError, "An Action object must be passed."
-                end
-                
                 self.AA ||= AdditionalActions.new
                 self.AA.D = action
             end
           
             def onMouseUp(action)        
-                unless action.is_a?(Action) or action.is_a?(Reference)
-                    raise TypeError, "An Action object must be passed."
-                end
-                
                 self.AA ||= AdditionalActions.new
                 self.AA.U = action
             end
           
             def onFocus(action)        
-                unless action.is_a?(Action) or action.is_a?(Reference)
-                    raise TypeError, "An Action object must be passed."
-                end
-                
                 self.AA ||= AdditionalActions.new
                 self.AA.Fo = action
             end
           
             def onBlur(action)        
-                unless action.is_a?(Action) or action.is_a?(Reference)
-                    raise TypeError, "An Action object must be passed."
-                end
-                
                 self.AA ||= AdditionalActions.new
                 self.AA.Bl = action
             end
           
             def onPageOpen(action)        
-                unless action.is_a?(Action) or action.is_a?(Reference)
-                    raise TypeError, "An Action object must be passed."
-                end
-                
                 self.AA ||= AdditionalActions.new
                 self.AA.PO = action
             end
           
             def onPageClose(action)        
-                unless action.is_a?(Action) or action.is_a?(Reference)
-                    raise TypeError, "An Action object must be passed."
-                end
-                
                 self.AA ||= AdditionalActions.new
                 self.AA.PC = action
             end
 
             def onPageVisible(action)        
-                unless action.is_a?(Action) or action.is_a?(Reference)
-                    raise TypeError, "An Action object must be passed."
-                end
-                
                 self.AA ||= AdditionalActions.new
                 self.AA.PV = action
             end
           
             def onPageInvisible(action)        
-                unless action.is_a?(Action) or action.is_a?(Reference)
-                  raise TypeError, "An Action object must be passed."
-                end
-                
                 self.AA ||= AdditionalActions.new
                 self.AA.PI = action
             end
