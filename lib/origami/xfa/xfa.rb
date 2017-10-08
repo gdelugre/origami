@@ -40,7 +40,7 @@ module Origami
                 attr_setter = "attr_#{name}="
                 remove_method(attr_setter) rescue NameError
                 define_method(attr_setter) do |value|
-                    self.attributes[names.to_s] = value
+                    self.attributes[name.to_s] = value
                 end
             end
 
