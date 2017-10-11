@@ -191,7 +191,11 @@ module Origami
                 raise InvalidHexaStringObjectError, "Hexadecimal string shall end with a '#{TOKENS.last}' token"
             end
 
-            decoded = Filter::ASCIIHex.decode(hexa.chomp!(TOKENS.last))
+            begin
+                decoded = Filter::ASCIIHex.decode(hexa.chomp!(TOKENS.last))
+            rescue Filter::InvalidASCIIHexStringError => e
+                raise InvalidHexaStringObjectError, e.message
+            end
 
             hexastr = HexaString.new(decoded)
             hexastr.file_offset = offset
