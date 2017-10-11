@@ -19,6 +19,12 @@
 =end
 
 module Origami
+
+    #
+    # Common Exception class for Origami errors.
+    #
+    class Error < StandardError
+    end
   
     #
     # Global options for Origami.

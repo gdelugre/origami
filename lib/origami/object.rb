@@ -81,12 +81,6 @@ module Origami
     end
 
     #
-    # Common Exception class for Origami errors.
-    #
-    class Error < StandardError
-    end
-
-    #
     # Provides an easier syntax for field access.
     # The object must have the defined the methods #[] and #[]=.
     #
