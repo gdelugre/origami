@@ -189,11 +189,11 @@ module Origami
         end
 
         def error(msg = "") #:nodoc:
-            log(VERBOSE_QUIET, 'error', :red, msg.red)
+            log(VERBOSE_QUIET, 'error', :red, msg)
         end
 
         def warn(msg = "") #:nodoc:
-            log(VERBOSE_INFO, 'warn ', :yellow, msg.yellow)
+            log(VERBOSE_INFO, 'warn ', :yellow, msg)
         end
 
         def info(msg = "") #:nodoc:
