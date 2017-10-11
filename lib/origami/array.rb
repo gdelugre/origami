@@ -114,6 +114,8 @@ module Origami
         end
         alias value to_a
 
+        alias each_value each
+
         def to_s #:nodoc:
             content = TOKENS.first.dup
             content << self.map {|entry|
