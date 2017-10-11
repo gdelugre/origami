@@ -382,7 +382,7 @@ module Origami
         #
         # Get the n-th Page object in this node, starting from 1.
         #
-        def get_page(n, browsed_nodes: [])
+        def get_page(n)
             page_enum = self.each_page.lazy
 
             raise IndexError, "Page numbers are referenced starting from 1" if n < 1
