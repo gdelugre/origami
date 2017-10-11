@@ -179,13 +179,14 @@ module Origami
         end
 
         def self.parse(stream, _parser = nil) #:nodoc:
-            offset = stream.pos
+            scanner = Parser.init_scanner(stream)
+            offset = scanner.pos
 
-            if stream.skip(@@regexp_open).nil?
+            if scanner.skip(@@regexp_open).nil?
                 raise InvalidHexaStringObjectError, "Hexadecimal string shall start with a '#{TOKENS.first}' token"
             end
 
-            hexa = stream.scan_until(@@regexp_close)
+            hexa = scanner.scan_until(@@regexp_close)
             if hexa.nil?
                 raise InvalidHexaStringObjectError, "Hexadecimal string shall end with a '#{TOKENS.last}' token"
             end
@@ -243,29 +244,30 @@ module Origami
         end
 
         def self.parse(stream, _parser = nil) #:nodoc:
-            offset = stream.pos
+            scanner = Parser.init_scanner(stream)
+            offset = scanner.pos
 
-            unless stream.skip(@@regexp_open)
+            unless scanner.skip(@@regexp_open)
                 raise InvalidLiteralStringObjectError, "No literal string start token found"
             end
 
             result = ""
             depth = 0
-            while depth != 0 or stream.peek(1) != TOKENS.last do
-                raise InvalidLiteralStringObjectError, "Non-terminated string" if stream.eos?
+            while depth != 0 or scanner.peek(1) != TOKENS.last do
+                raise InvalidLiteralStringObjectError, "Non-terminated string" if scanner.eos?
 
-                c = stream.get_byte
+                c = scanner.get_byte
                 case c
                 when "\\"
-                    if stream.match?(/\d{1,3}/)
-                        oct = stream.peek(3).oct.chr
-                        stream.pos += 3
+                    if scanner.match?(/\d{1,3}/)
+                        oct = scanner.peek(3).oct.chr
+                        scanner.pos += 3
                         result << oct
-                    elsif stream.match?(/((\r?\n)|(\r\n?))/)
-                        stream.skip(/((\r?\n)|(\r\n?))/)
+                    elsif scanner.match?(/((\r?\n)|(\r\n?))/)
+                        scanner.skip(/((\r?\n)|(\r\n?))/)
                         next
                     else
-                        flag = stream.get_byte
+                        flag = scanner.get_byte
                         case flag
                         when "n" then result << "\n"
                         when "r" then result << "\r"
@@ -276,7 +278,7 @@ module Origami
                         when ")" then result << ")"
                         when "\\" then result << "\\"
                         when "\r"
-                            stream.pos += 1 if stream.peek(1) == "\n"
+                            scanner.pos += 1 if scanner.peek(1) == "\n"
                         when "\n"
                         else
                             result << flag
@@ -294,7 +296,7 @@ module Origami
                 end
             end
 
-            unless stream.skip(@@regexp_close)
+            unless scanner.skip(@@regexp_close)
                 raise InvalidLiteralStringObjectError, "Byte string shall be terminated with '#{TOKENS.last}'"
             end
 

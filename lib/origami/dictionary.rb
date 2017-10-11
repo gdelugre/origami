@@ -82,20 +82,21 @@ module Origami
         end
 
         def self.parse(stream, parser = nil) #:nodoc:
-            offset = stream.pos
+            scanner = Parser.init_scanner(stream)
+            offset = scanner.pos
 
-            if stream.skip(@@regexp_open).nil?
+            if scanner.skip(@@regexp_open).nil?
                 raise InvalidDictionaryObjectError, "No token '#{TOKENS.first}' found"
             end
 
             hash = {}
-            while stream.skip(@@regexp_close).nil? do
-                key = Name.parse(stream, parser)
+            while scanner.skip(@@regexp_close).nil? do
+                key = Name.parse(scanner, parser)
 
-                type = Object.typeof(stream)
+                type = Object.typeof(scanner)
                 raise InvalidDictionaryObjectError, "Invalid object for field #{key}" if type.nil?
 
-                value = type.parse(stream, parser)
+                value = type.parse(scanner, parser)
                 hash[key] = value
             end
 

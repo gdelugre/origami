@@ -573,25 +573,26 @@ module Origami
 
         class << self
 
-            def typeof(stream, noref = false) #:nodoc:
-                stream.skip(REGEXP_WHITESPACES)
+            def typeof(stream) #:nodoc:
+                scanner = Parser.init_scanner(stream)
+                scanner.skip(REGEXP_WHITESPACES)
 
-                case stream.peek(1)
+                case scanner.peek(1)
                 when '/' then return Name
                 when '<'
-                    return (stream.peek(2) == '<<') ? Stream : HexaString
+                    return (scanner.peek(2) == '<<') ? Stream : HexaString
                 when '(' then return LiteralString
                 when '[' then return Origami::Array
                 when 'n' then
-                    return Null if stream.peek(4) == 'null'
+                    return Null if scanner.peek(4) == 'null'
                 when 't' then
-                    return Boolean if stream.peek(4) == 'true'
+                    return Boolean if scanner.peek(4) == 'true'
                 when 'f' then
-                    return Boolean if stream.peek(5) == 'false'
+                    return Boolean if scanner.peek(5) == 'false'
                 else
-                    if not noref and stream.check(Reference::REGEXP_TOKEN) then return Reference
-                    elsif stream.check(Real::REGEXP_TOKEN) then return Real
-                    elsif stream.check(Integer::REGEXP_TOKEN) then return Integer
+                    if scanner.check(Reference::REGEXP_TOKEN) then return Reference
+                    elsif scanner.check(Real::REGEXP_TOKEN) then return Real
+                    elsif scanner.check(Integer::REGEXP_TOKEN) then return Integer
                     else
                         nil
                     end
@@ -601,32 +602,30 @@ module Origami
             end
 
             def parse(stream, parser = nil) #:nodoc:
-                offset = stream.pos
+                scanner = Parser.init_scanner(stream)
+                offset = scanner.pos
 
                 #
                 # End of body ?
                 #
-                return nil if stream.match?(/xref/) or stream.match?(/trailer/) or stream.match?(/startxref/)
+                return nil if scanner.match?(/xref/) or scanner.match?(/trailer/) or scanner.match?(/startxref/)
 
-                if stream.scan(@@regexp_obj).nil?
-                  raise InvalidObjectError,
-                    "Object shall begin with '%d %d obj' statement"
+                if scanner.scan(@@regexp_obj).nil?
+                    raise InvalidObjectError, "Object shall begin with '%d %d obj' statement"
                 end
 
-                no = stream['no'].to_i
-                gen = stream['gen'].to_i
+                no = scanner['no'].to_i
+                gen = scanner['gen'].to_i
 
-                type = typeof(stream)
+                type = typeof(scanner)
                 if type.nil?
-                    raise InvalidObjectError,
-                            "Cannot determine object (no:#{no},gen:#{gen}) type"
+                    raise InvalidObjectError, "Cannot determine object (no:#{no},gen:#{gen}) type"
                 end
 
                 begin
-                    new_obj = type.parse(stream, parser)
+                    new_obj = type.parse(scanner, parser)
                 rescue
-                    raise InvalidObjectError,
-                            "Failed to parse object (no:#{no},gen:#{gen})\n\t -> [#{$!.class}] #{$!.message}"
+                    raise InvalidObjectError, "Failed to parse object (no:#{no},gen:#{gen})\n\t -> [#{$!.class}] #{$!.message}"
                 end
 
                 new_obj.set_indirect(true)
@@ -634,17 +633,17 @@ module Origami
                 new_obj.generation = gen
                 new_obj.file_offset = offset
 
-                if stream.skip(@@regexp_endobj).nil?
+                if scanner.skip(@@regexp_endobj).nil?
                     raise UnterminatedObjectError.new("Object shall end with 'endobj' statement", new_obj)
                 end
 
                 new_obj
             end
 
-            def skip_until_next_obj(stream) #:nodoc:
+            def skip_until_next_obj(scanner) #:nodoc:
                 [ @@regexp_obj, /xref/, /trailer/, /startxref/ ].each do |re|
-                    if stream.scan_until(re)
-                        stream.pos -= stream.matched_size
+                    if scanner.scan_until(re)
+                        scanner.pos -= scanner.matched_size
                         return true
                     end
                 end

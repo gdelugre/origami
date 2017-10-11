@@ -208,6 +208,16 @@ module Origami
             log(VERBOSE_TRACE, 'trace', :cyan, msg)
         end
 
+        def self.init_scanner(stream)
+            if stream.is_a?(StringScanner)
+                stream
+            elsif stream.respond_to?(:to_str)
+                StringScanner.new(stream.to_str)
+            else
+                raise TypeError, "Cannot initialize scanner from #{stream.class}"
+            end
+        end
+
         private
 
         #

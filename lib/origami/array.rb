@@ -84,18 +84,19 @@ module Origami
         end
 
         def self.parse(stream, parser = nil, hint_type: nil) #:nodoc:
+            scanner = Parser.init_scanner(stream)
+            offset = scanner.pos
             data = []
-            offset = stream.pos
 
-            if not stream.skip(@@regexp_open)
+            if not scanner.skip(@@regexp_open)
                 raise InvalidArrayObjectError, "No token '#{TOKENS.first}' found"
             end
 
-            while stream.skip(@@regexp_close).nil? do
-                type = Object.typeof(stream)
+            while scanner.skip(@@regexp_close).nil? do
+                type = Object.typeof(scanner)
                 raise InvalidArrayObjectError, "Bad embedded object format" if type.nil?
 
-                value = type.parse(stream, parser)
+                value = type.parse(scanner, parser)
                 data << value
             end
 

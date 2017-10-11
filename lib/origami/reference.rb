@@ -43,14 +43,15 @@ module Origami
         end
 
         def self.parse(stream, _parser = nil) #:nodoc:
-            offset = stream.pos
+            scanner = Parser.init_scanner(stream)
+            offset = scanner.pos
 
-            if stream.scan(@@regexp).nil?
+            if scanner.scan(@@regexp).nil?
                 raise InvalidReferenceError, "Bad reference to indirect objet format"
             end
 
-            no = stream['no'].to_i
-            gen = stream['gen'].to_i
+            no = scanner['no'].to_i
+            gen = scanner['gen'].to_i
 
             ref = Reference.new(no, gen)
             ref.file_offset = offset

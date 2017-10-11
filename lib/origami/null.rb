@@ -37,9 +37,10 @@ module Origami
         end
 
         def self.parse(stream, _parser = nil) #:nodoc:
-            offset = stream.pos
+            scanner = Parser.init_scanner(stream)
+            offset = scanner.pos
 
-            if stream.skip(@@regexp).nil?
+            if scanner.skip(@@regexp).nil?
                 raise InvalidNullObjectError
             end
 

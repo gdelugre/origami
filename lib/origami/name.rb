@@ -78,13 +78,14 @@ module Origami
         end
 
         def self.parse(stream, _parser = nil) #:nodoc:
-            offset = stream.pos
+            scanner = Parser.init_scanner(stream)
+            offset = scanner.pos
 
             name =
-                if stream.scan(@@regexp).nil?
+                if scanner.scan(@@regexp).nil?
                     raise InvalidNameObjectError, "Bad name format"
                 else
-                    value = stream['name']
+                    value = scanner['name']
 
                     Name.new(value.include?('#') ? contract(value) : value)
                 end

@@ -68,13 +68,15 @@ module Origami
         end
 
         def self.parse(stream) #:nodoc:
-            if stream.scan(@@regexp).nil?
+            scanner = Parser.init_scanner(stream)
+
+            if scanner.scan(@@regexp).nil?
                 raise InvalidXRefError, "Invalid XRef format"
             end
 
-            offset = stream['offset'].to_i
-            generation = stream['gen'].to_i
-            state = stream['state']
+            offset = scanner['offset'].to_i
+            generation = scanner['gen'].to_i
+            state = scanner['state']
 
             XRef.new(offset, generation, state)
         end
@@ -141,16 +143,18 @@ module Origami
             end
 
             def self.parse(stream) #:nodoc:
-                if stream.scan(@@regexp).nil?
+                scanner = Parser.init_scanner(stream)
+
+                if scanner.scan(@@regexp).nil?
                   raise InvalidXRefSubsectionError, "Bad subsection format"
                 end
 
-                start = stream['start'].to_i
-                size = stream['size'].to_i
+                start = scanner['start'].to_i
+                size = scanner['size'].to_i
 
                 xrefs = []
                 size.times do
-                  xrefs << XRef.parse(stream)
+                  xrefs << XRef.parse(scanner)
                 end
 
                 XRef::Subsection.new(start, xrefs)
@@ -235,13 +239,15 @@ module Origami
             end
 
             def self.parse(stream) #:nodoc:
-                if stream.skip(@@regexp_open).nil?
+                scanner = Parser.init_scanner(stream)
+
+                if scanner.skip(@@regexp_open).nil?
                     raise InvalidXRefSectionError, "No xref token found"
                 end
 
                 subsections = []
-                while stream.match?(@@regexp_sub) do
-                    subsections << XRef::Subsection.parse(stream)
+                while scanner.match?(@@regexp_sub) do
+                    subsections << XRef::Subsection.parse(scanner)
                 end
 
                 XRef::Section.new(subsections)

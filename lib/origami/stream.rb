@@ -114,22 +114,23 @@ module Origami
         end
 
         def self.parse(stream, parser = nil) #:nodoc:
-            dictionary = Dictionary.parse(stream, parser)
-            return dictionary if not stream.skip(@@regexp_open)
+            scanner = Parser.init_scanner(stream)
+            dictionary = Dictionary.parse(scanner, parser)
+            return dictionary if not scanner.skip(@@regexp_open)
 
             length = dictionary[:Length]
             if not length.is_a?(Integer)
-                raw_data = stream.scan_until(@@regexp_close)
+                raw_data = scanner.scan_until(@@regexp_close)
                 if raw_data.nil?
                     raise InvalidStreamObjectError,
                             "Stream shall end with a 'endstream' statement"
                 end
             else
                 length = length.value
-                raw_data = stream.peek(length)
-                stream.pos += length
+                raw_data = scanner.peek(length)
+                scanner.pos += length
 
-                if not ( unmatched = stream.scan_until(@@regexp_close) )
+                if not ( unmatched = scanner.scan_until(@@regexp_close) )
                     raise InvalidStreamObjectError,
                         "Stream shall end with a 'endstream' statement"
                 end

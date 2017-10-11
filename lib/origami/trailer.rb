@@ -115,20 +115,21 @@ module Origami
         end
 
         def self.parse(stream, parser = nil) #:nodoc:
+            scanner = Parser.init_scanner(stream)
 
-            if stream.skip(@@regexp_open)
-                dictionary = Dictionary.parse(stream, parser)
+            if scanner.skip(@@regexp_open)
+                dictionary = Dictionary.parse(scanner, parser)
             else
                 dictionary = nil
             end
 
-            if not stream.scan(@@regexp_xref)
+            if not scanner.scan(@@regexp_xref)
                 raise InvalidTrailerError, "Cannot get startxref value"
             end
 
-            startxref = stream['startxref'].to_i
+            startxref = scanner['startxref'].to_i
 
-            if not stream.scan(@@regexp_close)
+            if not scanner.scan(@@regexp_close)
                 parser.warn("No %%EOF token found") if parser
             end
 

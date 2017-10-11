@@ -52,13 +52,14 @@ module Origami
         end
 
         def self.parse(stream, _parser = nil) #:nodoc:
-            offset = stream.pos
+            scanner = Parser.init_scanner(stream)
+            offset = scanner.pos
 
-            if stream.scan(@@regexp).nil?
+            if scanner.scan(@@regexp).nil?
                 raise InvalidBooleanObjectError
             end
 
-            value = (stream['value'] == "true")
+            value = (scanner['value'] == "true")
 
             bool = Boolean.new(value)
             bool.file_offset = offset
