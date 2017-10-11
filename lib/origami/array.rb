@@ -115,17 +115,17 @@ module Origami
         alias value to_a
 
         def to_s #:nodoc:
-            content = "#{TOKENS.first} "
-            self.each do |entry|
+            content = TOKENS.first.dup
+            content << self.map {|entry|
                 entry = entry.to_o
 
                 case entry
                 when Dictionary # Do not indent dictionaries inside of arrays.
-                    content << entry.to_s(indent: 0) << ' '
+                    entry.to_s(indent: 0)
                 else
-                    content << entry.to_s << ' '
+                    entry.to_s
                 end
-            end
+            }.join(' ')
             content << TOKENS.last
 
             super(content)
