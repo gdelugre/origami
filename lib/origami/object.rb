@@ -490,45 +490,7 @@ module Origami
         # Catalog and PageTreeNode objects are excluded to limit the recursion.
         #
         def logicalize! #:nodoc:
-
-            resolve_all_references = -> (obj, browsed = [], ref_cache = {}) do
-                return if browsed.include?(obj)
-                browsed.push(obj)
-
-                if obj.is_a?(ObjectStream)
-                    obj.each do |subobj|
-                        resolve_all_references[subobj, browsed, ref_cache]
-                    end
-                end
-
-                if obj.is_a?(Dictionary) or obj.is_a?(Array)
-                    obj.map! do |subobj|
-                        if subobj.is_a?(Reference)
-                            new_obj =
-                                if ref_cache.has_key?(subobj)
-                                    ref_cache[subobj]
-                                else
-                                    ref_cache[subobj] = subobj.solve.copy
-                                end
-                            new_obj.no = new_obj.generation = 0
-                            new_obj.parent = obj
-
-                            new_obj unless new_obj.is_a?(Catalog) or new_obj.is_a?(PageTreeNode)
-                        else
-                            subobj
-                        end
-                    end
-
-                    obj.each do |subobj|
-                        resolve_all_references[subobj, browsed, ref_cache]
-                    end
-
-                elsif obj.is_a?(Stream)
-                    resolve_all_references[obj.dictionary, browsed, ref_cache]
-                end
-            end
-
-            resolve_all_references[self]
+            resolve_all_references(self)
         end
 
         #
@@ -688,6 +650,40 @@ module Origami
         end
 
         alias output to_s
+
+        private
+
+        #
+        # Replace all references of an object by their actual object value.
+        #
+        def resolve_all_references(obj, browsed: [], cache: {})
+            return obj if browsed.include?(obj)
+            browsed.push(obj)
+
+            if obj.is_a?(ObjectStream)
+                obj.each do |subobj|
+                    resolve_all_references(subobj, browsed: browsed, cache: cache)
+                end
+            end
+
+            if obj.is_a?(Stream)
+                resolve_all_references(obj.dictionary, browsed: browsed, cache: cache)
+            end
+
+            if obj.is_a?(Dictionary) or obj.is_a?(Array)
+                obj.map! do |subobj|
+                    if subobj.is_a?(Reference)
+                        subobj = (cache[subobj] ||= subobj.solve.copy)
+                        subobj.no = subobj.generation = 0
+                        subobj.parent = obj
+                    end
+
+                    resolve_all_references(subobj, browsed: browsed, cache: cache)
+                end
+            end
+
+            obj
+        end
     end
 
 end
