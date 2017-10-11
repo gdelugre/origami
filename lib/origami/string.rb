@@ -320,18 +320,8 @@ module Origami
             bytestr
         end
 
-        def expand #:nodoc:
-            extended = self.gsub("\\", "\\\\\\\\")
-            extended.gsub!(/\)/, "\\)")
-            extended.gsub!("\n", "\\n")
-            extended.gsub!("\r", "\\r")
-            extended.gsub!(/\(/, "\\(")
-
-            extended
-        end
-
         def to_s #:nodoc:
-            super(TOKENS.first + self.expand + TOKENS.last)
+            super(TOKENS.first + expand + TOKENS.last)
         end
 
         #
@@ -348,6 +338,20 @@ module Origami
             self.decrypt! if self.is_a?(Encryption::EncryptedString) and not @decrypted
 
             to_str
+        end
+
+        private
+
+        def expand #:nodoc:
+            self.gsub(/[\n\r\t\b\f()\\]/,
+                      "\n" => "\\n",
+                      "\r" => "\\r",
+                      "\t" => "\\t",
+                      "\b" => "\\b",
+                      "\f" => "\\f",
+                      "\\" => "\\\\",
+                      "(" => "\\(",
+                      ")" => "\\)")
         end
     end
 
