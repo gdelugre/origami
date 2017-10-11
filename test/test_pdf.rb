@@ -4,6 +4,7 @@ $:.unshift File.join(__dir__, "..", "lib")
 require 'origami'
 include Origami
 
+require_relative 'test_native_types'
 require_relative 'test_pdf_parse'
 require_relative 'test_pdf_parse_lazy'
 require_relative 'test_pdf_create'
