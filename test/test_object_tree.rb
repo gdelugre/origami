@@ -1,7 +1,7 @@
 require 'minitest/autorun'
 require 'stringio'
 
-class TestPDFObjects < Minitest::Test
+class TestPDFObjectTree < Minitest::Test
 
     def setup
         @pdf = PDF.new.append_page
