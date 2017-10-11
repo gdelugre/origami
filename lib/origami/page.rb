@@ -611,10 +611,6 @@ module Origami
         # Add an Annotation to the Page.
         #
         def add_annotation(*annotations)
-            unless annotations.all?{|annot| annot.is_a?(Annotation) or annot.is_a?(Reference)}
-                raise TypeError, "Only Annotation objects must be passed."
-            end
-
             self.Annots ||= []
 
             annotations.each do |annot|
@@ -671,10 +667,6 @@ module Origami
         # Will execute an action when the page is opened.
         #
         def onOpen(action)
-            unless action.is_a?(Action) or action.is_a?(Reference)
-                raise TypeError, "An Action object must be passed."
-            end
-
             self.AA ||= Page::AdditionalActions.new
             self.AA.O = action
 
@@ -685,10 +677,6 @@ module Origami
         # Will execute an action when the page is closed.
         #
         def onClose(action)
-            unless action.is_a?(Action) or action.is_a?(Reference)
-                raise TypeError, "An Action object must be passed."
-            end
-
             self.AA ||= Page::AdditionalActions.new
             self.AA.C = action
 
@@ -699,10 +687,6 @@ module Origami
         # Will execute an action when navigating forward from this page.
         #
         def onNavigateForward(action) #:nodoc:
-            unless action.is_a?(Action) or action.is_a?(Reference)
-                raise TypeError, "An Action object must be passed."
-            end
-
             self.PresSteps ||= NavigationNode.new
             self.PresSteps.NA = action
 
@@ -713,10 +697,6 @@ module Origami
         # Will execute an action when navigating backward from this page.
         #
         def onNavigateBackward(action) #:nodoc:
-            unless action.is_a?(Action) or action.is_a?(Reference)
-                raise TypeError, "An Action object must be passed."
-            end
-
             self.PresSteps ||= NavigationNode.new
             self.PresSteps.PA = action
 
