@@ -383,38 +383,12 @@ module Origami
         # Get the n-th Page object in this node, starting from 1.
         #
         def get_page(n, browsed_nodes: [])
+            page_enum = self.each_page.lazy
+
             raise IndexError, "Page numbers are referenced starting from 1" if n < 1
+            raise IndexError, "Page not found" if n > page_enum.size
 
-            if browsed_nodes.any?{|node| node.equal?(self)}
-                raise InvalidPageTreeError, "Cyclic tree graph detected"
-            end
-
-            unless self.Kids.is_a?(Array)
-                raise InvalidPageTreeError, "Kids must be an Array"
-            end
-
-            decount = n
-            [ self.Count.value, self.Kids.length ].min.times do |i|
-                node = self.Kids[i].solve
-
-                case node
-                when Page
-                    decount = decount - 1
-                    return node if decount == 0
-
-                when PageTreeNode
-                    nchilds = [ node.Count.value, node.Kids.length ].min
-                    if nchilds >= decount
-                        return node.get_page(decount, browsed_nodes: browsed_nodes)
-                    else
-                        decount -= nchilds
-                    end
-                else
-                    raise InvalidPageTreeError, "not a Page or PageTreeNode"
-                end
-            end
-
-            raise IndexError, "Page not found"
+            page_enum.drop(n - 1).first or raise IndexError, "Page not found"
         end
 
         def <<(pageset)
