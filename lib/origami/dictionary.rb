@@ -190,9 +190,7 @@ module Origami
 
             cast
         end
-
-        alias each each_value
-
+        
         def to_h
             Hash[self.to_a.map!{|k, v| [ k.value, v.value ]}]
         end

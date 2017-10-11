@@ -774,7 +774,7 @@ module Origami
             end
 
             # Finalize all the children objects.
-            object.each do |child|
+            object.each_value do |child|
                 build_object(child, revision, options)
             end
         end
