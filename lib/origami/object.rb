@@ -401,6 +401,13 @@ module Origami
         end
 
         #
+        # Returns whether an object number exists for this object.
+        #
+        def numbered?
+            @no > 0
+        end
+
+        #
         # Deep copy of an object.
         #
         def copy
@@ -673,9 +680,9 @@ module Origami
         #
         def to_s(data)
             content = ""
-            content << "#{no} #{generation} #{TOKENS.first}" << EOL if self.indirect?
+            content << "#{no} #{generation} #{TOKENS.first}" << EOL if indirect? and numbered?
             content << data
-            content << EOL << TOKENS.last << EOL if self.indirect?
+            content << EOL << TOKENS.last << EOL if indirect? and numbered?
 
             content.force_encoding('binary')
         end
