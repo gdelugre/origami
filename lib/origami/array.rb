@@ -302,6 +302,14 @@ module Origami
 
             Rectangle.new(corners)
         end
+
+        def width
+            self[2] - self[0]
+        end
+
+        def height
+            self[3] - self[1]
+        end
     end
 
 end
