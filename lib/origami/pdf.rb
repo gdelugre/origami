@@ -1078,14 +1078,6 @@ module Origami
             xrefsection
         end
 
-        def delete_revision(ngen) #:nodoc:
-            @revisions.delete_at[ngen]
-        end
-
-        def get_revision(ngen) #:nodoc:
-            @revisions[ngen].body
-        end
-
         def get_object_offset(no,generation) #:nodoc:
             objectoffset = @header.to_s.size
 
