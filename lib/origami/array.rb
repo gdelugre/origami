@@ -148,9 +148,8 @@ module Origami
         end
         alias push <<
 
-        def []=(key, val)
-            key, val = key.to_o, val.to_o
-            super(key.to_o, val.to_o)
+        def []=(index, val)
+            super(index, val.to_o)
 
             val.parent = self unless val.indirect?
         end
