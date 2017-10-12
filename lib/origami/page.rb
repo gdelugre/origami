@@ -296,7 +296,7 @@ module Origami
         # Inserts a page into the node at a specified position (starting from 1).
         #
         def insert_page(n, page)
-            check_page_number(n)
+            raise IndexError, "Page numbers are referenced starting from 1" if n < 1
 
             kids = self.Kids
             unless kids.is_a?(Array)
@@ -329,7 +329,7 @@ module Origami
                 end
             end
 
-            raise IndexError, "Out of order page index" unless count + 1 == index
+            raise IndexError, "Out of order page index" unless count + 1 == n
 
             self.append_page(page)
         end
@@ -377,7 +377,8 @@ module Origami
         # Get the n-th Page object in this node, starting from 1.
         #
         def get_page(n)
-            check_page_number(n)
+            raise IndexError, "Page numbers are referenced starting from 1" if n < 1
+            raise IndexError, "Page not found" if n > self.Count.to_i
 
             self.each_page.lazy.drop(n - 1).first or raise IndexError, "Page not found"
         end
@@ -396,8 +397,6 @@ module Origami
         private
 
         def check_page_number(n)
-            raise IndexError, "Page numbers are referenced starting from 1" if n < 1
-            raise IndexError, "Page not found" if n > self.Count.to_i
         end
     end
 
