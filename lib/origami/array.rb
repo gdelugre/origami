@@ -163,6 +163,8 @@ module Origami
                     self.push(val)
                 end
             end
+
+            self
         end
 
         def copy
