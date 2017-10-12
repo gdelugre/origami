@@ -148,15 +148,16 @@ module Origami
         end
         alias push <<
 
-        def []=(index, val)
-            super(index, val.to_o)
+        def []=(index, item)
+            val = item.to_o
+            super(index, val)
 
             val.parent = self unless val.indirect?
         end
 
-        def insert(index, *values)
-            values.reverse_each do |val|
-                val = val.to_o
+        def insert(index, *items)
+            items.reverse_each do |item|
+                val = item.to_o
                 val.parent = self unless val.indirect?
 
                 super(index, val)
