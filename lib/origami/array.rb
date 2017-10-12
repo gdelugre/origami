@@ -154,6 +154,17 @@ module Origami
             val.parent = self unless val.indirect?
         end
 
+        def insert(index, *values)
+            values.reverse_each do |val|
+                val = val.to_o
+                val.parent = self unless val.indirect?
+
+                super(index, val)
+            end
+
+            self
+        end
+
         def concat(*arys)
             arys.each do |ary|
                 ary.each do |e|
