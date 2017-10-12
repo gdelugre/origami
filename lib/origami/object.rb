@@ -387,13 +387,6 @@ module Origami
         end
 
         #
-        # Compare two objects from their respective numbers.
-        #
-        def <=>(obj)
-            [@no, @generation] <=> [obj.no, obj.generation]
-        end
-
-        #
         # Returns whether the objects is indirect, which means that it is not embedded into another object.
         #
         def indirect?

@@ -1012,7 +1012,9 @@ module Origami
                 xrefs = [ XRef.new(0, XRef::FIRSTFREE, XRef::FREE) ]
 
                 xrefsection = XRef::Section.new
-                objects.sort.each do |object|
+                objects.sort_by {|object| object.reference }
+                       .each do |object|
+
                     if (object.no - lastno).abs > 1
                         xrefsection << XRef::Subsection.new(brange, xrefs)
                         brange = object.no
@@ -1061,7 +1063,9 @@ module Origami
             xrefs = [ XRef.new(0, XRef::FIRSTFREE, XRef::FREE) ]
 
             xrefsection = XRef::Section.new
-            objects.sort.each do |object|
+            objects.sort_by {|object| object.reference}
+                   .each do |object|
+
                 if (object.no - lastno).abs > 1
                     xrefsection << XRef::Subsection.new(brange, xrefs)
                     brange = object.no
@@ -1078,11 +1082,13 @@ module Origami
             xrefsection
         end
 
-        def get_object_offset(no,generation) #:nodoc:
+        def get_object_offset(no, generation) #:nodoc:
             objectoffset = @header.to_s.size
 
             @revisions.each do |revision|
-                revision.objects.sort.each do |object|
+                revision.objects.sort_by {|object| object.reference }
+                                .each do |object|
+
                     if object.no == no and object.generation == generation then return objectoffset
                     else
                         objectoffset += object.to_s.size
