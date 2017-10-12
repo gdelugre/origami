@@ -29,8 +29,9 @@ module Origami
     # Class representing a Name Object.
     # Name objects are strings which identify some PDF file inner structures.
     #
-    class Name #< DelegateClass(Symbol)
+    class Name
         include Origami::Object
+        include Comparable
 
         TOKENS = %w{ / } #:nodoc:
 
