@@ -20,6 +20,9 @@ class TestPages < Minitest::Test
         assert_equal @target.get_page(2), p2
         assert_equal @target.get_page(3), p3
 
+        assert_raises(IndexError) { @target.get_page(0) }
+        assert_raises(IndexError) { @target.get_page(4) }
+
         assert_equal @target.Catalog.Pages, p1.Parent
         assert_equal @target.Catalog.Pages, p2.Parent
         assert_equal @target.Catalog.Pages, p3.Parent
@@ -27,6 +30,25 @@ class TestPages < Minitest::Test
         @target.save(@output)
 
         assert_equal @target.Catalog.Pages.Count, 3
+        assert_equal @target.pages, [p1, p2, p3]
+        assert_equal @target.each_page.to_a, [p1, p2, p3]
+    end
+
+    def test_insert_page
+        pages = Array.new(10) { Page.new }
+
+        pages.each_with_index do |page, index|
+            @target.insert_page(index + 1, page)
+        end
+
+        assert_equal @target.pages, pages
+
+        new_page = Page.new
+        @target.insert_page(1, new_page)
+        assert_equal @target.get_page(1), new_page
+
+        assert_raises(IndexError) { @target.insert_page(0, Page.new) }
+        assert_raises(IndexError) { @target.insert_page(1000, Page.new) }
     end
 
     def test_example_write_page
