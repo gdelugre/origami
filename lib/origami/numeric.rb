@@ -32,59 +32,59 @@ module Origami
         include Origami::Object
 
         def ~
-            self.class.new(~self.to_i)
+            self.class.new(~self.value)
         end
 
         def |(val)
-            self.class.new(self.to_i | val)
+            self.class.new(self.value | val)
         end
 
         def &(val)
-            self.class.new(self.to_i & val)
+            self.class.new(self.value & val)
         end
 
         def ^(val)
-            self.class.new(self.to_i ^ val)
+            self.class.new(self.value ^ val)
         end
 
         def <<(val)
-            self.class.new(self.to_i << val)
+            self.class.new(self.value << val)
         end
 
         def >>(val)
-            self.class.new(self.to_i >> val)
+            self.class.new(self.value >> val)
         end
 
         def +(val)
-            self.class.new(self.to_i + val)
+            self.class.new(self.value + val)
         end
 
         def -(val)
-            self.class.new(self.to_i - val)
+            self.class.new(self.value - val)
         end
 
         def -@
-            self.class.new(-self.to_i)
+            self.class.new(-self.value)
         end
 
         def *(val)
-            self.class.new(self.to_i * val)
+            self.class.new(self.value * val)
         end
 
         def /(val)
-            self.class.new(self.to_i / val)
+            self.class.new(self.value / val)
         end
 
         def abs
-            self.class.new(self.to_i.abs)
+            self.class.new(self.value.abs)
         end
 
         def **(val)
-            self.class.new(self.to_i ** val)
+            self.class.new(self.value ** val)
         end
 
         def to_s
-            super(value.to_s)
+            super(self.value.to_s)
         end
     end
 
