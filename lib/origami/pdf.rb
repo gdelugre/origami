@@ -297,7 +297,6 @@ module Origami
             end
         end
 
-
         #
         # Return an array of indirect objects.
         #
@@ -980,17 +979,7 @@ module Origami
         end
 
         def version_required #:nodoc:
-            max = [ 1.0, 0 ]
-            @revisions.each do |revision|
-                revision.objects.each do |object|
-                    current = object.version_required
-                    max = current if (current <=> max) > 0
-                end
-            end
-
-            max[0] = max[0].to_s
-
-            max
+            self.each_object.max_by {|obj| obj.version_required}.version_required
         end
 
         def indirect_objects_by_rev #:nodoc:

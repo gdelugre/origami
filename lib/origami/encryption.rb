@@ -760,7 +760,7 @@ module Origami
 
                 def version_required #:nodoc:
                     if self.R > 5
-                        [ 1.7, 8 ]
+                        [ '1.7', 8 ]
                     else
                         super
                     end

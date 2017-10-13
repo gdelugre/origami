@@ -208,7 +208,7 @@ module Origami
         # Returns the version and level required by the current Object.
         #
         def version_required #:nodoc:
-            max = [ 1.0, 0 ]
+            max = [ "1.0", 0 ]
 
             self.each_key do |field|
                 attributes = self.class.fields[field.value]
@@ -217,14 +217,11 @@ module Origami
                     next
                 end
 
-                current_version = attributes.has_key?(:Version) ? attributes[:Version].to_f : 0
-                current_level = attributes[:ExtensionLevel] || 0
-                current = [ current_version, current_level ]
+                version = attributes[:Version] || '1.0'
+                level = attributes[:ExtensionLevel] || 0
+                current = [ version, level ]
 
-                max = current if (current <=> max) > 0
-
-                sub = self[field.value].version_required
-                max = sub if (sub <=> max) > 0
+                max = [ max, current, self[field.value].version_required ].max
             end
 
             max
@@ -609,7 +606,7 @@ module Origami
         end
 
         def version_required #:nodoc:
-            [ 1.0, 0 ]
+            [ '1.0', 0 ]
         end
 
         #
