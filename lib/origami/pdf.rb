@@ -97,11 +97,11 @@ module Origami
                 @trailer = trl
             end
 
-            def has_xreftable?
+            def xreftable?
                 not @xreftable.nil?
             end
 
-            def has_xrefstm?
+            def xrefstm?
                 not @xrefstm.nil?
             end
 
@@ -440,7 +440,7 @@ module Origami
             # Search through xref sections.
             #
             @revisions.reverse_each do |rev|
-                next unless rev.has_xreftable?
+                next unless rev.xreftable?
 
                 xref = rev.xreftable.find(target.refno)
                 next if xref.nil? or xref.free?
@@ -454,7 +454,7 @@ module Origami
 
             # Search through xref streams.
             @revisions.reverse_each do |rev|
-                next unless rev.has_xrefstm?
+                next unless rev.xrefstm?
 
                 xrefstm = rev.xrefstm
 
@@ -650,9 +650,9 @@ module Origami
             return if @loaded or @parser.nil?
 
             @revisions.each do |revision|
-                if revision.has_xreftable?
+                if revision.xreftable?
                     xrefs = revision.xreftable
-                elsif revision.has_xrefstm?
+                elsif revision.xrefstm?
                     xrefs = revision.xrefstm
                 else
                     next

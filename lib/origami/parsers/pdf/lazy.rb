@@ -57,7 +57,7 @@ module Origami
                 pdf.revisions.clear
                 revisions.each do |rev|
                     pdf.revisions.push(rev)
-                    pdf.insert(rev.xrefstm) if rev.has_xrefstm?
+                    pdf.insert(rev.xrefstm) if rev.xrefstm?
                 end
 
                 parse_finalize(pdf)

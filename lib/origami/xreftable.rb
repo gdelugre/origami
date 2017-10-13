@@ -26,7 +26,7 @@ module Origami
         #
         def remove_xrefs
             @revisions.reverse_each do |rev|
-                if rev.has_xrefstm?
+                if rev.xrefstm?
                     delete_object(rev.xrefstm.reference)
                 end
 

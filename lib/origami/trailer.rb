@@ -56,7 +56,7 @@ module Origami
             @revisions.reverse_each do |rev|
                 if rev.trailer.dictionary? and not rev.trailer[attr].nil?
                     return rev.trailer[attr].solve
-                elsif rev.has_xrefstm?
+                elsif rev.xrefstm?
                     xrefstm = rev.xrefstm
                     if xrefstm.is_a?(XRefStream) and xrefstm.key?(attr)
                         return xrefstm[attr].solve
