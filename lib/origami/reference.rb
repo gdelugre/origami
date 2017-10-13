@@ -29,6 +29,7 @@ module Origami
     #
     class Reference
         include Origami::Object
+        include Comparable
 
         TOKENS = [ "(?<no>\\d+)" + WHITESPACES +  "(?<gen>\\d+)" + WHITESPACES + "R" ] #:nodoc:
         REGEXP_TOKEN = Regexp.new(TOKENS.first, Regexp::MULTILINE)
