@@ -146,7 +146,7 @@ module Origami
 
         def []=(key,val)
             unless key.is_a?(Symbol) or key.is_a?(Name)
-                fail "Expecting a Name for a Dictionary entry, found #{key.class} instead."
+                raise TypeError, "Expecting a Name for a Dictionary entry, found #{key.class} instead."
             end
 
             key = key.to_o
