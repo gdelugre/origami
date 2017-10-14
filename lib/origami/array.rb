@@ -70,15 +70,12 @@ module Origami
                     end
                 end
 
-                # Cache object value for fast search.
-                cache_value(value)
-
                 self.push(value)
             end
         end
 
         def pre_build
-            self.map!{|obj| obj.to_o}
+            self.map!(&:to_o)
 
             super
         end
