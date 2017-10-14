@@ -23,8 +23,11 @@
 #
 module Origami
 
+    #
+    # Provides refinements for standard Ruby types.
+    # Allows to convert native types to their associated Origami::Object types using method #to_o.
+    #
     module TypeConversion
-
         refine ::Integer do
             def to_o
                 Origami::Integer.new(self)
