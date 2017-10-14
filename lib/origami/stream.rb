@@ -36,6 +36,7 @@ module Origami
         include Origami::Object
         include StandardObject
         include FieldAccessor
+        include Enumerable
         using TypeConversion
 
         TOKENS = [ "stream" + WHITECHARS_NORET + "(\\r\\n|\\r|\\n)" , "endstream" ] #:nodoc:
