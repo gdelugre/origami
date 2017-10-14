@@ -398,7 +398,7 @@ module Origami
             @dictionary[key]
         end
 
-        def []=(key,val) #:nodoc:
+        def []=(key, val) #:nodoc:
             @dictionary[key] = val
         end
 
@@ -406,10 +406,19 @@ module Origami
             @dictionary.each_key(&b)
         end
 
+        def each_pair(&b) #:nodoc
+            @dictionary.each_pair(&b)
+        end
+        alias each each_pair
+
         def key?(name)
             @dictionary.key?(name)
         end
         alias has_key? key?
+
+        def keys
+            @dictionary.keys
+        end
 
         private
 
