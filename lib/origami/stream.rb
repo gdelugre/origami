@@ -330,7 +330,7 @@ module Origami
                 begin
                     @data = decode_data(@data, filter, params)
                 rescue Filter::Error => error
-                    @data = error.decoded_data if error.decoded_data
+                    @data = error.decoded_data
                     raise
                 end
             end
