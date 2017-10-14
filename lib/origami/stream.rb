@@ -305,12 +305,6 @@ module Origami
             return if decoded?
 
             filters = self.filters
-
-            if filters.empty?
-                @data = @encoded_data.dup
-                return
-            end
-
             dparams = decode_params
 
             @data = @encoded_data.dup
@@ -343,13 +337,8 @@ module Origami
         #
         def encode!
             return if encoded?
+
             filters = self.filters
-
-            if filters.empty?
-                @encoded_data = @data.dup
-                return
-            end
-
             dparams = decode_params
 
             @encoded_data = @data.dup
@@ -464,24 +453,22 @@ module Origami
         end
 
         def decode_data(data, filter, params) #:nodoc:
-            assert_filter(filter)
-
-            Origami::Filter.const_get(filter.value.to_s.sub(/Decode$/,"")).decode(data, params)
+            filter_module(filter).decode(data, params)
         end
 
         def encode_data(data, filter, params) #:nodoc:
-            assert_filter(filter)
+            mod = filter_module(filter)
 
-            encoded = Origami::Filter.const_get(filter.value.to_s.sub(/Decode$/,"")).encode(data, params)
+            encoded = mod.encode(data, params)
 
-            if filter.value == :ASCIIHexDecode or filter.value == :ASCII85Decode
-                encoded << Origami::Filter.const_get(filter.value.to_s.sub(/Decode$/,""))::EOD
+            if %i[ASCIIHexDecode ASCII85Decode AHx A85].include?(filter.value)
+                encoded << mod::EOD
             end
 
             encoded
         end
 
-        def assert_filter(name)
+        def filter_module(name)
             unless name.is_a?(Name)
                 raise InvalidObjectStreamObjectError, "Filter has invalid type #{name.type}"
             end
@@ -489,6 +476,8 @@ module Origami
             unless DEFINED_FILTERS.include?(name.value)
                 raise InvalidStreamObjectError, "Invalid filter : #{name}"
             end
+
+            Filter.const_get(name.value.to_s.sub(/Decode$/, ""))
         end
     end
 
