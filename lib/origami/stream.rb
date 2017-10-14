@@ -51,7 +51,7 @@ module Origami
         # Actually only 5 first ones are implemented,
         # other ones are mainly about image data processing (JPEG, JPEG2000 ...)
         #
-        @@defined_filters = %i[
+        DEFINED_FILTERS = %i[
           ASCIIHexDecode
           ASCII85Decode
           LZWDecode
@@ -311,10 +311,6 @@ module Origami
                 return
             end
 
-            unless filters.all?{|filter| filter.is_a?(Name)}
-                raise InvalidStreamObjectError, "Invalid Filter type parameter"
-            end
-
             dparams = decode_params
 
             @data = @encoded_data.dup
@@ -352,10 +348,6 @@ module Origami
             if filters.empty?
                 @encoded_data = @data.dup
                 return
-            end
-
-            unless filters.all?{|filter| filter.is_a?(Name)}
-                raise InvalidStreamObjectError, "Invalid Filter type parameter"
             end
 
             dparams = decode_params
@@ -472,17 +464,13 @@ module Origami
         end
 
         def decode_data(data, filter, params) #:nodoc:
-            unless @@defined_filters.include?(filter.value)
-                raise InvalidStreamObjectError, "Unknown filter : #{filter}"
-            end
+            assert_filter(filter)
 
             Origami::Filter.const_get(filter.value.to_s.sub(/Decode$/,"")).decode(data, params)
         end
 
         def encode_data(data, filter, params) #:nodoc:
-            unless @@defined_filters.include?(filter.value)
-                raise InvalidStreamObjectError, "Unknown filter : #{filter}"
-            end
+            assert_filter(filter)
 
             encoded = Origami::Filter.const_get(filter.value.to_s.sub(/Decode$/,"")).encode(data, params)
 
@@ -491,6 +479,16 @@ module Origami
             end
 
             encoded
+        end
+
+        def assert_filter(name)
+            unless name.is_a?(Name)
+                raise InvalidObjectStreamObjectError, "Filter has invalid type #{name.type}"
+            end
+
+            unless DEFINED_FILTERS.include?(name.value)
+                raise InvalidStreamObjectError, "Invalid filter : #{name}"
+            end
         end
     end
 
