@@ -174,7 +174,7 @@ module Origami
                         @thr = Thread.start(engine, timeout, code, repeat) do
                             loop do
                                 sleep(timeout / 1000.0)
-                                engine.exec(code)
+                                engine.exec(code.to_s)
                                 break if not repeat
                             end
                         end
@@ -414,7 +414,6 @@ module Origami
                         Arg[name: 'cExpr', required: true],
                         Arg[name: 'nMilliseconds', type: Numeric, required: true] do |cExpr, nMilliseconds|
 
-                        cExpr = cExpr.is_a?(::String) ? cExpr : ''
                         Interval.new(@engine, nMilliseconds, cExpr)
                     end
 
@@ -422,7 +421,6 @@ module Origami
                         Arg[name: 'cExpr', required: true],
                         Arg[name: 'nMilliseconds', type: Numeric, required: true] do |cExpr, nMilliseconds|
 
-                        cExpr = cExpr.is_a?(::String) ? cExpr : ''
                         TimeOut.new(@engine, nMilliseconds, cExpr)
                     end
 
@@ -520,14 +518,14 @@ module Origami
                         return if @field.key?(:Ff) and not @field.Ff.is_a?(Integer)
 
                         flags = @field.Ff.to_i
-                        
-                       if (flags & Annotation::Widget::Button::Flags::PUSHBUTTON) != 0
-                           'button'
-                       elsif (flags & Annotation::Widget::Button::Flags::RADIO) != 0
-                           'radiobox'
-                       else
-                           'checkbox'
-                       end
+
+                        if (flags & Annotation::Widget::Button::Flags::PUSHBUTTON) != 0
+                            'button'
+                        elsif (flags & Annotation::Widget::Button::Flags::RADIO) != 0
+                            'radiobox'
+                        else
+                            'checkbox'
+                        end
                     end
 
                     def choice_type
@@ -546,15 +544,13 @@ module Origami
                     attr_reader :creationDate, :modDate
                     attr_reader :description, :MIMEType
 
-                    def initialize(engine, name, size,
-                                   path: nil,
-                                   creationDate: nil, modDate: nil, description: nil, mimeType: nil)
-
+                    def initialize(engine, name, size, **metadata)
                         super(engine)
 
-                        @name, @path, @size = name, path, size
-                        @creationDate, @modDate = creationDate, modDate
-                        @description, @MIMEType = description, mimeType
+                        @name,  @size = name, size
+
+                        @path, @creationDate, @modDate,
+                        @description, @MIMEType = metadata.values_at(:path, :creationDate, :modDate, :description, :MIMEType)
                     end
                 end
             end
@@ -571,6 +567,7 @@ module Origami
                 def initialize(pdf)
                     @options =
                     {
+                        formsVersion: 11.008,
                         viewerVersion: 11.008,
                         viewerType: JavaScript::Viewers::ADOBE_READER,
                         viewerVariation: JavaScript::Viewers::ADOBE_READER,
