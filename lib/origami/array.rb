@@ -155,19 +155,6 @@ module Origami
             self.push(*arys.flatten)
         end
 
-        def copy
-            copy = self.class.new
-            self.each do |obj|
-                copy << obj.copy
-            end
-
-            copy.parent = @parent
-            copy.no, copy.generation = @no, @generation
-            copy.set_indirect(true) if self.indirect?
-            copy.set_document(@document) if self.indirect?
-            copy
-        end
-
         #
         # Parameterized Array class with additional typing information.
         # Example: Array.of(Integer)

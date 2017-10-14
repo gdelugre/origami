@@ -162,20 +162,6 @@ module Origami
         end
         alias value to_h
 
-        def copy
-            copy = self.class.new
-            self.each_pair do |k,v|
-                copy[k] = v.copy
-            end
-
-            copy.parent = @parent
-            copy.no, copy.generation = @no, @generation
-            copy.set_indirect(true) if self.indirect?
-            copy.set_document(@document) if self.indirect?
-
-            copy
-        end
-
         def self.add_type_signature(key, value) #:nodoc:
             key, value = key.to_o, value.to_o
 

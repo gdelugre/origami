@@ -105,6 +105,18 @@ module Origami
             unlink_object(obj) unless obj.nil?
         end
 
+        def copy
+            obj = self.update_values(&:copy)
+
+            transfer_attributes(obj)
+        end
+
+        def update_values(&b)
+            return enum_for(__method__) unless block_given?
+            return self.class.new self.transform_values(&b) if self.respond_to?(:transform_values)
+            return self.class.new self.map(&b) if self.respond_to?(:map)
+        end
+
         def update_values!(&b)
             return enum_for(__method__) unless block_given?
             return self.transform_values!(&b) if self.respond_to?(:transform_values!)
