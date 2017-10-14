@@ -29,14 +29,12 @@ module Origami
     # Arrays contain a set of Object.
     #
     class Array < ::Array
-        include Origami::Object
+        include CompoundObject
         using TypeConversion
 
         TOKENS = %w{ [ ] } #:nodoc:
         @@regexp_open = Regexp.new(WHITESPACES + Regexp.escape(TOKENS.first) + WHITESPACES)
         @@regexp_close = Regexp.new(WHITESPACES + Regexp.escape(TOKENS.last) + WHITESPACES)
-
-        attr_reader :strings_cache, :names_cache, :xref_cache
 
         #
         # Creates a new PDF Array Object.
@@ -45,10 +43,6 @@ module Origami
         def initialize(data = [], parser = nil, hint_type: nil)
             raise TypeError, "Expected type Array, received #{data.class}." unless data.is_a?(::Array)
             super()
-
-            @strings_cache = []
-            @names_cache = []
-            @xref_cache = {}
 
             data.each_with_index do |value, index|
                 value = value.to_o
@@ -138,42 +132,27 @@ module Origami
         end
 
         def <<(item)
-            obj = item.to_o
-            obj.parent = self unless obj.indirect?
-
-            super(obj)
+            super link_object(item)
         end
-        alias push <<
+
+        def push(*items)
+            items.each {|item| self << item }
+        end
 
         def []=(index, item)
-            val = item.to_o
-            super(index, val)
-
-            val.parent = self unless val.indirect?
+            super(index, link_object(item))
         end
 
         def insert(index, *items)
             items.reverse_each do |item|
-                val = item.to_o
-                val.parent = self unless val.indirect?
-
-                super(index, val)
+                super(index, link_object(item))
             end
 
             self
         end
 
         def concat(*arys)
-            arys.each do |ary|
-                ary.each do |e|
-                    val = e.to_o
-                    val.parent = self unless val.indirect?
-
-                    self.push(val)
-                end
-            end
-
-            self
+            self.push(*arys.flatten)
         end
 
         def copy
@@ -250,27 +229,6 @@ module Origami
                         end
                     end
                 end
-            end
-        end
-
-        private
-
-        def cache_value(value)
-            case value
-            when String then @strings_cache.push(value)
-            when Name then @names_cache.push(value)
-            when Reference then
-                (@xref_cache[value] ||= []).push(self)
-            when Dictionary, Array
-                @strings_cache.concat(value.strings_cache)
-                @names_cache.concat(value.names_cache)
-                @xref_cache.update(value.xref_cache) do |_ref, cache1, cache2|
-                    cache1.concat(cache2)
-                end
-
-                value.strings_cache.clear
-                value.names_cache.clear
-                value.xref_cache.clear
             end
         end
     end

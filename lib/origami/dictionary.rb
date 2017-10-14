@@ -28,7 +28,7 @@ module Origami
     # Dictionaries are containers associating a Name to an embedded Object.
     #
     class Dictionary < Hash
-        include Origami::Object
+        include CompoundObject
         include FieldAccessor
         using TypeConversion
 
@@ -39,8 +39,6 @@ module Origami
         @@type_signatures = {}
         @@type_keys = []
 
-        attr_reader :strings_cache, :names_cache, :xref_cache
-
         #
         # Creates a new Dictionary.
         # _hash_:: The hash representing the new Dictionary.
@@ -48,10 +46,6 @@ module Origami
         def initialize(hash = {}, parser = nil)
             raise TypeError, "Expected type Hash, received #{hash.class}." unless hash.is_a?(Hash)
             super()
-
-            @strings_cache = []
-            @names_cache = []
-            @xref_cache = {}
 
             hash.each_pair do |k,v|
                 next if k.nil?
@@ -72,10 +66,6 @@ module Origami
                         end
                     end
                 end
-
-                # Cache keys and values for fast search.
-                cache_key(key)
-                cache_value(value)
 
                 self[key] = value
             end
@@ -134,6 +124,9 @@ module Origami
             super(content)
         end
 
+        #
+        # Note: transform_values should be preferred with Ruby >= 2.4.
+        #
         def map!(&b)
             self.each_pair do |k,v|
                 self[k] = b.call(v)
@@ -149,32 +142,20 @@ module Origami
                 raise TypeError, "Expecting a Name for a Dictionary entry, found #{key.class} instead."
             end
 
-            key = key.to_o
             if val.nil?
-                delete(key)
+                self.delete(key)
                 return
             end
 
-            val = val.to_o
-            super(key,val)
-
-            key.parent = self
-            val.parent = self unless val.indirect? or val.parent.equal?(self)
+            super(link_object(key), link_object(val))
         end
 
         def [](key)
             super(key.to_o)
         end
 
-        def key?(key)
-            super(key.to_o)
-        end
-        alias include? key?
+        alias key? include?
         alias has_key? key?
-
-        def delete(key)
-            super(key.to_o)
-        end
 
         def cast_to(type, parser = nil)
             super(type)
@@ -239,29 +220,6 @@ module Origami
         def self.hint_type(_name); nil end #:nodoc:
 
         private
-
-        def cache_key(key)
-            @names_cache.push(key)
-        end
-
-        def cache_value(value)
-            case value
-            when String then @strings_cache.push(value)
-            when Name then @names_cache.push(value)
-            when Reference then
-                (@xref_cache[value] ||= []).push(self)
-            when Dictionary, Array
-                @strings_cache.concat(value.strings_cache)
-                @names_cache.concat(value.names_cache)
-                @xref_cache.update(value.xref_cache) do |_ref, cache1, cache2|
-                    cache1.concat(cache2)
-                end
-
-                value.strings_cache.clear
-                value.names_cache.clear
-                value.xref_cache.clear
-            end
-        end
 
         def guess_value_type(key, value)
             hint_type = self.class.hint_type(key.value)

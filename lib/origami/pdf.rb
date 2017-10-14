@@ -19,6 +19,7 @@
 =end
 
 require 'origami/object'
+require 'origami/compound'
 require 'origami/null'
 require 'origami/name'
 require 'origami/dictionary'
@@ -595,7 +596,7 @@ module Origami
             when Name, String
                 result.push object if object.value.match(pattern)
 
-            when Dictionary, Array
+            when ObjectCache
                 result.concat object.strings_cache.select{|str| pattern === str}
                 result.concat object.names_cache.select{|name| pattern === name.value}
             end
@@ -636,7 +637,7 @@ module Origami
                 object.extend(Encryption::EncryptedString)
             when Stream
                 object.extend(Encryption::EncryptedStream)
-            when Dictionary, Array
+            when ObjectCache
                 object.strings_cache.each do |string|
                     string.extend(Encryption::EncryptedString)
                 end
@@ -748,7 +749,7 @@ module Origami
             case object
             when Stream
                 build_object(object.dictionary, revision, options)
-            when Dictionary, Array
+            when CompoundObject
                 build_compound_object(object, revision, options)
             end
 
@@ -756,11 +757,11 @@ module Origami
         end
 
         def build_compound_object(object, revision, options)
-            return unless object.is_a?(Dictionary) or object.is_a?(Array)
+            return unless object.is_a?(CompoundObject)
 
             # Flatten the object by adding indirect objects to the revision and
             # replacing them with their reference.
-            object.map! do |child|
+            object.update_values! do |child|
                 next(child) unless child.indirect?
 
                 if get_object(child.reference)

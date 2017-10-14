@@ -446,7 +446,7 @@ module Origami
                         case object
                         when Stream
                             object.dictionary.xref_cache[self.reference]
-                        when Dictionary, Array
+                        when ObjectCache
                             object.xref_cache[self.reference]
                         end
                      }
@@ -663,8 +663,8 @@ module Origami
                 resolve_all_references(obj.dictionary, browsed: browsed, cache: cache)
             end
 
-            if obj.is_a?(Dictionary) or obj.is_a?(Array)
-                obj.map! do |subobj|
+            if obj.is_a?(CompoundObject)
+                obj.update_values! do |subobj|
                     if subobj.is_a?(Reference)
                         subobj = (cache[subobj] ||= subobj.solve.copy)
                         subobj.no = subobj.generation = 0
