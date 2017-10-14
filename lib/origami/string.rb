@@ -278,12 +278,6 @@ module Origami
                         when "t" then result << "\t"
                         when "b" then result << "\b"
                         when "f" then result << "\f"
-                        when "(" then result << "("
-                        when ")" then result << ")"
-                        when "\\" then result << "\\"
-                        when "\r"
-                            scanner.pos += 1 if scanner.peek(1) == "\n"
-                        when "\n"
                         else
                             result << flag
                         end
