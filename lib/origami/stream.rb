@@ -246,16 +246,13 @@ module Origami
         end
 
         def cast_to(type, _parser = nil)
-            super(type)
+            assert_cast_type(type)
 
             cast = type.new("", self.dictionary.copy)
             cast.encoded_data = self.encoded_data.dup
-            cast.no, cast.generation = self.no, self.generation
-            cast.set_indirect(true)
-            cast.set_document(self.document)
             cast.file_offset = self.file_offset
 
-            cast
+            transfer_attributes(cast)
         end
 
         def value #:nodoc:

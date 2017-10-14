@@ -168,21 +168,6 @@ module Origami
             copy
         end
 
-        def cast_to(type, parser = nil)
-            super(type)
-
-            cast = type.new(self.copy, parser)
-            cast.parent = self.parent
-            cast.no, cast.generation = self.no, self.generation
-            if self.indirect?
-                cast.set_indirect(true)
-                cast.set_document(self.document)
-                cast.file_offset = self.file_offset # cast can replace self
-            end
-
-            cast
-        end
-
         #
         # Parameterized Array class with additional typing information.
         # Example: Array.of(Integer)

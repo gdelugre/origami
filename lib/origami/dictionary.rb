@@ -157,21 +157,6 @@ module Origami
         alias key? include?
         alias has_key? key?
 
-        def cast_to(type, parser = nil)
-            super(type)
-
-            cast = type.new(self.copy, parser)
-            cast.parent = self.parent
-            cast.no, cast.generation = self.no, self.generation
-            if self.indirect?
-                cast.set_indirect(true)
-                cast.set_document(self.document)
-                cast.file_offset = self.file_offset # cast can replace self
-            end
-
-            cast
-        end
-        
         def to_h
             Hash[self.to_a.map!{|k, v| [ k.value, v.value ]}]
         end

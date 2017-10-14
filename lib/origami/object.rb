@@ -425,6 +425,18 @@ module Origami
         end
 
         #
+        # Casts an object to a new type.
+        #
+        def cast_to(type, parser = nil)
+            assert_cast_type(type)
+
+            cast = type.new(self.copy, parser)
+            cast.file_offset = @file_offset
+
+            transfer_attributes(cast)
+        end
+
+        #
         # Returns an indirect reference to this object, or a Null object is this object is not indirect.
         #
         def reference
@@ -623,14 +635,6 @@ module Origami
             name.split("::").last.to_sym
         end
 
-        def cast_to(type, _parser = nil) #:nodoc:
-            if type.native_type != self.native_type
-                raise TypeError, "Incompatible cast from #{self.class} to #{type}"
-            end
-
-            self
-        end
-
         #
         # Outputs this object into PDF code.
         # _data_:: The object data.
@@ -643,10 +647,33 @@ module Origami
 
             content.force_encoding('binary')
         end
-
         alias output to_s
 
         private
+
+        #
+        # Raises a TypeError exception if the current object is not castable to the provided type.
+        #
+        def assert_cast_type(type) #:nodoc:
+            if type.native_type != self.native_type
+                raise TypeError, "Incompatible cast from #{self.class} to #{type}"
+            end
+        end
+
+        #
+        # Copy the attributes of the current object to another object.
+        # Copied attributes do not include the file offset.
+        #
+        def transfer_attributes(target)
+            target.no, target.generation = @no, @generation
+            target.parent = @parent
+            if self.indirect?
+                target.set_indirect(true)
+                target.set_document(@document)
+            end
+
+            target
+        end
 
         #
         # Replace all references of an object by their actual object value.
