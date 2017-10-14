@@ -348,6 +348,7 @@ module Origami
             @no, @generation = 0, 0
             @document = nil
             @parent = nil
+            @file_offset = nil
 
             super(*cons) unless cons.empty?
         end
@@ -364,6 +365,7 @@ module Origami
             if bool == false
                 @no = @generation = 0
                 @document = nil
+                @file_offset = nil
             end
 
             @indirect = bool
