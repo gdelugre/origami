@@ -278,10 +278,10 @@ module Origami
         field   :Count,         :Type => Integer, :Default => 0, :Required => true
 
         def initialize(hash = {}, parser = nil)
+            super
+
             self.Count = 0
             self.Kids = []
-
-            super
 
             set_indirect(true)
         end
