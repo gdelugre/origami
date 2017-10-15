@@ -60,7 +60,7 @@ module Origami
             ref
         end
 
-        def solve
+        def follow
             doc = self.document
 
             if doc.nil?
@@ -75,6 +75,7 @@ module Origami
 
             target or Null.new
         end
+        alias solve follow
 
         def hash #:nodoc:
             self.to_a.hash
