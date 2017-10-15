@@ -20,17 +20,6 @@
 
 module Origami
 
-    module XFA
-        class TemplateElement < Element
-            include Referencable
-            include Prototypable
-        end
-
-        class NamedTemplateElement < TemplateElement
-            include Namable
-        end
-    end
-
     module XDP
 
         module Packet

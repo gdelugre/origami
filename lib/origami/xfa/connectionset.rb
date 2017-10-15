@@ -20,6 +20,13 @@
 
 module Origami
 
+    module XFA
+        class ConnectionElement < Element
+            xfa_attribute 'dataDescription'
+            xfa_attribute 'name'
+        end
+    end
+
     module XDP
 
         module Packet
@@ -36,35 +43,21 @@ module Origami
                     add_attribute 'xmlns', 'http://www.xfa.org/schema/xfa-connection-set/2.8/'
                 end
 
-                class EffectiveInputPolicy < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class EffectiveInputPolicy < XFA::NamedTemplateElement
                     def initialize
                         super('effectiveInputPolicy')
                     end
                 end
 
-                class EffectiveOutputPolicy < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class EffectiveOutputPolicy < XFA::NamedTemplateElement
                     def initialize
                         super('effectiveOutputPolicy')
                     end
                 end
 
-                class Operation < XFA::Element
-                    xfa_attribute 'id'
+                class Operation < XFA::NamedTemplateElement
                     xfa_attribute 'input'
-                    xfa_attribute 'name'
                     xfa_attribute 'output'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
 
                     def initialize(name = "")
                         super('operation')
@@ -73,12 +66,7 @@ module Origami
                     end
                 end
 
-                class SOAPAction < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class SOAPAction < XFA::NamedTemplateElement
                     def initialize(uri = "")
                         super('soapAction')
 
@@ -86,12 +74,7 @@ module Origami
                     end
                 end
 
-                class SOAPAddress < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class SOAPAddress < XFA::NamedTemplateElement
                     def initialize(addr = "")
                         super('soapAddress')
 
@@ -99,12 +82,7 @@ module Origami
                     end
                 end
 
-                class WSDLAddress < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class WSDLAddress < XFA::NamedTemplateElement
                     def initialize(addr = "")
                         super('wsdlAddress')
 
@@ -112,10 +90,7 @@ module Origami
                     end
                 end
 
-                class WSDLConnection < XFA::Element
-                    xfa_attribute 'dataDescription'
-                    xfa_attribute 'name'
-
+                class WSDLConnection < XFA::ConnectionElement
                     xfa_node 'effectiveInputPolicy', ConnectionSet::EffectiveInputPolicy, 0..1
                     xfa_node 'effectiveOutputPolicy', ConnectionSet::EffectiveOutputPolicy, 0..1
                     xfa_node 'operation', ConnectionSet::Operation, 0..1
@@ -128,12 +103,7 @@ module Origami
                     end
                 end
 
-                class URI < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class URI < XFA::NamedTemplateElement
                     def initialize(uri = "")
                         super('uri')
 
@@ -141,12 +111,7 @@ module Origami
                     end
                 end
 
-                class RootElement < XFA::Element
-                    xfa_attribute 'id'
-                    xfa_attribute 'name'
-                    xfa_attribute 'use'
-                    xfa_attribute 'usehref'
-
+                class RootElement < XFA::NamedTemplateElement
                     def initialize(root = '')
                         super('rootElement')
 
@@ -154,10 +119,7 @@ module Origami
                     end
                 end
 
-                class XSDConnection < XFA::Element
-                    xfa_attribute 'dataDescription'
-                    xfa_attribute 'name'
-
+                class XSDConnection < XFA::ConnectionElement
                     xfa_node 'rootElement', ConnectionSet::RootElement, 0..1
                     xfa_node 'uri', ConnectionSet::URI, 0..1
 
@@ -166,10 +128,7 @@ module Origami
                     end
                 end
 
-                class XMLConnection < XFA::Element
-                    xfa_attribute 'dataDescription'
-                    xfa_attribute 'name'
-
+                class XMLConnection < XFA::ConnectionElement
                     xfa_node 'uri', ConnectionSet::URI, 0..1
 
                     def initialize

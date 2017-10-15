@@ -133,5 +133,14 @@ module Origami
                 end
             end
         end
+
+        class TemplateElement < Element
+            include Referencable
+            include Prototypable
+        end
+
+        class NamedTemplateElement < TemplateElement
+            include Namable
+        end
     end
 end
