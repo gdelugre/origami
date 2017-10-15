@@ -37,15 +37,12 @@ module Origami
         include StandardObject
         include FieldAccessor
         include Enumerable
-        using TypeConversion
+        extend TypeGuessing
 
         TOKENS = [ "stream" + WHITECHARS_NORET + "(\\r\\n|\\r|\\n)" , "endstream" ] #:nodoc:
 
         @@regexp_open = Regexp.new(WHITESPACES + TOKENS.first)
         @@regexp_close = Regexp.new(TOKENS.last)
-
-        @@type_signatures = {}
-        @@type_keys = []
 
         #
         # Actually only 5 first ones are implemented,
@@ -161,32 +158,6 @@ module Origami
             stm.file_offset = dictionary.file_offset
 
             stm
-        end
-
-        def self.add_type_signature(key, value) #:nodoc:
-            key, value = key.to_o, value.to_o
-
-            # Inherit the superclass type information.
-            if not @@type_signatures.key?(self) and @@type_signatures.key?(self.superclass)
-                @@type_signatures[self] = @@type_signatures[self.superclass].dup
-            end
-
-            @@type_signatures[self] ||= {}
-            @@type_signatures[self][key] = value
-
-            @@type_keys.push(key) unless @@type_keys.include?(key)
-        end
-
-        def self.guess_type(hash) #:nodoc:
-            best_type = self
-
-            @@type_signatures.each_pair do |klass, keys|
-                next unless klass < best_type
-
-                best_type = klass if keys.all? { |k,v| hash[k] == v }
-            end
-
-            best_type
         end
 
         #

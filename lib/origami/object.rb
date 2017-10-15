@@ -18,6 +18,8 @@
 
 =end
 
+require 'set'
+
 #
 # Module for parsing/generating PDF files.
 #
@@ -83,6 +85,41 @@ module Origami
         end
     end
 
+    module TypeGuessing
+        using TypeConversion
+
+        def guess_type(hash)
+            return self if (@@type_keys & hash.keys).empty?
+            best_match = self
+
+            @@signatures.each_pair do |klass, keys|
+                next unless klass < best_match
+
+                best_match = klass if keys.all? {|k,v| hash[k] == v }
+            end
+
+            best_match
+        end
+
+        private
+
+        def add_type_signature(key, value)
+            key, value = key.to_o, value.to_o
+
+            @@signatures ||= {}
+            @@type_keys ||= Set.new
+
+            # Inherit the superclass type information.
+            if not @@signatures.key?(self) and @@signatures.key?(self.superclass)
+                @@signatures[self] = @@signatures[self.superclass].dup
+            end
+
+            @@signatures[self] ||= {}
+            @@signatures[self][key] = value
+            @@type_keys.add(key)
+        end
+    end
+
     #
     # Provides an easier syntax for field access.
     # The object must have the defined the methods #[] and #[]=.
@@ -111,7 +148,6 @@ module Origami
     # Mixin' module for objects which can store their options into an inner Dictionary.
     #
     module StandardObject #:nodoc:
-
         DEFAULT_ATTRIBUTES = { :Type => Object, :Version => "1.2" } #:nodoc:
 
         def self.included(receiver) #:nodoc:
@@ -120,6 +156,7 @@ module Origami
         end
 
         module ClassMethods #:nodoc:all
+            include TypeGuessing
 
             def inherited(subclass)
                 subclass.instance_variable_set(:@fields, Hash[@fields.map{|name, attributes| [name, attributes.clone]}])
@@ -134,7 +171,7 @@ module Origami
             #
             def field(name, attributes)
                 if attributes[:Required] == true and attributes.key?(:Default) and attributes[:Type] == Name
-                    self.add_type_signature(name, attributes[:Default])
+                    add_type_signature(name, attributes[:Default])
                 end
 
                 if @fields.key?(name)
