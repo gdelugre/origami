@@ -155,9 +155,7 @@ module Origami
 
                 until bitr.eod? or rows == 0
                     # realign the read line on a 8-bit boundary if required
-                    if params[:is_aligned?] and bitr.pos % 8 != 0
-                        bitr.pos += 8 - (bitr.pos % 8)
-                    end
+                    align_input(bitr) if params[:is_aligned?]
 
                     # received return-to-control code
                     if params[:has_eob?] and bitr.peek(RTC[1]) == RTC[0]
@@ -204,11 +202,12 @@ module Origami
                 scan_len = 0
                 white, _black = colors
                 current_color = white
+                length = 0
 
                 return if columns == 0
 
                 # Process each bit in line.
-                begin
+                loop do
                     if input.read(1) == current_color
                         scan_len += 1
                     else
@@ -221,7 +220,10 @@ module Origami
                         current_color ^= 1
                         scan_len = 1
                     end
-                end while input.pos % columns != 0
+
+                    length += 1
+                    break if length == columns
+                end
 
                 if current_color == white
                     put_white_bits(output, scan_len)
@@ -230,9 +232,19 @@ module Origami
                 end
 
                 # Align encoded lign on a 8-bit boundary.
-                if @params.EncodedByteAlign == true and output.pos % 8 != 0
-                    output.write(0, 8 - (output.pos % 8))
-                end
+                align_output(write) if @params.EncodedByteAlign == true
+            end
+
+            # Align input to a byte boundary.
+            def align_input(input)
+                return if input.pos % 8 == 0
+                input.pos += 8 - (input.pos % 8)
+            end
+
+            # Align output to a byte boundary by adding some zeros.
+            def align_output(output)
+                return if output.pos % 8 == 0
+                output.write(0, 8 - (output.pos % 8))
             end
 
             def encode_two_dimensional_line(_input, _output, _columns, _colors, _prev_line) #:nodoc:
