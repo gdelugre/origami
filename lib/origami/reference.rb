@@ -60,6 +60,11 @@ module Origami
             ref
         end
 
+        #
+        # Returns the object pointed to by the reference.
+        # The reference must be part of a document.
+        # Raises an InvalidReferenceError if the object cannot be found.
+        #
         def follow
             doc = self.document
 
@@ -76,6 +81,18 @@ module Origami
             target or Null.new
         end
         alias solve follow
+
+        #
+        # Returns true if the reference points to an object.
+        #
+        def valid?
+            begin
+                self.solve
+                true
+            rescue InvalidReferenceError
+                false
+            end
+        end
 
         def hash #:nodoc:
             self.to_a.hash
