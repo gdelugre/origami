@@ -333,15 +333,15 @@ module Origami
             self
         end
 
-        def to_s(indent: 1, tab: "\t") #:nodoc:
+        def to_s(indent: 1, tab: "\t", eol: $/) #:nodoc:
             content = ""
 
             content << @dictionary.to_s(indent: indent, tab: tab)
-            content << "stream" + EOL
+            content << "stream" + eol
             content << self.encoded_data
-            content << EOL << TOKENS.last
+            content << eol << TOKENS.last
 
-            super(content)
+            super(content, eol: eol)
         end
 
         def [](key) #:nodoc:

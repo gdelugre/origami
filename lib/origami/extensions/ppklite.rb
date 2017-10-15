@@ -83,8 +83,8 @@ module Origami
             #
             # Outputs self into PDF code.
             #
-            def to_s
-                "%PPKLITE-#{@major_version}.#{@minor_version}".b + EOL
+            def to_s(eol: $/)
+                "%PPKLITE-#{@major_version}.#{@minor_version}".b + eol
             end
 
             def to_sym #:nodoc:

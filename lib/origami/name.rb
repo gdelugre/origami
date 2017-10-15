@@ -74,8 +74,8 @@ module Origami
             @value.hash
         end
 
-        def to_s #:nodoc:
-            super(TOKENS.first + Name.expand(@value))
+        def to_s(eol: $/) #:nodoc:
+            super(TOKENS.first + Name.expand(@value), eol: eol)
         end
 
         def self.parse(stream, _parser = nil) #:nodoc:

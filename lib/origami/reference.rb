@@ -119,8 +119,8 @@ module Origami
             [@refno, @refgen]
         end
 
-        def to_s #:nodoc:
-            super("#{@refno} #{@refgen} R")
+        def to_s(eol: $/) #:nodoc:
+            super("#{@refno} #{@refgen} R", eol: eol)
         end
 
         #

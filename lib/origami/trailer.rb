@@ -157,13 +157,13 @@ module Origami
         #
         # Outputs self into PDF code.
         #
-        def to_s
+        def to_s(indent: 1, eol: $/)
             content = ""
             if self.dictionary?
-                content << TOKENS.first << EOL << @dictionary.to_s << EOL
+                content << TOKENS.first << eol << @dictionary.to_s(indent: indent, eol: eol) << eol
             end
 
-            content << XREF_TOKEN << EOL << @startxref.to_s << EOL << TOKENS.last << EOL
+            content << XREF_TOKEN << eol << @startxref.to_s << eol << TOKENS.last << eol
 
             content
         end

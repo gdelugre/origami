@@ -788,6 +788,7 @@ module Origami
 
             options =
             {
+                eol: $/,
                 rebuild_xrefs: true,
                 noindent: false,
                 obfuscate: false,
@@ -797,13 +798,20 @@ module Origami
             }
             options.update(params)
 
-            options[:up_to_revision] = @revisions.size if options[:up_to_revision] > @revisions.size
+            # Ensures we are using a valid EOL delimiter.
+            assert_valid_eol(options[:eol])
+
+            # Do not emit more revisions than present in the document.
+            options[:up_to_revision] = [ @revisions.size, options[:up_to_revision] ].min
 
             # Reset to default params if no xrefs are chosen (hybrid files not supported yet)
             if options[:use_xrefstm] == options[:use_xreftable]
                 options[:use_xrefstm] = has_objstm
                 options[:use_xreftable] = (not has_objstm)
             end
+
+            # Indent level for objects.
+            indent = (options[:noindent] == true ? 0 : 1)
 
             # Get trailer dictionary
             trailer_dict = self.trailer.dictionary
@@ -813,7 +821,7 @@ module Origami
 
             # Header
             bin = ""
-            bin << @header.to_s
+            bin << @header.to_s(eol: options[:eol])
 
             # For each revision
             @revisions[0, options[:up_to_revision]].each do |rev|
@@ -923,10 +931,10 @@ module Origami
                         end
 
                         # Output object code
-                        if (obj.is_a?(Dictionary) or obj.is_a?(Stream)) and options[:noindent]
-                            bin << obj.to_s(indent: 0)
+                        if (obj.is_a?(Dictionary) or obj.is_a?(Stream))
+                            bin << obj.to_s(eol: options[:eol], indent: indent)
                         else
-                            bin << obj.to_s
+                            bin << obj.to_s(eol: options[:eol])
                         end
                     end
                 end # end each object
@@ -955,12 +963,19 @@ module Origami
                 end
 
                 # Trailer
-                bin << rev.xreftable.to_s if options[:use_xreftable] == true
-                bin << (options[:obfuscate] == true ? rev.trailer.to_obfuscated_str : rev.trailer.to_s)
+                bin << rev.xreftable.to_s(eol: options[:eol]) if options[:use_xreftable] == true
+                bin << (options[:obfuscate] == true ? rev.trailer.to_obfuscated_str : rev.trailer.to_s(eol: options[:eol], indent: indent))
 
             end # end each revision
 
             bin
+        end
+
+        def assert_valid_eol(d)
+            allowed = [ "\n", "\r", "\r\n" ]
+            unless allowed.include?(d)
+                raise ArgumentError, "Invalid EOL delimiter #{d.inspect}, allowed: #{allowed.inspect}"
+            end
         end
 
         #

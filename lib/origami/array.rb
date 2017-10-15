@@ -107,21 +107,21 @@ module Origami
 
         alias each_value each
 
-        def to_s #:nodoc:
+        def to_s(eol: $/) #:nodoc:
             content = TOKENS.first.dup
             content << self.map {|entry|
                 entry = entry.to_o
 
                 case entry
                 when Dictionary # Do not indent dictionaries inside of arrays.
-                    entry.to_s(indent: 0)
+                    entry.to_s(indent: 0, eol: eol)
                 else
-                    entry.to_s
+                    entry.to_s(eol: eol)
                 end
             }.join(' ')
             content << TOKENS.last
 
-            super(content)
+            super(content, eol: eol)
         end
 
         def +(other)

@@ -47,8 +47,8 @@ module Origami
             @value = (value == true)
         end
 
-        def to_s #:nodoc:
-            super(@value.to_s)
+        def to_s(eol: $/) #:nodoc:
+            super(@value.to_s, eol: eol)
         end
 
         def self.parse(stream, _parser = nil) #:nodoc:

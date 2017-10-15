@@ -101,25 +101,28 @@ module Origami
             dict
         end
 
-        def to_s(indent: 1, tab: "\t") #:nodoc:
-            if indent > 0
-                content = TOKENS.first + EOL
-                self.each_pair do |key,value|
-                    content << tab * indent << key.to_s << ' '
-                    content << (value.is_a?(Dictionary) ? value.to_s(indent: indent+1) : value.to_s)
-                    content << EOL
+        def to_s(indent: 1, tab: "\t", eol: $/) #:nodoc:
+            nl = eol
+            tab, nl = '', '' if indent == 0
+
+            content = TOKENS.first + nl
+            self.each_pair do |key,value|
+                content << "#{tab * indent}#{key} "
+
+                content <<
+                if value.is_a?(Dictionary)
+                    value.to_s(eol: eol, indent: (indent == 0) ? 0 : indent + 1)
+                else
+                    value.to_s(eol: eol)
                 end
 
-                content << tab * (indent - 1) << TOKENS.last
-            else
-                content = TOKENS.first.dup
-                self.each_pair do |key,value|
-                    content << "#{key} #{value.is_a?(Dictionary) ? value.to_s(indent: 0) : value.to_s}"
-                end
-                content << TOKENS.last
+                content << nl
             end
 
-            super(content)
+            content << tab * (indent - 1) if indent > 0
+            content << TOKENS.last
+
+            super(content, eol: eol)
         end
 
         #

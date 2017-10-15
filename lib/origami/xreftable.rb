@@ -98,11 +98,11 @@ module Origami
         #
         # Outputs self into PDF code.
         #
-        def to_s
+        def to_s(eol: $/)
             off = @offset.to_s.rjust(10, '0')
             gen = @generation.to_s.rjust(5, '0')
 
-            "#{off} #{gen} #{@state}" + EOL
+            "#{off} #{gen} #{@state}" + eol.rjust(2, ' ')
         end
 
         def to_xrefstm_data(type_w, field1_w, field2_w)
@@ -205,10 +205,10 @@ module Origami
             #
             # Outputs self into PDF code.
             #
-            def to_s
-                section = "#{@range.begin} #{@range.end - @range.begin + 1}" + EOL
+            def to_s(eol: $/)
+                section = "#{@range.begin} #{@range.end - @range.begin + 1}" + eol
                 @entries.each do |xref|
-                    section << xref.to_s
+                    section << xref.to_s(eol: eol)
                 end
 
                 section
@@ -327,8 +327,8 @@ module Origami
             #
             # Outputs self into PDF code.
             #
-            def to_s
-                "xref" << EOL << @subsections.join
+            def to_s(eol: $/)
+                "xref" << eol << @subsections.map{|sub| sub.to_s(eol: eol)}.join
             end
         end
     end

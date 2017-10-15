@@ -486,16 +486,16 @@ module Origami
                 super
             end
 
-            def to_s(indent: 1, tab: "\t") #:nodoc:
+            def to_s(indent: 1, tab: "\t", eol: $/) #:nodoc:
 
                 # Must be deterministic.
-                indent, tab = 1, "\t"
+                indent, tab, eol = 1, "\t", $/
 
-                content = TOKENS.first + EOL
+                content = TOKENS.first + eol
 
                 self.to_a.sort_by{ |key, _| key }.reverse.each do |key, value|
                     content << tab * indent << key.to_s << " "
-                    content << (value.is_a?(Dictionary) ? value.to_s(indent: indent + 1) : value.to_s) << EOL
+                    content << (value.is_a?(Dictionary) ? value.to_s(indent: indent + 1) : value.to_s) << eol
                 end
 
                 content << tab * (indent - 1) << TOKENS.last
@@ -516,8 +516,8 @@ module Origami
             end
 
             def signature_offset #:nodoc:
-                indent, tab = 1, "\t"
-                content = "#{no} #{generation} obj" + EOL + TOKENS.first + EOL
+                indent, tab, eol = 1, "\t", $/
+                content = "#{no} #{generation} obj" + eol + TOKENS.first + eol
 
                 self.to_a.sort_by{ |key, _| key }.reverse.each do |key, value|
                     if key == :Contents
@@ -526,7 +526,7 @@ module Origami
                         return content.size
                     else
                         content << tab * indent + key.to_s << " "
-                        content << (value.is_a?(Dictionary) ? value.to_s(indent: indent + 1) : value.to_s) << EOL
+                        content << (value.is_a?(Dictionary) ? value.to_s(indent: indent + 1) : value.to_s) << eol
                     end
                 end
 

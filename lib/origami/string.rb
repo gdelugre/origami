@@ -203,8 +203,8 @@ module Origami
             hexastr
         end
 
-        def to_s #:nodoc:
-            super(TOKENS.first + Filter::ASCIIHex.encode(to_str) + TOKENS.last)
+        def to_s(eol: $/) #:nodoc:
+            super(TOKENS.first + Filter::ASCIIHex.encode(to_str) + TOKENS.last, eol: eol)
         end
 
         #
@@ -314,8 +314,8 @@ module Origami
             bytestr
         end
 
-        def to_s #:nodoc:
-            super(TOKENS.first + expand + TOKENS.last)
+        def to_s(eol: $/) #:nodoc:
+            super(TOKENS.first + expand + TOKENS.last, eol: eol)
         end
 
         #

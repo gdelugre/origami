@@ -42,7 +42,7 @@ module Origami
                 byte = rand(256).chr until (not byte.nil? and byte != "\n" and byte != "\r"); byte
             }.join
 
-            "%#{junk_comment}#{EOL}"
+            "%#{junk_comment}#{$/}"
         end
 
         def self.junk_object(type = nil)
@@ -221,9 +221,9 @@ module Origami
             content = ""
 
             content << @dictionary.to_obfuscated_str
-            content << "stream" + EOL
+            content << "stream" + $/
             content << self.encoded_data
-            content << EOL << TOKENS.last
+            content << $/ << TOKENS.last
 
             super(content)
         end
@@ -233,10 +233,10 @@ module Origami
         def to_obfuscated_str
             content = ""
             if self.dictionary?
-                content << TOKENS.first << EOL << @dictionary.to_obfuscated_str << EOL
+                content << TOKENS.first << $/ << @dictionary.to_obfuscated_str << $/
             end
 
-            content << XREF_TOKEN << EOL << @startxref.to_s << EOL << TOKENS.last << EOL
+            content << XREF_TOKEN << $/ << @startxref.to_s << $/ << TOKENS.last << $/
 
             content
         end

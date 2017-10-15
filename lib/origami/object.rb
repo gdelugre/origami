@@ -318,7 +318,6 @@ module Origami
 
     WHITESPACES = "([ \\f\\t\\r\\n\\0]|%[^\\n\\r]*(\\r\\n|\\r|\\n))*" #:nodoc:
     WHITECHARS_NORET = "[ \\f\\t\\0]*" #:nodoc:
-    EOL = "\r\n" #:nodoc:
     WHITECHARS = "[ \\f\\t\\r\\n\\0]*" #:nodoc:
     REGEXP_WHITESPACES = Regexp.new(WHITESPACES) #:nodoc:
 
@@ -674,11 +673,11 @@ module Origami
         # Outputs this object into PDF code.
         # _data_:: The object data.
         #
-        def to_s(data)
+        def to_s(data, eol: $/)
             content = ""
-            content << "#{no} #{generation} #{TOKENS.first}" << EOL if indirect? and numbered?
+            content << "#{no} #{generation} #{TOKENS.first}" << eol if indirect? and numbered?
             content << data
-            content << EOL << TOKENS.last << EOL if indirect? and numbered?
+            content << eol << TOKENS.last << eol if indirect? and numbered?
 
             content.force_encoding('binary')
         end

@@ -57,8 +57,8 @@ module Origami
             nil
         end
 
-        def to_s #:nodoc:
-            super(TOKENS.first)
+        def to_s(eol: $/) #:nodoc:
+            super(TOKENS.first, eol: eol)
         end
     end
 

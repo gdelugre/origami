@@ -82,10 +82,6 @@ module Origami
         def **(val)
             self.class.new(self.value ** val)
         end
-
-        def to_s
-            super(self.value.to_s)
-        end
     end
 
     #
@@ -124,6 +120,10 @@ module Origami
             int.file_offset = offset
 
             int
+        end
+
+        def to_s(eol: $/) #:nodoc:
+            super(self.value.to_s, eol: eol)
         end
 
         alias value to_i
@@ -173,8 +173,8 @@ module Origami
 
         alias value to_f
 
-        def to_s
-            sprintf("%f", self).sub(/\.0*$|(\.\d*[^0])0*$/, '\1')
+        def to_s(eol: $/) #:nodoc:
+            super(sprintf("%f", self).sub(/\.0*$|(\.\d*[^0])0*$/, '\1'), eol: eol)
         end
     end
 

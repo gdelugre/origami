@@ -73,8 +73,8 @@ module Origami
                 FDF::Header.new(maj, min)
             end
 
-            def to_s
-                "%FDF-#{@major_version}.#{@minor_version}".b + EOL
+            def to_s(eol: $/)
+                "%FDF-#{@major_version}.#{@minor_version}".b + eol
             end
 
             def to_sym #:nodoc:
