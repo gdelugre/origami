@@ -47,7 +47,7 @@ class OptParser
         options[:verbose] =
         options[:xstreams] = false
 
-        opts = OptionParser.new do |opts|
+        parser = OptionParser.new do |opts|
             opts.banner = <<BANNER
 Usage: #{$0} [-v] [-x] <PDF-file>
 Convert a PDF document to an Origami script (experimental).
@@ -69,7 +69,7 @@ BANNER
             end
         end
 
-        opts.parse!(args)
+        parser.parse!(args)
 
         options
     end
@@ -284,8 +284,8 @@ RUBY
 
 puts "[*] ".red + "Retrieving all indirect objects..."
 target.each_object(compressed: true) do |obj|
-    varname = "obj_" + obj.no.to_s
-    @var_hash[obj.reference] = varname
+    var_name = "obj_" + obj.no.to_s
+    @var_hash[obj.reference] = var_name
 end
 
 puts "[*] ".red + "Retrieving the document Catalog..."
@@ -297,8 +297,8 @@ catalog = target.Catalog
 puts "[*] ".red + "Processing the object hierarchy..."
 @current_idx = 0
 while @current_idx != @obj_route.size
-    varname = @obj_route[@current_idx]
-    obj = target[@var_hash.key(varname)]
+    var_name = @obj_route[@current_idx]
+    obj = target[@var_hash.key(var_name)]
 
     @code_hash[varname] ||= {}
     @code_hash[varname][:body] = objectToRuby(obj, 0, varname, true)

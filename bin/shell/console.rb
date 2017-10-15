@@ -63,7 +63,10 @@ module Origami
         if defined?(PDF::JavaScript::Engine)
             class JavaScript::Engine
                 def shell
-                    while (print 'js> '.magenta; line = gets)
+                    loop do
+                        print "js > ".magenta
+                        break if (line = gets).nil?
+
                         begin
                             puts exec(line)
                         rescue V8::JSError => e

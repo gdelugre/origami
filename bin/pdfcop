@@ -43,6 +43,16 @@ require 'colorize'
 DEFAULT_CONFIG_FILE = "#{File.dirname(__FILE__)}/config/pdfcop.conf.yml"
 DEFAULT_POLICY = "standard"
 SECURITY_POLICIES = {}
+ANNOTATION_RIGHTS = {
+     FileAttachment: %i[allowAttachments allowFileAttachmentAnnotation],
+     Sound: %i[allowSoundAnnotation],
+     Movie: %i[allowMovieAnnotation],
+     Screen: %i[allowScreenAnnotation],
+     Widget: %i[allowAcroforms],
+     RichMedia: %i[allowRichMediaAnnotation],
+     :"3D" => %i[allow3DAnnotation]
+}
+
 
 def load_config_file(path)
     SECURITY_POLICIES.update(Hash.new(false).update YAML.load(File.read(path)))
@@ -60,7 +70,7 @@ USAGE
     def self.parse(args)
         options = {colors: true, password: ''}
 
-        opts = OptionParser.new do |opts|
+        parser = OptionParser.new do |opts|
             opts.banner = BANNER
 
             opts.on("-o", "--output LOG_FILE", "Output log file (default STDOUT)") do |o|
@@ -93,7 +103,7 @@ USAGE
             end
         end
 
-        opts.parse!(args)
+        parser.parse!(args)
 
         options
     end
@@ -185,54 +195,43 @@ def analyze_xfa_forms(xfa)
     end
 end
 
+def check_annotation_rights(annot)
+    subtype = annot.Subtype.value
+
+    check_rights(*ANNOTATION_RIGHTS[subtype]) if ANNOTATION_RIGHTS.include?(subtype)
+end
+
 def analyze_annotation(annot, _level = 0)
     check_rights(:allowAnnotations)
 
     if annot.is_a?(Origami::Dictionary) and annot.key?(:Subtype)
-        case annot[:Subtype].solve.value
-        when :FileAttachment
-            check_rights(:allowAttachments, :allowFileAttachmentAnnotation)
+        check_annotation_rights(annot)
 
-        when :Sound
-            check_rights(:allowSoundAnnotation)
+        analyze_3d_annotation(annot) if annot.subtype.value == :"3D"
+    end
+end
 
-        when :Movie
-            check_rights(:allowMovieAnnotation)
+def analyze_3d_annotation(annot)
+    # 3D annotation might pull in JavaScript for real-time driven behavior.
+    return unless annot.key?(:"3DD")
 
-        when :Screen
-            check_rights(:allowScreenAnnotation)
+    dd = annot[:"3DD"].solve
+    u3dstream = nil
 
-        when :Widget
-            check_rights(:allowAcroforms)
+    case dd
+    when Origami::Stream
+        u3dstream = dd
+    when Origami::Dictionary
+        u3dstream = dd[:"3DD"].solve
+    end
 
-        when :"3D"
-            check_rights(:allow3DAnnotation)
+    if u3dstream.is_a?(Stream) and u3dstream.key?(:OnInstantiate)
+        check_rights(:allowJS)
 
-            # 3D annotation might pull in JavaScript for real-time driven behavior.
-            if annot.key?(:"3DD")
-                dd = annot[:"3DD"].solve
-                u3dstream = nil
+        if annot.key?(:"3DA") # is 3d view instantiated automatically?
+            u3dactiv = annot[:"3DA"].solve
 
-                case dd
-                when Origami::Stream
-                    u3dstream = dd
-                when Origami::Dictionary
-                    u3dstream = dd[:"3DD"]
-                end
-
-                if u3dstream and u3dstream.key?(:OnInstantiate)
-                    check_rights(:allowJS)
-
-                    if annot.key?(:"3DA") # is 3d view instantiated automatically?
-                        u3dactiv = annot[:"3DA"].solve
-
-                        check_rights(:allowJSAtOpening) if u3dactiv.is_a?(Origami::Dictionary) and (u3dactiv[:A] == :PO or u3dactiv[:A] == :PV)
-                    end
-                end
-            end
-
-        when :RichMedia
-            check_rights(:allowRichMediaAnnotation)
+            check_rights(:allowJSAtOpening) if u3dactiv.is_a?(Origami::Dictionary) and (u3dactiv.A == :PO or u3dactiv.A == :PV)
         end
     end
 end

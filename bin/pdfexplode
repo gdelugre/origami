@@ -111,76 +111,76 @@ begin
         type_rsrc = page.resources(type)
         other_rsrc = all_rsrc.keys - type_rsrc.keys
 
-        unless type_rsrc.empty?
-            # Keep only specified resource type.
-            output_file = File.join(OUTPUT_DIR, "page_#{n}_keeponly_#{type}.pdf")
+        return unless type_rsrc.empty?
+
+        # Keep only specified resource type.
+        output_file = File.join(OUTPUT_DIR, "page_#{n}_keeponly_#{type}.pdf")
+        PDF.write(output_file) do |pdf|
+            reduced = page.copy
+            # New resource dictionary with only matching resources.
+            reduced.Resources = Resources.new(type => type_rsrc)
+            # Remove mention of other resources.
+            reduced.each_content_stream do |stream|
+                stream.data = stream.data.lines.
+                    delete_if {|line| other_rsrc.any?{|res| line =~ /#{res}/}}.join
+            end
+
+            STDERR.puts "Creating #{output_file}..."
+            pdf.append_page(reduced)
+        end
+
+        # Remove all specified resource type.
+        output_file = File.join(OUTPUT_DIR, "page_#{n}_excluded_#{type}.pdf")
+        PDF.write(output_file) do |pdf|
+            reduced = page.copy
+            # New resource dictionary with no resource of specified type.
+            reduced.Resources = reduced.Resources.copy
+            reduced.Resources.delete(type)
+            # Remove mention this resource type.
+            reduced.each_content_stream do |stream|
+                stream.data = stream.data.lines.
+                    delete_if {|line| type_rsrc.keys.any?{|res| line =~ /#{res}/}}.join
+            end
+
+            STDERR.puts "Creating #{output_file}..."
+            pdf.append_page(reduced)
+        end
+
+        # Now treating each resource object separately.
+        type_rsrc.each_pair do |name, rsrc|
+            anyother_rsrc = all_rsrc.keys - [ name ]
+            # Keey only specified resource object.
+            output_file = File.join(OUTPUT_DIR, "page_#{n}_keeponly_#{type}_#{name}.pdf")
             PDF.write(output_file) do |pdf|
                 reduced = page.copy
-                # New resource dictionary with only matching resources.
-                reduced.Resources = Resources.new(type => type_rsrc)
-                # Remove mention of other resources.
+                # New resource dictionary with only specified resource object.
+                reduced.Resources = Resources.new(type => {name => rsrc})
+                # Remove mention of all other resources.
                 reduced.each_content_stream do |stream|
                     stream.data = stream.data.lines.
-                        delete_if {|line| other_rsrc.any?{|rsrc| line =~ /#{rsrc}/}}.join
+                        delete_if {|line| anyother_rsrc.any?{|res| line =~ /#{res}/}}.join
                 end
 
                 STDERR.puts "Creating #{output_file}..."
                 pdf.append_page(reduced)
             end
 
-            # Remove all specified resource type.
-            output_file = File.join(OUTPUT_DIR, "page_#{n}_excluded_#{type}.pdf")
+            # Remove only specified resource object.
+            output_file = File.join(OUTPUT_DIR, "page_#{n}_excluded_#{type}_#{name}.pdf")
             PDF.write(output_file) do |pdf|
                 reduced = page.copy
-                # New resource dictionary with no resource of specified type.
+                # New resource dictionary with only specified resource object.
                 reduced.Resources = reduced.Resources.copy
-                reduced.Resources.delete(type)
-                # Remove mention this resource type.
+                reduced.Resources[type] = reduced.Resources.send(type).copy
+                reduced.Resources[type].delete(name)
+                # Remove mention of this resource only.
                 reduced.each_content_stream do |stream|
                     stream.data = stream.data.lines.
-                        delete_if {|line| type_rsrc.keys.any?{|rsrc| line =~ /#{rsrc}/}}.join
+                        delete_if {|line| line =~ /#{name}/}.join
                 end
 
                 STDERR.puts "Creating #{output_file}..."
                 pdf.append_page(reduced)
-            end
-
-            # Now treating each resource object separately.
-            type_rsrc.each_pair do |name, rsrc|
-                anyother_rsrc = all_rsrc.keys - [ name ]
-                # Keey only specified resource object.
-                output_file = File.join(OUTPUT_DIR, "page_#{n}_keeponly_#{type}_#{name}.pdf")
-                PDF.write(output_file) do |pdf|
-                    reduced = page.copy
-                    # New resource dictionary with only specified resource object.
-                    reduced.Resources = Resources.new(type => {name => rsrc})
-                    # Remove mention of all other resources.
-                    reduced.each_content_stream do |stream|
-                        stream.data = stream.data.lines.
-                            delete_if {|line| anyother_rsrc.any?{|rsrc| line =~ /#{rsrc}/}}.join
-                    end
-
-                    STDERR.puts "Creating #{output_file}..."
-                    pdf.append_page(reduced)
-                end
-
-                # Remove only specified resource object.
-                output_file = File.join(OUTPUT_DIR, "page_#{n}_excluded_#{type}_#{name}.pdf")
-                PDF.write(output_file) do |pdf|
-                    reduced = page.copy
-                    # New resource dictionary with only specified resource object.
-                    reduced.Resources = reduced.Resources.copy
-                    reduced.Resources[type] = reduced.Resources.send(type).copy
-                    reduced.Resources[type].delete(name)
-                    # Remove mention of this resource only.
-                    reduced.each_content_stream do |stream|
-                        stream.data = stream.data.lines.
-                            delete_if {|line| line =~ /#{name}/}.join
-                    end
-
-                    STDERR.puts "Creating #{output_file}..."
-                    pdf.append_page(reduced)
-                end
             end
         end
     end
@@ -196,9 +196,9 @@ begin
         case @options[:split_by]
         when 'pages'
             output_file = File.join(OUTPUT_DIR, "page_#{i}.pdf")
-            PDF.write(output_file) do |pdf|
-              STDERR.puts "Creating #{output_file}..."
-              pdf.append_page(page)
+            PDF.write(output_file) do |doc|
+                STDERR.puts "Creating #{output_file}..."
+                doc.append_page(page)
             end
 
         when 'rsrc'
