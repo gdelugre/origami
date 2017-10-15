@@ -133,11 +133,11 @@ module Origami
             # Define a new field with given attributes.
             #
             def field(name, attributes)
-                if attributes[:Required] == true and attributes.has_key?(:Default) and attributes[:Type] == Name
+                if attributes[:Required] == true and attributes.key?(:Default) and attributes[:Type] == Name
                     self.add_type_signature(name, attributes[:Default])
                 end
 
-                if @fields.has_key?(name)
+                if @fields.key?(name)
                     @fields[name].merge! attributes
                 else
                     @fields[name] = attributes
@@ -162,9 +162,7 @@ module Origami
             # Returns the expected type for a field name.
             #
             def hint_type(name)
-                if @fields.has_key?(name)
-                    @fields[name][:Type]
-                end
+                @fields[name][:Type] if @fields.key?(name)
             end
 
             private
@@ -437,7 +435,7 @@ module Origami
         end
 
         #
-        # Returns an indirect reference to this object, or a Null object is this object is not indirect.
+        # Returns an indirect reference to this object.
         #
         def reference
             raise InvalidObjectError, "Cannot reference a direct object" unless self.indirect?
