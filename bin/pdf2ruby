@@ -306,7 +306,7 @@ while @current_idx != @obj_route.size
     @current_idx = @current_idx + 1
 end
 
-@obj_route.reverse.each do |varname|
+@obj_route.reverse_each do |varname|
     fd.puts "#{varname} = #{@code_hash[varname][:body]}"
     if @code_hash[varname][:afterDecl]
         @code_hash[varname][:afterDecl].each do |decl|

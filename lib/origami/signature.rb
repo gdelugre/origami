@@ -493,7 +493,7 @@ module Origami
 
                 content = TOKENS.first + eol
 
-                self.to_a.sort_by{ |key, _| key }.reverse.each do |key, value|
+                self.to_a.sort_by{ |key, _| key }.reverse_each do |key, value|
                     content << tab * indent << key.to_s << " "
                     content << (value.is_a?(Dictionary) ? value.to_s(indent: indent + 1) : value.to_s) << eol
                 end
@@ -519,7 +519,7 @@ module Origami
                 indent, tab, eol = 1, "\t", $/
                 content = "#{no} #{generation} obj" + eol + TOKENS.first + eol
 
-                self.to_a.sort_by{ |key, _| key }.reverse.each do |key, value|
+                self.to_a.sort_by{ |key, _| key }.reverse_each do |key, value|
                     if key == :Contents
                         content << tab * indent + key.to_s + " "
 
