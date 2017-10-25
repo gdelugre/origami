@@ -24,3 +24,5 @@ end
 task :clean do
     Rake::Cleaner.cleanup_files Dir['*.gem', 'doc', 'examples/**/*.pdf']
 end
+
+task :default => :test
