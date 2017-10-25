@@ -1,0 +1,14 @@
+sudo: false
+cache: bundler
+language: ruby
+dist: trusty
+rvm:
+  - 2.4.3
+  - 2.5.0
+  - ruby-head
+matrix:
+  fast_finish: true
+  allow_failures:
+    - rvm: ruby-head
+install:
+  - bundle install --jobs=4 --retry=3
