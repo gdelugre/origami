@@ -1,5 +1,9 @@
 # encoding: UTF-8
 
+require 'bundler' rescue 'You must `gem install bundler` and `bundle install` to run rake tasks'
+Bundler.setup
+Bundler::GemHelper.install_tasks
+
 require 'rdoc/task'
 require 'rake/testtask'
 require 'rake/clean'
