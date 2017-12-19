@@ -78,7 +78,7 @@ module Origami
             x, y = attr[:x], attr[:y]
 
             @instructions << PDF::Instruction.new('q')
-            @instructions << PDF::Instruction.new('cm', 300, 0, 0, 300, x, y)
+            @instructions << PDF::Instruction.new('cm', (attr[:w] || 300), 0, 0, (attr[:h] || 300), x, y)
             @instructions << PDF::Instruction.new('Do', name)
             @instructions << PDF::Instruction.new('Q')
         end
