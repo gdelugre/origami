@@ -656,7 +656,7 @@ module Origami
 
             def self.from_image_file(path, format = nil)
                 if path.respond_to?(:read)
-                    data = fd.read
+                    data = path.read
                 else
                     data = File.binread(File.expand_path(path))
                     format ||= File.extname(path)[1..-1]
