@@ -280,8 +280,19 @@ module Origami
         def initialize(hash = {}, parser = nil)
             super
 
-            self.Count = 0
-            self.Kids = []
+            self.Count = 
+                if hash[Name.new("Count")].instance_of?(Integer)
+                    hash[Name.new("Count")]
+                else
+                    0
+                end
+
+            self.Kids =
+                if hash[Name.new("Kids")].instance_of?(Array)
+                    hash[Name.new("Kids")]
+                else
+                    []
+                end
 
             set_indirect(true)
         end
