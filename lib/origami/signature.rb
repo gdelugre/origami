@@ -59,6 +59,7 @@ module Origami
         # _method_:: The PDF signature identifier.
         # _ca_:: Optional CA certificates used to sign the user certificate.
         # _annotation_:: Annotation associated with the signature.
+        # _annotations_:: [Annotation] associated with the signature.
         # _issuer_:: Issuer name.
         # _location_:: Signature location.
         # _contact_:: Signer contact.
@@ -68,6 +69,7 @@ module Origami
                  method: Signature::PKCS7_DETACHED,
                  ca: [],
                  annotation: nil,
+                 annotations: [],
                  issuer: nil,
                  location: nil,
                  contact: nil,
@@ -91,13 +93,19 @@ module Origami
 
             digsig = Signature::DigitalSignature.new.set_indirect(true)
 
-            if annotation.nil?
+            if annotation.nil? && annotations.empty?
                 annotation = Annotation::Widget::Signature.new
                 annotation.Rect = Rectangle[:llx => 0.0, :lly => 0.0, :urx => 0.0, :ury => 0.0]
             end
+            unless annotation.nil?
+              annotation.V = digsig
+              add_fields(annotation)
+            end
+            annotations.each do |annotation|
+              annotation.V = digsig
+              add_fields(annotation)
+            end
 
-            annotation.V = digsig
-            add_fields(annotation)
             self.Catalog.AcroForm.SigFlags =
                 InteractiveForm::SigFlags::SIGNATURES_EXIST | InteractiveForm::SigFlags::APPEND_ONLY
 
