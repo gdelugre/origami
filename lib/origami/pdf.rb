@@ -188,24 +188,19 @@ module Origami
         end
 
         #
+        # Returns a binary representation of the current document.
+        #
+        def to_blob(params = {})
+            options = prepare_with_options(params)
+            output(options)
+        end
+
+        #
         # Saves the current document.
         # _filename_:: The path where to save this PDF.
         #
         def save(path, params = {})
-            options =
-            {
-                delinearize: true,
-                recompile: true,
-                decrypt: false
-            }
-            options.update(params)
-
-            if self.frozen? # incompatible flags with frozen doc (signed)
-                options[:recompile] =
-                options[:rebuild_xrefs] =
-                options[:noindent] =
-                options[:obfuscate] = false
-            end
+            options = prepare_with_options(params)
 
             if path.respond_to?(:write)
                 fd = path
@@ -214,12 +209,6 @@ module Origami
                 fd = File.open(path, 'w').binmode
                 close = true
             end
-
-            load_all_objects unless @loaded
-
-            intents_as_pdfa1 if options[:intent] =~ /pdf[\/-]?A1?/i
-            self.delinearize! if options[:delinearize] and self.linearized?
-            compile(options) if options[:recompile]
 
             fd.write output(options)
             fd.close if close
@@ -539,6 +528,34 @@ module Origami
         ##########################
         private
         ##########################
+
+        #
+        # Prepares object for output with options
+        #
+        def prepare_with_options(params = {})
+            options =
+            {
+                delinearize: true,
+                recompile: true,
+                decrypt: false
+            }
+            options.update(params)
+
+            if self.frozen? # incompatible flags with frozen doc (signed)
+                options[:recompile] =
+                options[:rebuild_xrefs] =
+                options[:noindent] =
+                options[:obfuscate] = false
+            end
+
+            load_all_objects unless @loaded
+
+            intents_as_pdfa1 if options[:intent] =~ /pdf[\/-]?A1?/i
+            self.delinearize! if options[:delinearize] and self.linearized?
+            compile(options) if options[:recompile]
+
+            options
+        end
 
         #
         # Iterates over the children of an object, avoiding cycles.
