@@ -382,6 +382,21 @@ module Origami
         end
 
         #
+        # Removes all pages in the node.
+        #
+        def clear_pages
+            self.Count = 0
+            self.Kids = []
+        end
+
+        #
+        # Returns true unless the node is empty.
+        #
+        def pages?
+            self.each_page.size > 0
+        end
+
+        #
         # Append a page at the end of this node.
         #
         def append_page(page)
@@ -390,11 +405,6 @@ module Origami
             self.Count += 1
 
             page.Parent = self
-        end
-
-        private
-
-        def check_page_number(n)
         end
     end
 
