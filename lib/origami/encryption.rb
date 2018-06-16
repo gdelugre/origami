@@ -44,7 +44,7 @@ module Origami
         end
 
         #
-        # Decrypts the current document (only RC4 40..128 bits).
+        # Decrypts the current document.
         # _passwd_:: The password to decrypt the document.
         #
         def decrypt(passwd = "")
