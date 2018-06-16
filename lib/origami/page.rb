@@ -280,9 +280,7 @@ module Origami
         def initialize(hash = {}, parser = nil)
             super
 
-            self.Count = 0
-            self.Kids = []
-
+            set_default_values # Ensure that basic tree fields are present.
             set_indirect(true)
         end
 
