@@ -27,7 +27,7 @@ Gem::Specification.new do |s|
     s.add_runtime_dependency "colorize", "~> 0.7"
     s.add_development_dependency "minitest", "~> 5.0"
     s.add_development_dependency 'rake',     '~> 0.9'
-    s.add_development_dependency 'rdoc',     '~> 0.6'
+    s.add_development_dependency 'rdoc',     '~> 6.0'
 
     s.bindir        = "bin"
     s.executables   = %w(pdfsh
