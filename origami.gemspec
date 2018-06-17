@@ -20,7 +20,6 @@ Gem::Specification.new do |s|
                     ]
 
     s.require_path  = "lib"
-    s.has_rdoc      = true
     s.test_file     = "test/test_pdf.rb"
     s.license       = "LGPL-3.0+"
 
@@ -28,6 +27,7 @@ Gem::Specification.new do |s|
     s.add_runtime_dependency "colorize", "~> 0.7"
     s.add_development_dependency "minitest", "~> 5.0"
     s.add_development_dependency 'rake',     '~> 0.9'
+    s.add_development_dependency 'rdoc',     '~> 0.6'
 
     s.bindir        = "bin"
     s.executables   = %w(pdfsh
