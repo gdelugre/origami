@@ -1,8 +1,13 @@
 # encoding: UTF-8
 
-require 'bundler' rescue 'You must `gem install bundler` and `bundle install` to run rake tasks'
-Bundler.setup
-Bundler::GemHelper.install_tasks
+# Optionally install bundler tasks if present.
+begin
+    require 'bundler'
+
+    Bundler.setup
+    Bundler::GemHelper.install_tasks
+rescue LoadError
+end
 
 require 'rdoc/task'
 require 'rake/testtask'
