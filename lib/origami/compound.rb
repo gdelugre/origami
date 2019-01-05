@@ -96,27 +96,45 @@ module Origami
         include ObjectCache
         using TypeConversion
 
+        #
+        # Returns true if the item is present in the compound object.
+        #
         def include?(item)
             super(item.to_o)
         end
 
+        #
+        # Removes the item from the compound object if present.
+        #
         def delete(item)
             obj = super(item.to_o)
             unlink_object(obj) unless obj.nil?
         end
 
+        #
+        # Creates a deep copy of the compound object.
+        # This method can be quite expensive as nested objects are copied too.
+        #
         def copy
             obj = self.update_values(&:copy)
 
             transfer_attributes(obj)
         end
 
+        #
+        # Returns a new compound object with updated values based on the provided block.
+        #
         def update_values(&b)
             return enum_for(__method__) unless block_given?
             return self.class.new self.transform_values(&b) if self.respond_to?(:transform_values)
             return self.class.new self.map(&b) if self.respond_to?(:map)
+
+            raise NotImplementedError, "This object does not implement this method"
         end
 
+        #
+        # Modifies the compound object's values based on the provided block.
+        #
         def update_values!(&b)
             return enum_for(__method__) unless block_given?
             return self.transform_values!(&b) if self.respond_to?(:transform_values!)

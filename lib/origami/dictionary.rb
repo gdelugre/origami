@@ -126,16 +126,28 @@ module Origami
         end
 
         #
-        # Note: transform_values should be preferred with Ruby >= 2.4.
+        # Returns a new Dictionary object with values modified by given block.
         #
-        def map!(&b)
-            self.each_pair do |k,v|
-                self[k] = b.call(v)
+        def transform_values(&b)
+            self.class.new self.map { |k, v|
+                [ k.to_sym, b.call(v) ]
+            }.to_h
+        end
+
+        #
+        # Modifies the values of the Dictionary, leaving keys unchanged.
+        #
+        def transform_values!(&b)
+            self.each_pair do |k, v|
+                self[k] = b.call(unlink_object(v))
             end
         end
 
+        #
+        # Merges the content of the Dictionary with another Dictionary.
+        #
         def merge(dict)
-            Dictionary.new(super(dict))
+            self.class.new(super(dict))
         end
 
         def []=(key,val)
