@@ -1,6 +1,7 @@
 Origami
 =====
 [![Gem Version](https://badge.fury.io/rb/origami.svg)](http://rubygems.org/gems/origami)
+[![Build Status](https://secure.travis-ci.org/gdelugre/origami.svg?branch=master)](http://travis-ci.org/gdelugre/origami)
 
 Overview
 --------
