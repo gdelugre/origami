@@ -43,13 +43,12 @@ Then import Origami with:
 
 ```ruby
 require 'origami'
-include Origami
 ```
 
 To process a PDF document, you can use the ``PDF.read`` method:
 
 ```ruby
-pdf = PDF.read "something.pdf"
+pdf = Origami::PDF.read "something.pdf"
 
 puts "This document has #{pdf.pages.size} page(s)"
 ```
@@ -57,7 +56,7 @@ puts "This document has #{pdf.pages.size} page(s)"
 The default behavior is to parse the entire contents of the document at once. This can be changed by passing the ``lazy`` flag to parse objects on demand.
 
 ```ruby
-pdf = PDF.read "something.pdf", lazy: true
+pdf = Origami::PDF.read "something.pdf", lazy: true
 
 pdf.each_page do |page|
     page.each_font do |name, font|
@@ -69,7 +68,7 @@ end
 You can also create documents directly by instanciating a new PDF object:
 
 ```ruby
-pdf = PDF.new
+pdf = Origami::PDF.new
 
 pdf.append_page
 pdf.pages.first.write "Hello", size: 30
@@ -77,7 +76,7 @@ pdf.pages.first.write "Hello", size: 30
 pdf.save("example.pdf")
 
 # Another way of doing it
-PDF.write("example.pdf") do |pdf|
+Origami::PDF.write("example.pdf") do |pdf|
     pdf.append_page do |page|
         page.write "Hello", size: 30
     end
@@ -111,4 +110,4 @@ License
 
 Origami is distributed under the [LGPL](COPYING.LESSER) license.
 
-Copyright © 2017 Guillaume Delugré.
+Copyright © 2018 Guillaume Delugré.
