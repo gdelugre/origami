@@ -300,8 +300,8 @@ while @current_idx != @obj_route.size
     var_name = @obj_route[@current_idx]
     obj = target[@var_hash.key(var_name)]
 
-    @code_hash[varname] ||= {}
-    @code_hash[varname][:body] = objectToRuby(obj, 0, varname, true)
+    @code_hash[var_name] ||= {}
+    @code_hash[var_name][:body] = objectToRuby(obj, 0, var_name, true)
 
     @current_idx = @current_idx + 1
 end
