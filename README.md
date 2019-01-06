@@ -2,6 +2,7 @@ Origami
 =====
 [![Gem Version](https://badge.fury.io/rb/origami.svg)](http://rubygems.org/gems/origami)
 [![Build Status](https://secure.travis-ci.org/gdelugre/origami.svg?branch=master)](http://travis-ci.org/gdelugre/origami)
+[![License: LGPL v3](https://img.shields.io/badge/License-LGPL%20v3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0)
 
 Overview
 --------
