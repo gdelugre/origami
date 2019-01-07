@@ -188,6 +188,7 @@ module Origami
 
                     self.each_with_index do |object, index|
                         index_type = array_type.is_a?(::Array) ? array_type[index % array_type.size] : array_type
+												index_type = [index_type].flatten
 
                         begin
                             object_value = object.solve
@@ -196,7 +197,8 @@ module Origami
                             next
                         end
 
-                        unless object_value.is_a?(index_type)
+                        #unless object_value.is_a?(index_type)
+												unless index_type.any?{|type| object_value.is_a?(type)}
                             STDERR.puts "Warning: object #{self.class.name || 'Array'} should be composed of #{index_type.name} at index #{index} (got #{object_value.type} instead)"
                         end
                     end
