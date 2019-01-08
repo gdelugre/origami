@@ -81,7 +81,7 @@ module Origami
             end
 
             def apply_pre_prediction(data, predictor: NONE, colors: 1, bpc: 8, columns: 1)
-                return data if predictor == NONE
+                return data if data.empty? or predictor == NONE
 
                 bpp, bpr = compute_bpp_bpr(data, columns, colors, bpc)
 
@@ -100,7 +100,7 @@ module Origami
             end
 
             def apply_post_prediction(data, predictor: NONE, colors: 1, bpc: 8, columns: 1)
-                return data if predictor == NONE
+                return data if data.empty? or predictor == NONE
 
                 bpp, bpr = compute_bpp_bpr(data, columns, colors, bpc)
 
