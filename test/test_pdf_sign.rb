@@ -22,7 +22,9 @@ class TestSign < Minitest::Test
         @cert.public_key = @key.public_key
         @cert.subject = name
 
-        extension_factory = OpenSSL::X509::ExtensionFactory.new nil, @cert
+        extension_factory = OpenSSL::X509::ExtensionFactory.new
+        extension_factory.issuer_certificate = @cert
+        extension_factory.subject_certificate = @cert
 
         @cert.add_extension extension_factory.create_extension('basicConstraints', 'CA:TRUE', true)
         @cert.add_extension extension_factory.create_extension('keyUsage', 'digitalSignature')
