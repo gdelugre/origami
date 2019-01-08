@@ -23,10 +23,10 @@ require 'digest/sha1'
 
 module Origami
 
-    class PDF
-        class SignatureError < Error #:nodoc:
-        end
+    class SignatureError < Error #:nodoc:
+    end
 
+    class PDF
         #
         # Verify a document signature.
         #   _:trusted_certs_: an array of trusted X509 certificates.
