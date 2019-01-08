@@ -336,7 +336,7 @@ module Origami
                     k = (color.respond_to?(:k) ? color.k : color[3]).to_f
                     PDF::Instruction.new('k', c, m, y, k) if @canvas.gs.nonstroking_color != [c,m,y,k]
 
-                elsif color.respond_to?:g or (0.0..1.0) === color
+                elsif color.respond_to?(:g) or (0.0..1.0).include?(color)
                     g = color.respond_to?(:g) ? color.g : color
                     PDF::Instruction.new('g', g) if @canvas.gs.nonstroking_color != [ g ]
 
@@ -366,7 +366,7 @@ module Origami
                     k = (color.respond_to?(:k) ? color.k : color[3]).to_f
                     PDF::Instruction.new('K', c, m, y, k) if @canvas.gs.stroking_color != [c,m,y,k]
 
-                elsif color.respond_to?:g or (0.0..1.0) === color
+                elsif color.respond_to?(:g) or (0.0..1.0).include?(color)
                     g = color.respond_to?(:g) ? color.g : color
                     PDF::Instruction.new('G', g) if @canvas.gs.stroking_color != [ g ]
 

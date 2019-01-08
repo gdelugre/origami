@@ -577,8 +577,8 @@ module Origami
 
             case object
             when Stream
-                result.concat object.dictionary.strings_cache.select{|str| pattern === str}
-                result.concat object.dictionary.names_cache.select{|name| pattern === name.value}
+                result.concat object.dictionary.strings_cache.select{|str| str.match(pattern) }
+                result.concat object.dictionary.names_cache.select{|name| name.value.match(pattern) }
 
                 begin
                     result.push object if streams and object.data.match(pattern)
@@ -597,8 +597,8 @@ module Origami
                 result.push object if object.value.match(pattern)
 
             when ObjectCache
-                result.concat object.strings_cache.select{|str| pattern === str}
-                result.concat object.names_cache.select{|name| pattern === name.value}
+                result.concat object.strings_cache.select{|str| str.match(pattern) }
+                result.concat object.names_cache.select{|name| name.value.match(pattern) }
             end
 
             result

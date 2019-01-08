@@ -118,7 +118,7 @@ module Origami
             # Computes the number of bytes per pixel and number of bytes per row.
             #
             def compute_bpp_bpr(data, columns, colors, bpc)
-                unless (1..4) === colors
+                unless colors.between?(1, 4)
                     raise PredictorError.new("Colors must be between 1 and 4", input_data: data)
                 end
 
