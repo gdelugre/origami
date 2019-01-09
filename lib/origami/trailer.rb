@@ -52,9 +52,8 @@ module Origami
         end
 
         def trailer_key(attr) #:nodoc:
-
             @revisions.reverse_each do |rev|
-                if rev.trailer.dictionary? and not rev.trailer[attr].nil?
+                if rev.trailer.dictionary? and rev.trailer.key?(attr)
                     return rev.trailer[attr].solve
                 elsif rev.xrefstm?
                     xrefstm = rev.xrefstm
@@ -136,20 +135,39 @@ module Origami
             Trailer.new(startxref, dictionary)
         end
 
+        #
+        # Returns true if the specified key is present in the Trailer dictionary.
+        #
+        def key?(key)
+            self.dictionary? and @dictionary.key?(key)
+        end
+
+        #
+        # Access a key in the trailer dictionary if present.
+        #
         def [](key)
             @dictionary[key] if dictionary?
         end
 
-        def []=(key,val)
+        #
+        # Sets a value in the trailer dictionary.
+        #
+        def []=(key, value)
             self.dictionary = Dictionary.new unless dictionary?
-            @dictionary[key] = val
+            @dictionary[key] = value
         end
 
+        #
+        # Sets the trailer dictionary.
+        #
         def dictionary=(dict)
             dict.parent = self if dict
             @dictionary = dict
         end
 
+        #
+        # Returns true if the Trailer contains a Dictionary.
+        #
         def dictionary?
             not @dictionary.nil?
         end
