@@ -690,17 +690,25 @@ module Origami
                     Encryption::RC4
                 when 4, 5
                     return Encryption::Identity if name == :Identity
-                    raise EncryptionError, "Broken CF entry" unless self.CF.is_a?(Dictionary)
 
-                    self.CF.select { |key, dict| key == name and dict.is_a?(Dictionary) }
-                           .map { |_, dict| cipher_from_crypt_filter_method(dict[:CFM] || :None) }
-                           .first
+                    select_cipher_by_name(name)
                 else
                     raise EncryptionNotSupportedError, "Unsupported encryption version: #{handler.V}"
                 end
             end
 
             private
+
+            #
+            # Returns the cipher associated with a crypt filter name.
+            #
+            def select_cipher_by_name(name)
+                raise EncryptionError, "Broken CF entry" unless self.CF.is_a?(Dictionary)
+
+                self.CF.select { |key, dict| key == name and dict.is_a?(Dictionary) }
+                       .map { |_, dict| cipher_from_crypt_filter_method(dict[:CFM] || :None) }
+                       .first
+            end
 
             #
             # Converts a crypt filter method identifier to its cipher class.
