@@ -91,7 +91,7 @@ module Origami
             # In the LazyParser, the revisions are parsed by jumping through the cross-references (table or streams).
             #
             def parse_revision(pdf, offset)
-                raise ParsingError, "Invalid xref offset" if offset < 0 or offset >= @data.string.size
+                raise ParsingError, "Invalid xref offset" unless offset.between?(0, @data.string.size - 1)
 
                 @data.pos = offset
 
