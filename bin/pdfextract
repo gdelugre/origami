@@ -133,7 +133,7 @@ begin
         stream_dir = File.join(OUTPUT_DIR, "streams")
         Dir::mkdir(stream_dir) unless File.directory?(stream_dir)
 
-        pdf.root_objects.find_all{|obj| obj.is_a?(Stream)}.each do |stream|
+        pdf.each_object.select {|obj| obj.is_a?(Stream)}.each do |stream|
             stream_file = File.join(stream_dir, "stream_#{stream.reference.refno}.dmp")
             begin
                 File.binwrite(stream_file, stream.data)
@@ -220,7 +220,7 @@ begin
         fonts_dir = File.join(OUTPUT_DIR, "fonts")
         Dir::mkdir(fonts_dir) unless File.directory?(fonts_dir)
 
-        pdf.root_objects.find_all{|obj| obj.is_a?(Stream)}.each do |stream|
+        pdf.each_object.select {|obj| obj.is_a?(Stream)}.each do |stream|
             font = stream.xrefs.find{|obj| obj.is_a?(FontDescriptor)}
             if font
                 font_file = File.join(fonts_dir, File.basename(font.FontName.value.to_s))
@@ -237,7 +237,7 @@ begin
         metadata_dir = File.join(OUTPUT_DIR, "metadata")
         Dir::mkdir(metadata_dir) unless File.directory?(metadata_dir)
 
-        pdf.root_objects.find_all{|obj| obj.is_a?(MetadataStream)}.each do |stream|
+        pdf.each_object.select {|obj| obj.is_a?(MetadataStream)}.each do |stream|
             metadata_file = File.join(metadata_dir, "metadata_#{stream.reference.refno}.xml")
             File.binwrite(metadata_file, stream.data)
             nmeta += 1
@@ -251,7 +251,7 @@ begin
         image_dir = File.join(OUTPUT_DIR, "images")
         Dir::mkdir(image_dir) unless File.directory?(image_dir)
 
-        pdf.root_objects.find_all{|obj| obj.is_a?(Graphics::ImageXObject)}.each do |stream|
+        pdf.each_object.select {|obj| obj.is_a?(Graphics::ImageXObject)}.each do |stream|
             begin
                 ext, image_data = stream.to_image_file
                 image_file = File.join(image_dir, "image_#{stream.reference.refno}.#{ext}")

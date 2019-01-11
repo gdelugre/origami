@@ -80,14 +80,14 @@ begin
 
     pdf = PDF.read(target, params)
 
-    pdf.root_objects.find_all { |obj|
-        obj.is_a?(Stream)
-    }.each { |stream|
-        unless stream.filters.any?{|filter| %i[JPXDecode DCTDecode JBIG2Decode].include?(filter.value) }
-            stream.encoded_data = stream.data
-            stream.dictionary.delete(:Filter)
-        end
-    }
+    pdf.each_object
+       .select { |obj| obj.is_a?(Stream) }
+       .each { |stream|
+            unless stream.filters.any?{|filter| %i[JPXDecode DCTDecode JBIG2Decode].include?(filter.value) }
+                stream.encoded_data = stream.data
+                stream.dictionary.delete(:Filter)
+            end
+        }
 
     pdf.save(@options[:output], noindent: true)
 
