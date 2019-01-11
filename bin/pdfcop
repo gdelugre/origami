@@ -207,7 +207,7 @@ def analyze_annotation(annot, _level = 0)
     if annot.is_a?(Origami::Dictionary) and annot.key?(:Subtype)
         check_annotation_rights(annot)
 
-        analyze_3d_annotation(annot) if annot.subtype.value == :"3D"
+        analyze_3d_annotation(annot) if annot.Subtype.value == :"3D"
     end
 end
 
