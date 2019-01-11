@@ -81,6 +81,7 @@ module Origami
             def locate_xref_streams(pdf, revision_no)
                 revision = pdf.revisions[revision_no]
                 trailer = revision.trailer
+                xrefstm = nil
 
                 # Try to match the location of the last startxref / XRefStm with an XRefStream.
                 if trailer.startxref != 0
