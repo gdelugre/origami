@@ -24,9 +24,9 @@ Gem::Specification.new do |s|
     s.license       = "LGPL-3.0+"
 
     s.required_ruby_version = '>= 2.1'
-    s.add_runtime_dependency "colorize", "~> 0.7"
+    s.add_runtime_dependency "colorize", "~> 0.8"
     s.add_development_dependency "minitest", "~> 5.0"
-    s.add_development_dependency 'rake',     '~> 0.9'
+    s.add_development_dependency 'rake',     '~> 10.0'
     s.add_development_dependency 'rdoc',     '~> 5.0'
 
     s.bindir        = "bin"
