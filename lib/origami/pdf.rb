@@ -550,16 +550,10 @@ module Origami
             excludes.push(object)
 
             case object
-            when Dictionary
+            when CompoundObject
                 object.each_value do |value|
                     yield(value)
                     walk_object(value, excludes: excludes, &block)
-                end
-
-            when Array
-                object.each do |child|
-                    yield(child)
-                    walk_object(child, excludes: excludes, &block)
                 end
 
             when Stream
