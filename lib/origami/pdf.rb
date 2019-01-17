@@ -215,7 +215,7 @@ module Origami
                 close = true
             end
 
-            load_all_objects unless @loaded
+            load_all_objects unless loaded?
 
             intents_as_pdfa1 if options[:intent] =~ /pdf[\/-]?A1?/i
             self.delinearize! if options[:delinearize] and self.linearized?
@@ -536,6 +536,13 @@ module Origami
             @loaded = true
         end
 
+        #
+        # Returns if the document as been fully loaded by the parser.
+        #
+        def loaded?
+            @loaded
+        end
+
         ##########################
         private
         ##########################
@@ -603,7 +610,7 @@ module Origami
         # The document must have an associated Parser.
         #
         def load_object_at_offset(revision, offset)
-            return nil if @loaded or @parser.nil?
+            return nil if loaded? or @parser.nil?
             pos = @parser.pos
 
             begin
@@ -642,7 +649,7 @@ module Origami
         # Force the loading of all objects in the document.
         #
         def load_all_objects
-            return if @loaded or @parser.nil?
+            return if loaded? or @parser.nil?
 
             @revisions.each do |revision|
                 if revision.xreftable?
@@ -658,7 +665,7 @@ module Origami
                 end
             end
 
-            @loaded = true
+            loaded!
         end
 
         #
@@ -693,7 +700,7 @@ module Origami
         #
         def compile(options = {})
 
-            load_all_objects unless @loaded
+            load_all_objects unless loaded?
 
             #
             # A valid document must have at least one page.
@@ -979,7 +986,7 @@ module Origami
             catalog = (self.Catalog = (trailer_key(:Root) || Catalog.new))
             @revisions.last.trailer.Root = catalog.reference
 
-            @loaded = true
+            loaded!
 
             self
         end
