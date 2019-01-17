@@ -730,8 +730,11 @@ module Origami
         #
         def physicalize(options = {})
 
-            indirect_objects_by_rev.each do |obj, revision|
-                build_object(obj, revision, options)
+            @revisions.each do |revision|
+                # Do not use each_object here as build_object may modify the iterator.
+                revision.objects.each do |obj|
+                    build_object(obj, revision, options)
+                end
             end
 
             self
@@ -997,13 +1000,6 @@ module Origami
 
         def version_required #:nodoc:
             self.each_object.max_by {|obj| obj.version_required}.version_required
-        end
-
-        def indirect_objects_by_rev #:nodoc:
-            @revisions.inject([]) do |set,rev|
-                objset = rev.objects
-                set.concat(objset.zip(::Array.new(objset.length, rev)))
-            end
         end
 
         #
