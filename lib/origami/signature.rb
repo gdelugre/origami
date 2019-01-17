@@ -30,9 +30,16 @@ module Origami
         #
         # Verify a document signature.
         #   _:trusted_certs_: an array of trusted X509 certificates.
-        #   If no argument is passed, embedded certificates are treated as trusted.
+        #   _:use_system_store_: use the system store for certificate authorities.
+        #   _:allow_self_signed_: allow self-signed certificates in the verification chain.
+        #   _verify_cb_: block called when encountering a certificate that cannot be verified.
+        #                Passed argument in the OpenSSL::X509::StoreContext.
         #
-        def verify(trusted_certs: [])
+        def verify(trusted_certs: [],
+                   use_system_store: false,
+                   allow_self_signed: false,
+                   &verify_cb)
+
             digsig = self.signature
             digsig = digsig.cast_to(Signature::DigitalSignature) unless digsig.is_a?(Signature::DigitalSignature)
 
@@ -41,15 +48,26 @@ module Origami
             end
 
             store = OpenSSL::X509::Store.new
+            store.set_default_paths if use_system_store
             trusted_certs.each { |ca| store.add_cert(ca) }
-            flags = 0
-            flags |= OpenSSL::PKCS7::NOVERIFY if trusted_certs.empty?
+
+            store.verify_callback = -> (success, ctx) {
+                return true if success
+
+                error = ctx.error
+                is_self_signed = (error == OpenSSL::X509::V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT ||
+                                  error == OpenSSL::X509::V_ERR_SELF_SIGNED_CERT_IN_CHAIN)
+
+                return true if is_self_signed && allow_self_signed && verify_cb.nil?
+
+                verify_cb.call(ctx) unless verify_cb.nil?
+            }
 
             data = extract_signed_data(digsig)
             signature = digsig[:Contents]
             subfilter = digsig.SubFilter.value
 
-            Signature.verify(subfilter.to_s, data, signature, store, flags)
+            Signature.verify(subfilter.to_s, data, signature, store)
         end
 
         #
@@ -326,17 +344,16 @@ module Origami
         PKCS7_SHA1      = "adbe.pkcs7.sha1"
         PKCS7_DETACHED  = "adbe.pkcs7.detached"
 
-        def self.verify(method, data, signature, store, flags)
+        def self.verify(method, data, signature, store)
             case method
             when PKCS7_DETACHED
                 pkcs7 = OpenSSL::PKCS7.new(signature)
                 raise SignatureError, "Not a PKCS7 detached signature" unless pkcs7.detached?
-                flags |= OpenSSL::PKCS7::DETACHED
-                pkcs7.verify([], store, data, flags)
+                pkcs7.verify([], store, data, OpenSSL::PKCS7::DETACHED | OpenSSL::PKCS7::BINARY)
 
             when PKCS7_SHA1
                 pkcs7 = OpenSSL::PKCS7.new(signature)
-                pkcs7.verify([], store, nil, flags) and pkcs7.data == Digest::SHA1.digest(data)
+                pkcs7.verify([], store, nil, OpenSSL::PKCS7::BINARY) and pkcs7.data == Digest::SHA1.digest(data)
 
             else
                 raise NotImplementedError, "Unsupported signature method #{method.inspect}"
