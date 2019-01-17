@@ -392,7 +392,7 @@ module Origami
         # Looking for an object present at a specified file offset.
         #
         def get_object_by_offset(offset) #:nodoc:
-            self.indirect_objects.find { |obj| obj.file_offset == offset }
+            self.each_object.find { |obj| obj.file_offset == offset }
         end
 
         #
@@ -676,7 +676,7 @@ module Origami
             startxref = @header.to_s.size
 
             @revisions.each do |revision|
-                revision.objects.each do |object|
+                revision.each_object do |object|
                     startxref += object.to_s.size
                 end
 
@@ -788,7 +788,7 @@ module Origami
         #
         def output(params = {})
 
-            has_objstm = self.indirect_objects.any?{|obj| obj.is_a?(ObjectStream)}
+            has_objstm = self.each_object.any?{|obj| obj.is_a?(ObjectStream)}
 
             options =
             {
@@ -1037,7 +1037,7 @@ module Origami
             startxref = @header.to_s.size
 
             @revisions.each do |revision|
-                revision.objects.each do |object|
+                revision.each_object do |object|
                     startxref += object.to_s.size
                 end
 
