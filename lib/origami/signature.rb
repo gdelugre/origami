@@ -97,11 +97,19 @@ module Origami
             end
 
             unless ca.is_a?(::Array)
-                raise TypeError, "Expected an Array of CA certificate."
+                raise TypeError, "Expected an Array of CA certificates."
             end
 
             unless annotation.nil? or annotation.is_a?(Annotation::Widget::Signature)
                 raise TypeError, "Expected a Annotation::Widget::Signature object."
+            end
+
+            #
+            # XXX: Currently signing a linearized document will result in a broken document.
+            # Delinearize the document first until we find a proper way to handle this case.
+            #
+            if self.linearized?
+                self.delinearize!
             end
 
             digsig = Signature::DigitalSignature.new.set_indirect(true)
