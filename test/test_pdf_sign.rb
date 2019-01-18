@@ -51,11 +51,11 @@ class TestSign < Minitest::Test
         [ document, annotation ]
     end
 
-    def test_sign_pkcs7_sha1
+    def sign_document_with_method(method)
         document, annotation = setup_document_with_annotation
 
         document.sign(@cert, @key,
-            method: Signature::PKCS7_SHA1,
+            method: method,
             annotation: annotation,
             issuer: "Guillaume Delugré",
             location: "France",
@@ -83,35 +83,15 @@ class TestSign < Minitest::Test
         assert result
     end
 
+    def test_sign_pkcs7_sha1
+        sign_document_with_method(Signature::PKCS7_SHA1)
+    end
+
     def test_sign_pkcs7_detached
-        document, annotation = setup_document_with_annotation
+        sign_document_with_method(Signature::PKCS7_DETACHED)
+    end
 
-        document.sign(@cert, @key,
-            method: Signature::PKCS7_DETACHED,
-            annotation: annotation,
-            issuer: "Guillaume Delugré",
-            location: "France",
-            contact: "origami@localhost",
-            reason: "Example"
-        )
-
-        assert document.frozen?
-        assert document.signed?
-
-        output = StringIO.new
-        document.save(output)
-
-        document = PDF.read(output.reopen(output.string,'r'), verbosity: Parser::VERBOSE_QUIET)
-
-        refute document.verify
-        assert document.verify(allow_self_signed: true)
-        assert document.verify(trusted_certs: [@cert])
-        refute document.verify(trusted_certs: [@other_cert])
-
-        result = document.verify do |ctx|
-            ctx.error == OpenSSL::X509::V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT && ctx.current_cert.to_pem == @cert.to_pem
-        end
-
-        assert result
+    def test_sign_x509_sha1
+        sign_document_with_method(Signature::PKCS1_RSA_SHA1)
     end
 end

@@ -43,9 +43,9 @@ module Origami
             digsig = self.signature
             digsig = digsig.cast_to(Signature::DigitalSignature) unless digsig.is_a?(Signature::DigitalSignature)
 
-            unless digsig[:Contents].is_a?(String)
-                raise SignatureError, "Invalid digital signature contents"
-            end
+            signature = digsig.signature_data
+            chain = digsig.certificate_chain
+            subfilter = digsig.SubFilter.value
 
             store = OpenSSL::X509::Store.new
             store.set_default_paths if use_system_store
@@ -64,10 +64,7 @@ module Origami
             }
 
             data = extract_signed_data(digsig)
-            signature = digsig[:Contents]
-            subfilter = digsig.SubFilter.value
-
-            Signature.verify(subfilter.to_s, data, signature, store)
+            Signature.verify(subfilter.to_s, data, signature, store, chain)
         end
 
         #
@@ -344,7 +341,55 @@ module Origami
         PKCS7_SHA1      = "adbe.pkcs7.sha1"
         PKCS7_DETACHED  = "adbe.pkcs7.detached"
 
-        def self.verify(method, data, signature, store)
+        #
+        # PKCS1 class used for adbe.x509.rsa_sha1.
+        #
+        class PKCS1
+            class PKCS1Error < SignatureError; end
+
+            def initialize(signature)
+                @signature_object = decode_pkcs1(signature)
+            end
+
+            def verify(certificate, chain, store, data)
+                store.verify(certificate, chain) and certificate.public_key.verify(OpenSSL::Digest::SHA1.new, @signature_object.value, data)
+            end
+
+            def self.sign(certificate, key, data)
+                raise PKCS1Error, "Invalid key for certificate" unless certificate.check_private_key(key)
+
+                self.new encode_pkcs1 key.sign(OpenSSL::Digest::SHA1.new, data)
+            end
+
+            def to_der
+                @signature_object.to_der
+            end
+
+            private
+
+            def decode_pkcs1(data)
+                #
+                # Extracts the first ASN.1 object from the data and discards the rest.
+                # Must be an octet string.
+                #
+                signature_len = 0
+                OpenSSL::ASN1.traverse(data) do |_, offset, hdr_len, len, _, _, tag|
+                    raise PKCS1Error, "Invalid PKCS1 object, expected an ASN.1 octet string" unless tag == OpenSSL::ASN1::OCTET_STRING
+
+                    signature_len = offset + hdr_len + len
+                    break
+                end
+
+                OpenSSL::ASN1.decode(data[0, signature_len])
+            end
+
+            def self.encode_pkcs1(data)
+                OpenSSL::ASN1::OctetString.new(data).to_der
+            end
+            private_class_method :encode_pkcs1
+        end
+
+        def self.verify(method, data, signature, store, chain)
             case method
             when PKCS7_DETACHED
                 pkcs7 = OpenSSL::PKCS7.new(signature)
@@ -354,6 +399,12 @@ module Origami
             when PKCS7_SHA1
                 pkcs7 = OpenSSL::PKCS7.new(signature)
                 pkcs7.verify([], store, nil, OpenSSL::PKCS7::BINARY) and pkcs7.data == Digest::SHA1.digest(data)
+
+            when PKCS1_RSA_SHA1
+                raise SignatureError, "Cannot verify RSA signature without a certificate" if chain.empty?
+                cert = chain.shift
+                pkcs1 = PKCS1.new(signature)
+                pkcs1.verify(cert, chain, store, data)
 
             else
                 raise NotImplementedError, "Unsupported signature method #{method.inspect}"
@@ -379,7 +430,8 @@ module Origami
                 OpenSSL::PKCS7.sign(certificate, key, Digest::SHA1.digest(data), ca, OpenSSL::PKCS7::BINARY).to_der
 
             when PKCS1_RSA_SHA1
-                key.sign(OpenSSL::Digest::SHA1.new, data)
+                PKCS1.sign(certificate, key, data).to_der
+
             else
                 raise NotImplementedError, "Unsupported signature method #{method.inspect}"
             end
@@ -535,6 +587,23 @@ module Origami
                 byte_range.map(&:to_i).each_slice(2).map do |start, length|
                     (start...start + length)
                 end
+            end
+
+            def signature_data
+                raise SignatureError, "Invalid signature data" unless self[:Contents].is_a?(String)
+
+                self[:Contents]
+            end
+
+            def certificate_chain
+                return [] unless key?(:Cert)
+
+                chain = self.Cert
+                unless chain.is_a?(String) or (chain.is_a?(Array) and chain.all?{|cert| cert.is_a?(String)})
+                    return SignatureError, "Invalid embedded certificate chain"
+                end
+
+                [ chain ].flatten.map! {|str| OpenSSL::X509::Certificate.new(str) }
             end
 
             def signature_offset #:nodoc:
