@@ -95,7 +95,7 @@ module Origami
             @@signatures.each_pair do |klass, keys|
                 next unless klass < best_match
 
-                best_match = klass if keys.all? {|k,v| hash[k] == v }
+                best_match = klass if keys.all? {|k,v| v.is_a?(Set) ? v.include?(hash[k]) : hash[k] == v }
             end
 
             best_match
@@ -103,9 +103,7 @@ module Origami
 
         private
 
-        def add_type_signature(key, value)
-            key, value = key.to_o, value.to_o
-
+        def add_type_signature(**key_vals)
             @@signatures ||= {}
             @@type_keys ||= Set.new
 
@@ -115,8 +113,22 @@ module Origami
             end
 
             @@signatures[self] ||= {}
-            @@signatures[self][key] = value
-            @@type_keys.add(key)
+
+            key_vals.each_pair do |key, value|
+                key, value = key.to_o, value.to_o
+
+                if @@signatures[self].key?(key)
+                    if @@signatures[self][key].is_a?(Set)
+                        @@signatures[self][key].add(value)
+                    elsif @@signatures[self][key] != value
+                        @@signatures[self][key] = Set.new.add(@@signatures[self][key]).add(value)
+                    end
+                else
+                    @@signatures[self][key] = value
+                end
+
+                @@type_keys.add(key)
+            end
         end
     end
 
@@ -170,8 +182,11 @@ module Origami
             # Define a new field with given attributes.
             #
             def field(name, attributes)
-                if attributes[:Required] == true and attributes.key?(:Default) and attributes[:Type] == Name
-                    add_type_signature(name, attributes[:Default])
+                if attributes[:Required] and attributes.key?(:Default) and attributes[:Type] == Name
+                    signature = {}
+                    signature[name] = attributes[:Default]
+
+                    add_type_signature(**signature)
                 end
 
                 if @fields.key?(name)

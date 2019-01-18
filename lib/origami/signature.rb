@@ -392,6 +392,8 @@ module Origami
         class Reference < Dictionary
             include StandardObject
 
+            add_type_signature        :Type => :SigRef
+
             field   :Type,            :Type => Name, :Default => :SigRef
             field   :TransformMethod, :Type => Name, :Default => :DocMDP, :Required => true
             field   :TransformParams, :Type => Dictionary
@@ -476,6 +478,9 @@ module Origami
         #
         class DigitalSignature < Dictionary
             include StandardObject
+
+            add_type_signature        :Filter => :"Adobe.PPKLite"
+            add_type_signature        :Filter => :"Adobe.PPKMS"
 
             field   :Type,            :Type => Name, :Default => :Sig
             field   :Filter,          :Type => Name, :Default => :"Adobe.PPKLite", :Required => true
