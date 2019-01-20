@@ -44,10 +44,12 @@ module Origami
                     revision = parse_revision(pdf, xref_offset)
 
                     # Locate the previous xref section.
-                    if revision.xrefstm
+                    if revision.xrefstm? and revision.xrefstm[:Prev].is_a?(Integer)
                         xref_offset = revision.xrefstm[:Prev].to_i
-                    else
+                    elsif revision.trailer[:Prev].is_a?(Integer)
                         xref_offset = revision.trailer[:Prev].to_i
+                    else
+                        xref_offset = nil
                     end
 
                     # Prepend the revision.
