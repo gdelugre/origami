@@ -6,7 +6,7 @@
     Prints out the metadata contained in a PDF document.
 
 = License
-    Copyright (C) 2016  Guillaume Delugré.
+    Copyright (C) 2019  Guillaume Delugré.
 
     Origami is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as published by
@@ -33,6 +33,7 @@ include Origami
 
 require 'colorize'
 require 'optparse'
+require 'json'
 
 class OptParser
     BANNER = <<USAGE
@@ -55,6 +56,10 @@ USAGE
                 options[:doc_stream] = true
             end
 
+            opts.on("-f", "--format [FORMAT]", %i{text json}, "Output format ('text', 'json')") do |format|
+                options[:output_format] = format
+            end
+
             opts.on("-n", "--no-color", "Turn off colorized output.") do
                 options[:disable_colors] = true
             end
@@ -69,12 +74,22 @@ USAGE
     def self.parse(args)
         options =
         {
+            output_format: :text,
             disable_colors: false
         }
 
         self.parser(options).parse!(args)
 
         options
+    end
+end
+
+def print_section(name, elements)
+    puts "[*] #{name}:".magenta
+
+    elements.each_pair do |name, item|
+        print name.ljust(20, ' ').green
+        puts ": #{item}"
     end
 end
 
@@ -95,30 +110,35 @@ begin
     }
 
     pdf = PDF.read(target, params)
+    result = {}
 
     if @options[:doc_info] and pdf.document_info?
-        puts "[*] Document information dictionary:".magenta
+        result[:document_info] = pdf.document_info.map {|k,v| 
+            key = k.value.to_s
+            obj = v.solve
+            str_value = obj.respond_to?(:to_utf8) ? obj.to_utf8 : obj.value.to_s
 
-        docinfo = pdf.document_info
-        docinfo.each_pair do |name, item|
-            obj = item.solve
-
-            print name.value.to_s.ljust(20, ' ').green
-            puts ": #{obj.respond_to?(:to_utf8) ? obj.to_utf8 : obj.value}"
-        end
-        puts
+            [ key, str_value ]
+        }.to_h
     end
 
     if @options[:doc_stream] and pdf.metadata?
-        puts "[*] Metadata stream:".magenta
+        result[:xmp_metadata] = pdf.metadata
+    end
 
-        metadata = pdf.metadata
-        metadata.each_pair do |name, item|
-            print name.ljust(20, ' ').green
-            puts ": #{item}"
+
+    if @options[:output_format] == :text
+        print_section("Document information dictionary", result[:document_info]) if result.key?(:document_info)
+        
+        if result.key?(:xmp_metadata)
+            puts if result.key?(:document_info)
+            print_section("Metadata stream", result[:xmp_metadata])
         end
+    elsif @options[:output_format] == :json
+        puts JSON.pretty_generate(result)
     end
 
 rescue
+    puts $!.backtrace.join $/
     abort "#{$!.class}: #{$!.message}"
 end
