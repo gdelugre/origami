@@ -71,25 +71,35 @@ module Origami
         #
         # Inserts an invisible signature into the PDF with an empty /Content prepared for external signing
         #
-        def prepare_signature(
-          name: nil,
-          location: nil,
-          contact: nil,
-          reason: nil,
-          method: Signature::PKCS7_DETACHED,
-          content_size: 4096)
+        def prepare_signature(annotation: nil, name: nil, location: nil, contact: nil, reason: nil, method: Signature::PKCS7_DETACHED, content_size: 4096)
+
+            unless annotation.nil? or annotation.is_a?(Annotation::Widget::Signature)
+                raise TypeError, "Expected a Annotation::Widget::Signature object."
+            end
+
+            #
+            # XXX: Currently signing a linearized document will result in a broken document.
+            # Delinearize the document first until we find a proper way to handle this case.
+            #
+            if self.linearized?
+                self.delinearize!
+            end
 
             # Create Digital Signature Object in PDF
             digsig = Signature::DigitalSignature.new.set_indirect(true)
 
             # Create Annotation Object for Digital Signature
-            annotation = Annotation::Widget::Signature.new
-            annotation.FT = :Sig
+            if annotation.nil?
+                annotation = Annotation::Widget::Signature.new
+                annotation.Rect = Rectangle[:llx => 0.0, :lly => 0.0, :urx => 0.0, :ury => 0.0]
+            end
+
             annotation.V = digsig
             add_fields(annotation)
 
             # Set Flags for PDF Reader
-            self.Catalog.AcroForm.SigFlags = InteractiveForm::SigFlags::SIGNATURES_EXIST | InteractiveForm::SigFlags::APPEND_ONLY
+            self.Catalog.AcroForm.SigFlags =
+              InteractiveForm::SigFlags::SIGNATURES_EXIST | InteractiveForm::SigFlags::APPEND_ONLY
 
             digsig.Type = :Sig
             digsig.Filter = Name.new("Adobe.PPKLite")  # Method should be Adobe.PPKLite
