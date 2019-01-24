@@ -78,7 +78,7 @@ module Origami
             x, y = attr[:x], attr[:y]
 
             @instructions << PDF::Instruction.new('q')
-            @instructions << PDF::Instruction.new('cm', 300, 0, 0, 300, x, y)
+            @instructions << PDF::Instruction.new('cm', (attr[:w] || 300), 0, 0, (attr[:h] || 300), x, y)
             @instructions << PDF::Instruction.new('Do', name)
             @instructions << PDF::Instruction.new('Q')
         end
@@ -336,7 +336,7 @@ module Origami
                     k = (color.respond_to?(:k) ? color.k : color[3]).to_f
                     PDF::Instruction.new('k', c, m, y, k) if @canvas.gs.nonstroking_color != [c,m,y,k]
 
-                elsif color.respond_to?:g or (0.0..1.0) === color
+                elsif color.respond_to?(:g) or (0.0..1.0).include?(color)
                     g = color.respond_to?(:g) ? color.g : color
                     PDF::Instruction.new('g', g) if @canvas.gs.nonstroking_color != [ g ]
 
@@ -366,7 +366,7 @@ module Origami
                     k = (color.respond_to?(:k) ? color.k : color[3]).to_f
                     PDF::Instruction.new('K', c, m, y, k) if @canvas.gs.stroking_color != [c,m,y,k]
 
-                elsif color.respond_to?:g or (0.0..1.0) === color
+                elsif color.respond_to?(:g) or (0.0..1.0).include?(color)
                     g = color.respond_to?(:g) ? color.g : color
                     PDF::Instruction.new('G', g) if @canvas.gs.stroking_color != [ g ]
 
@@ -656,7 +656,7 @@ module Origami
 
             def self.from_image_file(path, format = nil)
                 if path.respond_to?(:read)
-                    data = fd.read
+                    data = path.read
                 else
                     data = File.binread(File.expand_path(path))
                     format ||= File.extname(path)[1..-1]

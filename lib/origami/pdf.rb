@@ -215,7 +215,7 @@ module Origami
                 close = true
             end
 
-            load_all_objects unless @loaded
+            load_all_objects unless loaded?
 
             intents_as_pdfa1 if options[:intent] =~ /pdf[\/-]?A1?/i
             self.delinearize! if options[:delinearize] and self.linearized?
@@ -392,7 +392,7 @@ module Origami
         # Looking for an object present at a specified file offset.
         #
         def get_object_by_offset(offset) #:nodoc:
-            self.indirect_objects.find { |obj| obj.file_offset == offset }
+            self.each_object.find { |obj| obj.file_offset == offset }
         end
 
         #
@@ -536,6 +536,13 @@ module Origami
             @loaded = true
         end
 
+        #
+        # Returns if the document as been fully loaded by the parser.
+        #
+        def loaded?
+            @loaded
+        end
+
         ##########################
         private
         ##########################
@@ -550,16 +557,10 @@ module Origami
             excludes.push(object)
 
             case object
-            when Dictionary
+            when CompoundObject
                 object.each_value do |value|
                     yield(value)
                     walk_object(value, excludes: excludes, &block)
-                end
-
-            when Array
-                object.each do |child|
-                    yield(child)
-                    walk_object(child, excludes: excludes, &block)
                 end
 
             when Stream
@@ -577,8 +578,8 @@ module Origami
 
             case object
             when Stream
-                result.concat object.dictionary.strings_cache.select{|str| pattern === str}
-                result.concat object.dictionary.names_cache.select{|name| pattern === name.value}
+                result.concat object.dictionary.strings_cache.select{|str| str.match(pattern) }
+                result.concat object.dictionary.names_cache.select{|name| name.value.match(pattern) }
 
                 begin
                     result.push object if streams and object.data.match(pattern)
@@ -597,8 +598,8 @@ module Origami
                 result.push object if object.value.match(pattern)
 
             when ObjectCache
-                result.concat object.strings_cache.select{|str| pattern === str}
-                result.concat object.names_cache.select{|name| pattern === name.value}
+                result.concat object.strings_cache.select{|str| str.match(pattern) }
+                result.concat object.names_cache.select{|name| name.value.match(pattern) }
             end
 
             result
@@ -609,7 +610,7 @@ module Origami
         # The document must have an associated Parser.
         #
         def load_object_at_offset(revision, offset)
-            return nil if @loaded or @parser.nil?
+            return nil if loaded? or @parser.nil?
             pos = @parser.pos
 
             begin
@@ -648,7 +649,7 @@ module Origami
         # Force the loading of all objects in the document.
         #
         def load_all_objects
-            return if @loaded or @parser.nil?
+            return if loaded? or @parser.nil?
 
             @revisions.each do |revision|
                 if revision.xreftable?
@@ -664,7 +665,7 @@ module Origami
                 end
             end
 
-            @loaded = true
+            loaded!
         end
 
         #
@@ -675,7 +676,7 @@ module Origami
             startxref = @header.to_s.size
 
             @revisions.each do |revision|
-                revision.objects.each do |object|
+                revision.each_object do |object|
                     startxref += object.to_s.size
                 end
 
@@ -699,7 +700,7 @@ module Origami
         #
         def compile(options = {})
 
-            load_all_objects unless @loaded
+            load_all_objects unless loaded?
 
             #
             # A valid document must have at least one page.
@@ -729,8 +730,11 @@ module Origami
         #
         def physicalize(options = {})
 
-            indirect_objects_by_rev.each do |obj, revision|
-                build_object(obj, revision, options)
+            @revisions.each do |revision|
+                # Do not use each_object here as build_object may modify the iterator.
+                revision.objects.each do |obj|
+                    build_object(obj, revision, options)
+                end
             end
 
             self
@@ -784,7 +788,7 @@ module Origami
         #
         def output(params = {})
 
-            has_objstm = self.indirect_objects.any?{|obj| obj.is_a?(ObjectStream)}
+            has_objstm = self.each_object.any?{|obj| obj.is_a?(ObjectStream)}
 
             options =
             {
@@ -985,7 +989,7 @@ module Origami
             catalog = (self.Catalog = (trailer_key(:Root) || Catalog.new))
             @revisions.last.trailer.Root = catalog.reference
 
-            @loaded = true
+            loaded!
 
             self
         end
@@ -996,13 +1000,6 @@ module Origami
 
         def version_required #:nodoc:
             self.each_object.max_by {|obj| obj.version_required}.version_required
-        end
-
-        def indirect_objects_by_rev #:nodoc:
-            @revisions.inject([]) do |set,rev|
-                objset = rev.objects
-                set.concat(objset.zip(::Array.new(objset.length, rev)))
-            end
         end
 
         #
@@ -1040,7 +1037,7 @@ module Origami
             startxref = @header.to_s.size
 
             @revisions.each do |revision|
-                revision.objects.each do |object|
+                revision.each_object do |object|
                     startxref += object.to_s.size
                 end
 

@@ -207,7 +207,7 @@ def analyze_annotation(annot, _level = 0)
     if annot.is_a?(Origami::Dictionary) and annot.key?(:Subtype)
         check_annotation_rights(annot)
 
-        analyze_3d_annotation(annot) if annot.subtype.value == :"3D"
+        analyze_3d_annotation(annot) if annot.Subtype.value == :"3D"
     end
 end
 
@@ -421,7 +421,7 @@ begin
     end
 
     log("> Inspecting document streams...", :yellow)
-    @pdf.indirect_objects.find_all{|obj| obj.is_a?(Origami::Stream)}.each do |stream|
+    @pdf.each_object.select{|obj| obj.is_a?(Origami::Stream)}.each do |stream|
         if stream.dictionary.key?(:Filter)
             filters = stream.Filter
             filters = [ filters ] if filters.is_a?(Origami::Name)

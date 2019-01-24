@@ -96,6 +96,13 @@ module Origami
         end
 
         #
+        # Marks an XRef as freed.
+        #
+        def free!
+            @state = FREE
+        end
+
+        #
         # Outputs self into PDF code.
         #
         def to_s(eol: $/)
@@ -146,7 +153,7 @@ module Origami
                 scanner = Parser.init_scanner(stream)
 
                 if scanner.scan(@@regexp).nil?
-                  raise InvalidXRefSubsectionError, "Bad subsection format"
+                    raise InvalidXRefSubsectionError, "Bad subsection format"
                 end
 
                 start = scanner['start'].to_i
@@ -154,7 +161,7 @@ module Origami
 
                 xrefs = []
                 size.times do
-                  xrefs << XRef.parse(scanner)
+                    xrefs << XRef.parse(scanner)
                 end
 
                 XRef::Subsection.new(start, xrefs)
@@ -220,7 +227,7 @@ module Origami
 
         #
         # Class representing a Cross-reference table.
-        # A section contains a set of XRefSubsection.
+        # A section contains a set of XRef::Subsection.
         #
         class Section
             include Enumerable

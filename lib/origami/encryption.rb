@@ -185,7 +185,7 @@ module Origami
         # Returns [ version, revision ].
         #
         def crypto_revision_from_rc4_key(key_size)
-            raise EncryptionError, "Invalid RC4 key length" unless (40..128) === key_size and key_size % 8 == 0
+            raise EncryptionError, "Invalid RC4 key length" unless key_size.between?(40, 128) and key_size % 8 == 0
 
             if key_size > 40
                 version = 2
@@ -626,7 +626,7 @@ module Origami
 
                 if @use_padding
                     padlen = plain[-1]
-                    unless (1..16) === padlen
+                    unless padlen.between?(1, 16)
                         raise EncryptionError, "Incorrect padding length : #{padlen}"
                     end
 
@@ -690,17 +690,25 @@ module Origami
                     Encryption::RC4
                 when 4, 5
                     return Encryption::Identity if name == :Identity
-                    raise EncryptionError, "Broken CF entry" unless self.CF.is_a?(Dictionary)
 
-                    self.CF.select { |key, dict| key == name and dict.is_a?(Dictionary) }
-                           .map { |_, dict| cipher_from_crypt_filter_method(dict[:CFM] || :None) }
-                           .first
+                    select_cipher_by_name(name)
                 else
                     raise EncryptionNotSupportedError, "Unsupported encryption version: #{handler.V}"
                 end
             end
 
             private
+
+            #
+            # Returns the cipher associated with a crypt filter name.
+            #
+            def select_cipher_by_name(name)
+                raise EncryptionError, "Broken CF entry" unless self.CF.is_a?(Dictionary)
+
+                self.CF.select { |key, dict| key == name and dict.is_a?(Dictionary) }
+                       .map { |_, dict| cipher_from_crypt_filter_method(dict[:CFM] || :None) }
+                       .first
+            end
 
             #
             # Converts a crypt filter method identifier to its cipher class.

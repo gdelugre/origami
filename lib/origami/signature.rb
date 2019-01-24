@@ -24,33 +24,48 @@ require 'base64'
 
 module Origami
 
-    class PDF
-        class SignatureError < Error #:nodoc:
-        end
+    class SignatureError < Error #:nodoc:
+    end
 
+    class PDF
         #
         # Verify a document signature.
         #   _:trusted_certs_: an array of trusted X509 certificates.
-        #   If no argument is passed, embedded certificates are treated as trusted.
+        #   _:use_system_store_: use the system store for certificate authorities.
+        #   _:allow_self_signed_: allow self-signed certificates in the verification chain.
+        #   _verify_cb_: block called when encountering a certificate that cannot be verified.
+        #                Passed argument in the OpenSSL::X509::StoreContext.
         #
-        def verify(trusted_certs: [])
+        def verify(trusted_certs: [],
+                   use_system_store: false,
+                   allow_self_signed: false,
+                   &verify_cb)
+
             digsig = self.signature
             digsig = digsig.cast_to(Signature::DigitalSignature) unless digsig.is_a?(Signature::DigitalSignature)
 
-            unless digsig[:Contents].is_a?(String)
-                raise SignatureError, "Invalid digital signature contents"
-            end
-
-            store = OpenSSL::X509::Store.new
-            trusted_certs.each { |ca| store.add_cert(ca) }
-            flags = 0
-            flags |= OpenSSL::PKCS7::NOVERIFY if trusted_certs.empty?
-
-            data = extract_signed_data(digsig)
-            signature = digsig[:Contents]
+            signature = digsig.signature_data
+            chain = digsig.certificate_chain
             subfilter = digsig.SubFilter.value
 
-            Signature.verify(subfilter.to_s, data, signature, store, flags)
+            store = OpenSSL::X509::Store.new
+            store.set_default_paths if use_system_store
+            trusted_certs.each { |ca| store.add_cert(ca) }
+
+            store.verify_callback = -> (success, ctx) {
+                return true if success
+
+                error = ctx.error
+                is_self_signed = (error == OpenSSL::X509::V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT ||
+                                  error == OpenSSL::X509::V_ERR_SELF_SIGNED_CERT_IN_CHAIN)
+
+                return true if is_self_signed && allow_self_signed && verify_cb.nil?
+
+                verify_cb.call(ctx) unless verify_cb.nil?
+            }
+
+            data = extract_signed_data(digsig)
+            Signature.verify(subfilter.to_s, data, signature, store, chain)
         end
 
         #
@@ -163,11 +178,19 @@ module Origami
             end
 
             unless ca.is_a?(::Array)
-                raise TypeError, "Expected an Array of CA certificate."
+                raise TypeError, "Expected an Array of CA certificates."
             end
 
             unless annotation.nil? or annotation.is_a?(Annotation::Widget::Signature)
                 raise TypeError, "Expected a Annotation::Widget::Signature object."
+            end
+
+            #
+            # XXX: Currently signing a linearized document will result in a broken document.
+            # Delinearize the document first until we find a proper way to handle this case.
+            #
+            if self.linearized?
+                self.delinearize!
             end
 
             digsig = Signature::DigitalSignature.new.set_indirect(true)
@@ -407,17 +430,70 @@ module Origami
         PKCS7_SHA1      = "adbe.pkcs7.sha1"
         PKCS7_DETACHED  = "adbe.pkcs7.detached"
 
-        def self.verify(method, data, signature, store, flags)
+        #
+        # PKCS1 class used for adbe.x509.rsa_sha1.
+        #
+        class PKCS1
+            class PKCS1Error < SignatureError; end
+
+            def initialize(signature)
+                @signature_object = decode_pkcs1(signature)
+            end
+
+            def verify(certificate, chain, store, data)
+                store.verify(certificate, chain) and certificate.public_key.verify(OpenSSL::Digest::SHA1.new, @signature_object.value, data)
+            end
+
+            def self.sign(certificate, key, data)
+                raise PKCS1Error, "Invalid key for certificate" unless certificate.check_private_key(key)
+
+                self.new encode_pkcs1 key.sign(OpenSSL::Digest::SHA1.new, data)
+            end
+
+            def to_der
+                @signature_object.to_der
+            end
+
+            private
+
+            def decode_pkcs1(data)
+                #
+                # Extracts the first ASN.1 object from the data and discards the rest.
+                # Must be an octet string.
+                #
+                signature_len = 0
+                OpenSSL::ASN1.traverse(data) do |_, offset, hdr_len, len, _, _, tag|
+                    raise PKCS1Error, "Invalid PKCS1 object, expected an ASN.1 octet string" unless tag == OpenSSL::ASN1::OCTET_STRING
+
+                    signature_len = offset + hdr_len + len
+                    break
+                end
+
+                OpenSSL::ASN1.decode(data[0, signature_len])
+            end
+
+            def self.encode_pkcs1(data)
+                OpenSSL::ASN1::OctetString.new(data).to_der
+            end
+            private_class_method :encode_pkcs1
+        end
+
+        def self.verify(method, data, signature, store, chain)
             case method
             when PKCS7_DETACHED
                 pkcs7 = OpenSSL::PKCS7.new(signature)
                 raise SignatureError, "Not a PKCS7 detached signature" unless pkcs7.detached?
-                flags |= OpenSSL::PKCS7::DETACHED
-                pkcs7.verify([], store, data, flags)
+                pkcs7.verify([], store, data, OpenSSL::PKCS7::DETACHED | OpenSSL::PKCS7::BINARY)
 
             when PKCS7_SHA1
                 pkcs7 = OpenSSL::PKCS7.new(signature)
-                pkcs7.verify([], store, nil, flags) and pkcs7.data == Digest::SHA1.digest(data)
+                pkcs7.verify([], store, nil, OpenSSL::PKCS7::BINARY) and pkcs7.data == Digest::SHA1.digest(data)
+
+            when PKCS1_RSA_SHA1
+                raise SignatureError, "Cannot verify RSA signature without a certificate" if chain.empty?
+                cert = chain.shift
+                pkcs1 = PKCS1.new(signature)
+                pkcs1.verify(cert, chain, store, data)
 
             else
                 raise NotImplementedError, "Unsupported signature method #{method.inspect}"
@@ -443,7 +519,8 @@ module Origami
                 OpenSSL::PKCS7.sign(certificate, key, Digest::SHA1.digest(data), ca, OpenSSL::PKCS7::BINARY).to_der
 
             when PKCS1_RSA_SHA1
-                key.sign(OpenSSL::Digest::SHA1.new, data)
+                PKCS1.sign(certificate, key, data).to_der
+
             else
                 raise NotImplementedError, "Unsupported signature method #{method.inspect}"
             end
@@ -455,6 +532,8 @@ module Origami
         #
         class Reference < Dictionary
             include StandardObject
+
+            add_type_signature        :Type => :SigRef
 
             field   :Type,            :Type => Name, :Default => :SigRef
             field   :TransformMethod, :Type => Name, :Default => :DocMDP, :Required => true
@@ -541,6 +620,9 @@ module Origami
         class DigitalSignature < Dictionary
             include StandardObject
 
+            add_type_signature        :Filter => :"Adobe.PPKLite"
+            add_type_signature        :Filter => :"Adobe.PPKMS"
+
             field   :Type,            :Type => Name, :Default => :Sig
             field   :Filter,          :Type => Name, :Default => :"Adobe.PPKLite", :Required => true
             field   :SubFilter,       :Type => Name
@@ -594,6 +676,23 @@ module Origami
                 byte_range.map(&:to_i).each_slice(2).map do |start, length|
                     (start...start + length)
                 end
+            end
+
+            def signature_data
+                raise SignatureError, "Invalid signature data" unless self[:Contents].is_a?(String)
+
+                self[:Contents]
+            end
+
+            def certificate_chain
+                return [] unless key?(:Cert)
+
+                chain = self.Cert
+                unless chain.is_a?(String) or (chain.is_a?(Array) and chain.all?{|cert| cert.is_a?(String)})
+                    return SignatureError, "Invalid embedded certificate chain"
+                end
+
+                [ chain ].flatten.map! {|str| OpenSSL::X509::Certificate.new(str) }
             end
 
             def signature_offset #:nodoc:

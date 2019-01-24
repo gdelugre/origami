@@ -104,7 +104,7 @@ module Origami
                 if name[i] == "#"
                     digits = name[i+1, 2]
 
-                    unless /^[A-Za-z0-9]{2}$/ === digits
+                    unless digits =~ /^[A-Za-z0-9]{2}$/
                         raise InvalidNameObjectError, "Irregular use of # token"
                     end
 

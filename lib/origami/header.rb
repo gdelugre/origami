@@ -58,18 +58,17 @@ module Origami
             end
 
             #
+            # Returns the Header version as a String.
+            #
+            def version
+                "#{@major_version}.#{@minor_version}"
+            end
+
+            #
             # Outputs self into PDF code.
             #
             def to_s(eol: $/)
-                "%PDF-#{@major_version}.#{@minor_version}".b + eol
-            end
-
-            def to_sym #:nodoc:
-                "#{@major_version}.#{@minor_version}".to_sym
-            end
-
-            def to_f #:nodoc:
-                to_sym.to_s.to_f
+                "%PDF-#{self.version}".b + eol
             end
         end
     end
