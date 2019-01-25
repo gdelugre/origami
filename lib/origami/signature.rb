@@ -272,9 +272,9 @@ module Origami
             #
             rebuild_xrefs
 
-            file_data = output()
+            file_data = output
             signable_data = file_data[digsig.ByteRange[0],digsig.ByteRange[1]] +
-                file_data[digsig.ByteRange[2],digsig.ByteRange[3]]
+                file_data[digsig.ByteRange[2],digsig.ByteRange[2]+digsig.ByteRange[3]]
 
             #
             # Computes and inserts the signature.
