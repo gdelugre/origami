@@ -230,7 +230,7 @@ module Origami
             #
             signable_data = prepare_signature(method: method, annotation: annotation, issuer: issuer,
                                               location: location, contact: contact, reason: reason,
-                                              content_size: Signature::required_size(method, certificate, key, ca),
+                                              content_size: Signature.required_size(method, certificate, key, ca),
                                               ca: ca, certificate: certificate)
 
             #
@@ -334,7 +334,7 @@ module Origami
             #
             rebuild_xrefs
 
-            file_data = output()
+            file_data = output
             signable_data = file_data[digsig.ByteRange[0],digsig.ByteRange[1]] +
                 file_data[digsig.ByteRange[2],digsig.ByteRange[3]]
 
