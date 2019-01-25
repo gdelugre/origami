@@ -71,7 +71,13 @@ module Origami
         #
         # Inserts an invisible signature into the PDF with an empty /Content prepared for external signing
         #
-        def prepare_signature(annotation: nil, name: nil, location: nil, contact: nil, reason: nil, method: Signature::PKCS7_DETACHED, content_size: 4096)
+        def prepare_signature(method: Signature::PKCS7_DETACHED,
+                              annotation: nil,
+                              issuer: nil,
+                              location: nil,
+                              contact: nil,
+                              reason: nil,
+                              content_size: 4096)
 
             unless annotation.nil? or annotation.is_a?(Annotation::Widget::Signature)
                 raise TypeError, "Expected a Annotation::Widget::Signature object."
@@ -102,12 +108,12 @@ module Origami
               InteractiveForm::SigFlags::SIGNATURES_EXIST | InteractiveForm::SigFlags::APPEND_ONLY
 
             digsig.Type = :Sig
-            digsig.Filter = Name.new("Adobe.PPKLite")  # Method should be Adobe.PPKLite
-            digsig.SubFilter = Name.new(method) # Signature sub method
-            digsig.Contents = HexaString.new("\x00" * content_size) # Placeholder for actual signature, try to leave enough space for the signature or ByteRange has to be updated
-            digsig.ByteRange = [0, 0, 0, 0] # Init empty ByteRange
+            digsig.Contents = HexaString.new("\x00" * content_size)
+            digsig.Filter = :"Adobe.PPKLite"
+            digsig.SubFilter = Name.new(method)
+            digsig.ByteRange = [0, 0, 0, 0]
 
-            digsig.Name = HexaString.new(name) if name # Hex String to deal with non ascii chars
+            digsig.Name = HexaString.new(issuer) if issuer
             digsig.Location = HexaString.new(location) if location
             digsig.ContactInfo = HexaString.new(contact) if contact
             digsig.Reason = HexaString.new(reason) if reason
@@ -136,7 +142,7 @@ module Origami
             # Sign everything except the Contents HexString
             signable_data = filedata[digsig.ByteRange[0],digsig.ByteRange[1]] + filedata[digsig.ByteRange[2],digsig.ByteRange[2]+digsig.ByteRange[3]]
 
-            Base64.encode64 signable_data # Return Base64 encoded signable data
+            Base64.encode64(signable_data) # Return Base64 encoded signable data
         end
 
         #
@@ -144,7 +150,7 @@ module Origami
         #
         def insert_signature(signature_base64)
 
-            signature = Base64.decode64 signature_base64 # decode the signature
+            signature = Base64.decode64(signature_base64) # decode the signature
 
             begin
                 digsig = self.signature
@@ -154,8 +160,6 @@ module Origami
 
             signature = OpenSSL::PKCS7.new(signature).to_der # Convert Signature to DER encoding
             digsig.Contents[0, signature.size] = signature # Insert the signature into the Contents
-
-            self.freeze # No more modification are allowed after signing.
         end
 
         #
@@ -436,9 +440,10 @@ module Origami
 
     module Signature
 
-        PKCS1_RSA_SHA1  = "adbe.x509.rsa_sha1"
-        PKCS7_SHA1      = "adbe.pkcs7.sha1"
-        PKCS7_DETACHED  = "adbe.pkcs7.detached"
+        PKCS1_RSA_SHA1      = "adbe.x509.rsa_sha1"
+        PKCS7_SHA1          = "adbe.pkcs7.sha1"
+        PKCS7_DETACHED      = "adbe.pkcs7.detached"
+        ETSI_CADES_DETACHED = "ETSI.CAdES.detached"
 
         #
         # PKCS1 class used for adbe.x509.rsa_sha1.
@@ -490,14 +495,14 @@ module Origami
 
         def self.verify(method, data, signature, store, chain)
             case method
-            when PKCS7_DETACHED
+            when PKCS7_DETACHED, ETSI_CADES_DETACHED
                 pkcs7 = OpenSSL::PKCS7.new(signature)
                 raise SignatureError, "Not a PKCS7 detached signature" unless pkcs7.detached?
-                pkcs7.verify([], store, data, OpenSSL::PKCS7::DETACHED | OpenSSL::PKCS7::BINARY)
+                pkcs7.verify([], store, data)
 
             when PKCS7_SHA1
                 pkcs7 = OpenSSL::PKCS7.new(signature)
-                pkcs7.verify([], store, nil, OpenSSL::PKCS7::BINARY) and pkcs7.data == Digest::SHA1.digest(data)
+                pkcs7.verify([], store, nil) and pkcs7.data == Digest::SHA1.digest(data)
 
             when PKCS1_RSA_SHA1
                 raise SignatureError, "Cannot verify RSA signature without a certificate" if chain.empty?
@@ -530,6 +535,9 @@ module Origami
 
             when PKCS1_RSA_SHA1
                 PKCS1.sign(certificate, key, data).to_der
+
+            when ETSI_CADES_DETACHED
+                raise NotImplementedError, "#{ETSI_CADES_DETACHED} signatures are recognized, but creating them is not supported. You may use prepare_signature() / insert_signature() to insert externally prepared CADES signature"
 
             else
                 raise NotImplementedError, "Unsupported signature method #{method.inspect}"
