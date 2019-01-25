@@ -1,6 +1,7 @@
 #!/usr/bin/ruby
 
 require 'openssl'
+require 'base64'
 
 begin
   require 'origami'
@@ -17,24 +18,18 @@ contents = ContentStream.new.setFilter(:FlateDecode)
 contents.write OUTPUT_FILE,
                x: 350, y: 750, size: 30
 
-pdf = PDF.new
+pdf  = PDF.new
 page = Page.new.setContents(contents)
 pdf.append_page(page)
 
 puts "PDF created"
-pdf_b64 = pdf.prepare_signature(name: "Max Mustermann")
-puts "Send this to your external signer: "
-puts "------------------------------------------"
-puts pdf_b64
-puts "------------------------------------------"
-puts "Update the signature file (signature.txt) and press enter"
-gets
+signable_content = pdf.prepare_signature(issuer: "Max Mustermann")
 
-sig = IO.read("signature.txt")
+# you will probably need to base64 encode signable_content
+sig = sign_with_external_provider(signable_content)
 
-puts "Inserting the signature into the PDF"
-pdf.insert_signature sig
+# insert computed signature value to pdf, it must be provided in DER format, so you will probable need to base64 decode it first
+pdf.insert_signature(sig)
 
 pdf.save(OUTPUT_FILE)
 puts "PDF saved as " + OUTPUT_FILE
-puts "Signature Check: http://signaturpruefung.gv.at/"
