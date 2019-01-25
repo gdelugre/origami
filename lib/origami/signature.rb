@@ -183,7 +183,6 @@ module Origami
             end
 
             # Insert signature
-            signature = OpenSSL::PKCS7.new(signature).to_der # Convert Signature to DER encoding
             digsig.Contents[0, signature.size] = signature # Insert the signature into the Contents
 
             #
