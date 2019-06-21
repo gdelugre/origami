@@ -65,7 +65,7 @@ module Origami
                 }
 
                 data = index == signatures.length - 1 ? extract_signed_data(digsig, last_sig: true) : extract_signed_data(digsig)
-                return false if !Signature.verify(subfilter.to_s, data, signature, store, chain)
+                return false unless Signature.verify(subfilter.to_s, data, signature, store, chain)
             end
 
           true
