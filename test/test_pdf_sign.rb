@@ -54,14 +54,7 @@ class TestSign < Minitest::Test
     def sign_document_with_method(method)
         document, annotation = setup_document_with_annotation
 
-        document.sign(@cert, @key,
-            method: method,
-            annotation: annotation,
-            issuer: "Guillaume Delugré",
-            location: "France",
-            contact: "origami@localhost",
-            reason: "Example"
-        )
+        sign_document(annotation, document, method)
 
         assert document.frozen?
         assert document.signed?
@@ -83,6 +76,27 @@ class TestSign < Minitest::Test
         assert result
     end
 
+    def sign_document_twice_with_method(method)
+        document, annotation = setup_document_with_annotation
+
+        2.times do
+            sign_document(annotation, document, method)
+        end
+
+        assert document.frozen?
+        assert document.signed?
+
+        output = StringIO.new
+        document.save(output)
+
+        document = PDF.read(output.reopen(output.string,'r'), verbosity: Parser::VERBOSE_QUIET)
+
+        refute document.verify
+        assert document.verify(allow_self_signed: true)
+        assert document.verify(trusted_certs: [@cert])
+        refute document.verify(trusted_certs: [@other_cert])
+    end
+
     def test_sign_pkcs7_sha1
         sign_document_with_method(Signature::PKCS7_SHA1)
     end
@@ -93,5 +107,30 @@ class TestSign < Minitest::Test
 
     def test_sign_x509_sha1
         sign_document_with_method(Signature::PKCS1_RSA_SHA1)
+    end
+
+    def test_sign_pkcs7_sha1_twice
+        sign_document_twice_with_method(Signature::PKCS7_SHA1)
+    end
+
+    def test_sign_pkcs7_detached_twice
+        sign_document_twice_with_method(Signature::PKCS7_DETACHED)
+    end
+
+    def test_sign_x509_sha1_twice
+        sign_document_twice_with_method(Signature::PKCS1_RSA_SHA1)
+    end
+
+    private
+
+    def sign_document(annotation, document, method)
+        document.sign(@cert, @key,
+                      method: method,
+                      annotation: annotation,
+                      issuer: "Guillaume Delugré",
+                      location: "France",
+                      contact: "origami@localhost",
+                      reason: "Example"
+        )
     end
 end

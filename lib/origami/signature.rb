@@ -35,36 +35,40 @@ module Origami
         #   _verify_cb_: block called when encountering a certificate that cannot be verified.
         #                Passed argument in the OpenSSL::X509::StoreContext.
         #
+        # Added a new method to verify all signatures in a signed pdf
         def verify(trusted_certs: [],
                    use_system_store: false,
                    allow_self_signed: false,
                    &verify_cb)
 
-            digsig = self.signature
-            digsig = digsig.cast_to(Signature::DigitalSignature) unless digsig.is_a?(Signature::DigitalSignature)
+            signatures.each_with_index do |digsig, index|
+                digsig = digsig.cast_to(Signature::DigitalSignature) unless digsig.is_a?(Signature::DigitalSignature)
 
-            signature = digsig.signature_data
-            chain = digsig.certificate_chain
-            subfilter = digsig.SubFilter.value
+                signature = digsig.signature_data
+                chain = digsig.certificate_chain
+                subfilter = digsig.SubFilter.value
 
-            store = OpenSSL::X509::Store.new
-            store.set_default_paths if use_system_store
-            trusted_certs.each { |ca| store.add_cert(ca) }
+                store = OpenSSL::X509::Store.new
+                store.set_default_paths if use_system_store
+                trusted_certs.each {|ca| store.add_cert(ca)}
 
-            store.verify_callback = -> (success, ctx) {
-                return true if success
+                store.verify_callback = -> (success, ctx) {
+                    return true if success
 
-                error = ctx.error
-                is_self_signed = (error == OpenSSL::X509::V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT ||
-                                  error == OpenSSL::X509::V_ERR_SELF_SIGNED_CERT_IN_CHAIN)
+                    error = ctx.error
+                    is_self_signed = (error == OpenSSL::X509::V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT ||
+                        error == OpenSSL::X509::V_ERR_SELF_SIGNED_CERT_IN_CHAIN)
 
-                return true if is_self_signed && allow_self_signed && verify_cb.nil?
+                    return true if is_self_signed && allow_self_signed && verify_cb.nil?
 
-                verify_cb.call(ctx) unless verify_cb.nil?
-            }
+                    verify_cb.call(ctx) unless verify_cb.nil?
+                }
 
-            data = extract_signed_data(digsig)
-            Signature.verify(subfilter.to_s, data, signature, store, chain)
+                data = index == signatures.length - 1 ? extract_signed_data(digsig, last_sig: true) : extract_signed_data(digsig)
+                return false if !Signature.verify(subfilter.to_s, data, signature, store, chain)
+            end
+
+          true
         end
 
         #
@@ -306,33 +310,50 @@ module Origami
             raise SignatureError, "Cannot find digital signature"
         end
 
+
+        def signatures
+            raise SignatureError, "Not a signed document" unless self.signed?
+
+            dig_sigs = []
+            self.each_field do |field|
+                dig_sigs << field.V if field.FT == :Sig && field.V.is_a?(Dictionary)
+            end.compact
+
+            return dig_sigs if dig_sigs.count > 0
+            raise SignatureError, "Cannot find digital signature"
+        end
+
         private
 
         #
         # Verifies the ByteRange field of a digital signature and returned the signed data.
+        # Only check for valid ByteRange when it is the last signature
         #
-        def extract_signed_data(digsig)
+        def extract_signed_data(digsig, last_sig: false)
             # Computes the boundaries of the Contents field.
-            start_sig = digsig[:Contents].file_offset
-
-            stream = StringScanner.new(self.original_data)
-            stream.pos = digsig[:Contents].file_offset
-            Object.typeof(stream).parse(stream)
-            end_sig = stream.pos
-            stream.terminate
 
             r1, r2 = digsig.ranges
-            if r1.begin != 0 or
-                r2.end != self.original_data.size or
-                r1.end != start_sig or
-                r2.begin != end_sig
 
-                raise SignatureError, "Invalid signature byte range"
+            if last_sig
+                start_sig = digsig[:Contents].file_offset
+
+                stream = StringScanner.new(self.original_data)
+                stream.pos = digsig[:Contents].file_offset
+                Object.typeof(stream).parse(stream)
+                end_sig = stream.pos
+                stream.terminate
+
+                if r1.begin != 0 or
+                    r2.end != self.original_data.size or
+                    r1.end != start_sig or
+                    r2.begin != end_sig
+
+                    raise SignatureError, "Invalid signature byte range"
+                end
             end
 
             self.original_data[r1] + self.original_data[r2]
         end
-
     end
 
     class Perms < Dictionary
