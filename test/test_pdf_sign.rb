@@ -97,6 +97,20 @@ class TestSign < Minitest::Test
         refute document.verify(trusted_certs: [@other_cert])
     end
 
+    def signature_with_certificate
+        document, annotation = setup_document_with_annotation
+
+        sign_document(annotation, document, Signature::PKCS7_DETACHED)
+        signature = document.signatures.first
+        assert_equal document.certificates(signature).first.subject, @cert.subject
+    end
+
+    def signature_has_problem
+        document = setup_document_with_annotation[0]
+
+        assert document.certificates('wrong sig').empty?
+    end
+
     def test_sign_pkcs7_sha1
         sign_document_with_method(Signature::PKCS7_SHA1)
     end
@@ -119,6 +133,11 @@ class TestSign < Minitest::Test
 
     def test_sign_x509_sha1_twice
         sign_document_twice_with_method(Signature::PKCS1_RSA_SHA1)
+    end
+
+    def test_sig_certificates
+        signature_with_certificate
+        signature_has_problem
     end
 
     private

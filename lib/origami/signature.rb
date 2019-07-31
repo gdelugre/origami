@@ -323,6 +323,16 @@ module Origami
             raise SignatureError, "Cannot find digital signature"
         end
 
+        def certificates(signature)
+            begin
+                certs = OpenSSL::PKCS7.new(signature[:Contents]).certificates
+            rescue => e
+                return []
+            end
+
+            certs
+        end
+
         private
 
         #
