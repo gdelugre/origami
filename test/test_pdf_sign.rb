@@ -102,13 +102,11 @@ class TestSign < Minitest::Test
 
         sign_document(annotation, document, Signature::PKCS7_DETACHED)
         signature = document.signatures.first
-        assert_equal document.certificates(signature).first.subject, @cert.subject
+        assert_equal Origami::PDF.extract_certificates(signature).first.subject, @cert.subject
     end
 
     def signature_has_problem
-        document = setup_document_with_annotation[0]
-
-        assert document.certificates('wrong sig').empty?
+        assert Origami::PDF.extract_certificates('wrong sig').empty?
     end
 
     def test_sign_pkcs7_sha1
