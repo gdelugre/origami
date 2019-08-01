@@ -326,7 +326,7 @@ module Origami
         def self.extract_certificates(signature)
             begin
                 certs = OpenSSL::PKCS7.new(signature[:Contents]).certificates
-            rescue => e
+            rescue
                 return []
             end
 
