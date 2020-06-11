@@ -187,7 +187,7 @@ module Origami
                     end
 
                     self.each_with_index do |object, index|
-                        index_type = array_type.is_a?(::Array) ? array_type[index % array_type.size] : array_type
+                        index_type = index_type.is_a?(::Array) ? index_type[index % index_type.size] : index_type
 
                         begin
                             object_value = object.solve
