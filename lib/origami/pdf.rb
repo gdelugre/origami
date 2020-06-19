@@ -191,7 +191,7 @@ module Origami
         # Saves the current document.
         # _filename_:: The path where to save this PDF.
         #
-        def save(path, params = {})
+        def save(path, params = {}, bin = false)
             options =
             {
                 delinearize: true,
@@ -207,26 +207,39 @@ module Origami
                 options[:obfuscate] = false
             end
 
-            if path.respond_to?(:write)
-                fd = path
+            unless bin
+                if path.respond_to?(:write)
+                    fd = path
+                else
+                    path = File.expand_path(path)
+                    fd = File.open(path, 'w').binmode
+                    close = true
+                end
+           
+                load_all_objects unless loaded?
+
+                intents_as_pdfa1 if options[:intent] =~ /pdf[\/-]?A1?/i
+                self.delinearize! if options[:delinearize] and self.linearized?
+                compile(options) if options[:recompile]
+
+            
+                fd.write output(options)
+                fd.close if close
+
+                self
             else
-                path = File.expand_path(path)
-                fd = File.open(path, 'w').binmode
-                close = true
+                output(options)
             end
-
-            load_all_objects unless loaded?
-
-            intents_as_pdfa1 if options[:intent] =~ /pdf[\/-]?A1?/i
-            self.delinearize! if options[:delinearize] and self.linearized?
-            compile(options) if options[:recompile]
-
-            fd.write output(options)
-            fd.close if close
-
-            self
         end
         alias write save
+
+
+        #
+        # Returns pdf in binary mode.
+        #
+        def to_bin
+           save(nil, {}, bin = true)
+        end
 
         #
         # Saves the file up to given revision number.
