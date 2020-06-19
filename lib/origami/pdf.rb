@@ -207,29 +207,25 @@ module Origami
                 options[:obfuscate] = false
             end
 
-            unless bin_mode
-                if path.respond_to?(:write)
-                    fd = path
-                else
-                    path = File.expand_path(path)
-                    fd = File.open(path, 'w').binmode
-                    close = true
-                end
-           
-                load_all_objects unless loaded?
+            return output(options) if bin_mode
 
-                intents_as_pdfa1 if options[:intent] =~ /pdf[\/-]?A1?/i
-                self.delinearize! if options[:delinearize] and self.linearized?
-                compile(options) if options[:recompile]
-
-            
-                fd.write output(options)
-                fd.close if close
-
-                self
+            if path.respond_to?(:write)
+                fd = path
             else
-                output(options)
+                path = File.expand_path(path)
+                fd = File.open(path, 'w').binmode
+                close = true
             end
+        
+            load_all_objects unless loaded?
+            intents_as_pdfa1 if options[:intent] =~ /pdf[\/-]?A1?/i
+            self.delinearize! if options[:delinearize] and self.linearized?
+            compile(options) if options[:recompile]
+
+            fd.write output(options)
+            fd.close if close
+
+            self
         end
         alias write save
 
