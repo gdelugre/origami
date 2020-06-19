@@ -234,7 +234,7 @@ module Origami
         # Returns pdf in binary mode.
         #
         def to_bin
-           save(nil, {}, true)
+            save(nil, {}, true)
         end
 
         #
