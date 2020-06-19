@@ -191,7 +191,7 @@ module Origami
         # Saves the current document.
         # _filename_:: The path where to save this PDF.
         #
-        def save(path, params = {}, bin = false)
+        def save(path, params = {}, bin_mode = false)
             options =
             {
                 delinearize: true,
@@ -207,7 +207,7 @@ module Origami
                 options[:obfuscate] = false
             end
 
-            unless bin
+            unless bin_mode
                 if path.respond_to?(:write)
                     fd = path
                 else
