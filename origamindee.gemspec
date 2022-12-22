@@ -21,14 +21,15 @@ Gem::Specification.new do |spec|
                         'bin/shell/.irbrc',
                     ]
 
-    spec.require_path  = 'lib'
+    spec.require_paths = ['lib']
     spec.test_file     = 'test/test_pdf.rb'
     spec.license       = 'LGPL-3.0+'
 
     spec.required_ruby_version = '>= 2.6'
     spec.add_runtime_dependency 'colorize', '~> 0.8'
+    spec.add_runtime_dependency 'rexml',    '>= 3.2.5'
     spec.add_development_dependency 'minitest', '~> 5.0'
-    spec.add_development_dependency 'rake',     '~> 10.0'
+    spec.add_development_dependency 'rake',     '~> 10.5'
     spec.add_development_dependency 'rdoc',     '~> 5.0'
 
     spec.bindir        = 'bin'
