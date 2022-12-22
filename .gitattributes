@@ -1,0 +1,14 @@
+# Auto-detect text files, ensure they use LF.
+*       text=auto eol=lf
+
+# These files are always considered text and should use LF.
+# See core.whitespace @ https://git-scm.com/docs/git-config for whitespace flags.
+*.rb    text eol=lf whitespace=blank-at-eol,space-before-tab,tab-in-indent,tabwidth=2 diff=ruby
+*.sh    text eol=lf whitespace=blank-at-eol diff=bash
+*.md    text eol=lf whitespace=blank-at-eol diff=markdown
+
+# Exclude non-essential files from dist
+.gitattributes  export-ignore
+.gitignore      export-ignore
+test/           export-ignore
+.github         export-ignore
