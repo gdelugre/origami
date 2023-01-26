@@ -93,7 +93,7 @@ module Origami
                 raise TypeError, "A OpenSSL::X509::Certificate object must be passed."
             end
 
-            if !key.is_a?(OpenSSL::PKey::RSA) || !key.is_a?(OpenSSL::PKey::EC)
+            unless (key.is_a?(OpenSSL::PKey::RSA) || key.is_a?(OpenSSL::PKey::EC))
                 raise TypeError, "A OpenSSL::PKey::RSA or EC object must be passed."
             end
 
