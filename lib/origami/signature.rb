@@ -69,6 +69,7 @@ module Origami
 
         #
         # Sign the document with the given key and x509 certificate.
+        # permit use RSA and EC private key.
         # _certificate_:: The X509 certificate containing the public key.
         # _key_:: The private key associated with the certificate.
         # _method_:: The PDF signature identifier.
@@ -92,8 +93,8 @@ module Origami
                 raise TypeError, "A OpenSSL::X509::Certificate object must be passed."
             end
 
-            unless key.is_a?(OpenSSL::PKey::RSA)
-                raise TypeError, "A OpenSSL::PKey::RSA object must be passed."
+            if !key.is_a?(OpenSSL::PKey::RSA) || !key.is_a?(OpenSSL::PKey::EC)
+                raise TypeError, "A OpenSSL::PKey::RSA or EC object must be passed."
             end
 
             unless ca.is_a?(::Array)
