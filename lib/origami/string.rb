@@ -437,7 +437,7 @@ module Origami
                 utc_offset: now.utc_offset
             }
 
-            Origami::Date.new(date)
+            Origami::Date.new(**date)
         end
     end
 
